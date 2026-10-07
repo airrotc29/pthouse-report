@@ -514,6 +514,46 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .rrow .rmrow { justify-self: end; padding: 3px 8px; color: var(--muted); width: auto; }
 .fs > [data-add] { margin-top: 8px; }
 @media (max-width: 640px) { .cklist { grid-template-columns: 1fr; } .ckrow { grid-template-columns: 1fr; } .rrow.r2 { grid-template-columns: 1fr 1fr; } }
+.hero .sbar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: rgba(255,255,255,.1); margin-top: 10px; }
+.hero .sbar i { display: block; height: 100%; min-width: 2px; }
+.hero .sleg { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 5px 14px; margin-top: 9px; font-size: 12px; color: var(--hero-mut); }
+.hero .sleg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.hero .sleg b { color: var(--hero-fg); font-variant-numeric: tabular-nums; }
+/* premium daily form */
+.fsum-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); margin-bottom: 12px; }
+.fsum { display: flex; gap: 6px; flex-wrap: wrap; }
+.fsec { position: relative; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 12px 16px 14px; margin: 0 0 12px; box-shadow: var(--shadow); min-width: 0; }
+.fsec::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 2px; background: linear-gradient(180deg, var(--accent), var(--gold)); opacity: .7; }
+.fsec.urgentfs { border-color: var(--crit); background: var(--crit-soft); }
+.fsec.urgentfs::before { background: var(--crit); opacity: 1; }
+.fh { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.fh .fnum { width: 26px; height: 26px; border-radius: 50%; display: grid; place-content: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 12.5px; flex: none; box-shadow: 0 0 0 2px var(--gold-soft); }
+.fh .ft h3 { font-size: 14.5px; }
+.fh .fx { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fh .fx .check.urg { color: var(--crit); font-weight: 600; font-size: 13px; }
+.femp { padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-size: 12.5px; }
+.statin { display: flex; flex-wrap: wrap; gap: 8px; }
+.sti { display: flex; flex-direction: column; gap: 3px; background: var(--surface-2); border-radius: 10px; padding: 7px 10px 8px; min-width: 104px; position: relative; }
+.sti span { font-size: 11.5px; color: var(--fg-2); font-weight: 500; }
+.sti input { width: 100%; min-width: 0; font-weight: 600; font-size: 15px; padding: 4px 34px 4px 8px; min-height: 32px; font-variant-numeric: tabular-nums; }
+.sti small { position: absolute; right: 18px; bottom: 15px; font-size: 11px; color: var(--muted); }
+.sti.wide { flex: 1 1 260px; } .sti.wide input { padding-right: 8px; font-weight: 500; font-size: 13.5px; }
+.cktiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.cktile { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line-soft); border-left: 4px solid var(--good); border-radius: 10px; background: var(--surface); transition: background .15s, border-color .15s; }
+.cktile.bad { border-left-color: var(--crit); background: var(--crit-soft); }
+.cktile.fix { border-left-color: var(--warn); background: var(--warn-soft); }
+.cktile.na { border-left-color: var(--muted); opacity: .65; }
+.cktile .ckh { display: flex; align-items: center; gap: 9px; }
+.cktile .ckh svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cktile.bad .ckh svg { stroke: var(--crit); } .cktile.fix .ckh svg { stroke: #9a6b00; }
+.cktile .seg { align-self: flex-start; }
+.cktile .cknote input { width: 100%; }
+.rrow { grid-template-columns: 26px repeat(auto-fit, minmax(140px, 1fr)); background: var(--surface-2); border: 0; border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
+.rrow.openrow { box-shadow: inset 0 0 0 1px var(--crit); }
+.rrow .rno { width: 22px; height: 22px; border-radius: 50%; display: grid; place-content: center; background: var(--surface); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; color: var(--fg-2); }
+.rrow .ckbox { gap: 4px 10px; }
+.savebar { position: sticky; bottom: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 0 2px; background: var(--surface); border-top: 1px solid var(--line-soft); }
+@media (max-width: 640px) { .cktiles { grid-template-columns: 1fr; } .rrow { grid-template-columns: 26px 1fr 1fr; } .fh .fx { margin-left: 0; } }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -562,21 +602,9 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
       <div class="hd"><h2>일일보고 요약</h2>
         <div class="row">
           <input type="month" id="dailyMonth" aria-label="일일보고 월">
-          <input type="search" id="dailyQ" placeholder="키워드 검색 (업무·민원·특이사항)" aria-label="일일보고 검색" style="min-width:230px">
         </div>
       </div>
       <div class="bd" id="dailyMatrix"></div>
-    </div>
-    <div class="card">
-      <div class="hd"><h2 id="dailyFeedTitle">일자별 보고</h2>
-        <div class="row">
-          <button class="btn sm" id="dayPrev" aria-label="전날">◀</button>
-          <input type="date" id="dailyDate" aria-label="일자">
-          <button class="btn sm" id="dayNext" aria-label="다음날">▶</button>
-          <button class="btn sm" id="dayToday">오늘</button>
-        </div>
-      </div>
-      <div class="bd" id="dailyFeed"></div>
     </div>
     <div class="card" id="dailyFormCard">
       <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="note">정상인 항목은 그대로 두고 이상·민원·사고만 입력하면 됩니다. 입력 중인 내용은 이 브라우저에 임시 저장됩니다.</span></div>
@@ -966,7 +994,7 @@ function renderHome() {
   const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
   let h = '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
-    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div><div class="spark">' + heroSpark(ttp) + '</div><div class="cap">' + (ttp.length > 1 ? ttp.map(p => shortMonth(p.m)).join(' → ') + ' · 전 사업소 합산' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
+    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div>' + siteShareBar(reps) + ageBar(reps.flatMap(r => unitSummary(r)), tot) + '</div>' +
     '<div class="rings">' +
       ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
       ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대', { vals: serLt, fmt: pp, goodWhen: 'down' }) +
@@ -1222,7 +1250,7 @@ function renderSite() {
     '<div class="hchips"><span>당월 발생 <b>' + (r.arrears.monthChange == null ? '–' : (r.arrears.monthChange > 0 ? '+' : '') + krw(r.arrears.monthChange)) + '</b></span>' +
     (r.arrears.prevBalance != null ? '<span>전월 잔액 <b>' + krw(r.arrears.prevBalance) + '</b></span>' : '') +
     '<span>최대 미납 <b>' + (top ? esc(top.unit) : '–') + '</b>' + (top ? ' ' + krw(top.total) + '원 · ' + top.n + '개월' : '') + '</span></div>' +
-    '<div class="spark">' + heroSpark(ser) + '</div><div class="cap">' + (ser.length > 1 ? '월간보고 ' + ser.length + '개 시점 추이' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
+    ageBar(us, tot) + '</div>' +
     '<div class="rings">' +
     ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대', { vals: sRate, fmt: pp, goodWhen: 'down' }) +
     ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) +
@@ -1257,6 +1285,25 @@ function renderSite() {
   $('#ltOnly').addEventListener('change', drawU); $('#showAllU').addEventListener('change', drawU); drawU();
   const del = $('#delRep');
   if (del) del.addEventListener('click', () => { if (del.dataset.arm) { store.deleteReport(r.id).then(() => toast('삭제했습니다')).catch(e => toast('삭제 실패: ' + e.message)); } else { del.dataset.arm = '1'; del.textContent = '정말 삭제하려면 한 번 더 누르세요'; setTimeout(() => { del.dataset.arm = ''; del.textContent = '이 보고서 삭제'; }, 4000); } });
+}
+/* 사업소별 체납 총액 비중 (상위 6개소 + 기타) */
+function siteShareBar(reps) {
+  const rows = reps.map(r => ({ lb: r.site, amt: arrearsTotal(r) || 0 })).filter(x => x.amt > 0).sort((a, b) => b.amt - a.amt);
+  if (!rows.length) return '<div class="cap" style="margin-top:16px">체납 총액이 있는 보고서가 없습니다.</div>';
+  const top = rows.slice(0, 6), rest = rows.slice(6); if (rest.length) top.push({ lb: '기타 ' + rest.length + '개소', amt: rest.reduce((a, x) => a + x.amt, 0) });
+  const pal = ['#8fb4dc', '#5b92cc', '#e6c987', '#b08a4a', '#ff9c80', '#a3c9a8', '#9aa7b5'], sum = top.reduce((a, x) => a + x.amt, 0) || 1;
+  return '<div class="cap" style="margin-top:14px">사업소별 체납 총액 비중</div><div class="sbar">' + top.map((x, i) => '<i style="width:' + (100 * x.amt / sum).toFixed(1) + '%;background:' + pal[i] + '" title="' + esc(x.lb + ' ' + won(x.amt)) + '"></i>').join('') + '</div>' +
+    '<div class="sleg">' + top.map((x, i) => '<div><i style="background:' + pal[i] + '"></i>' + esc(x.lb) + ' <b>' + krw(x.amt) + '</b>원 <span style="opacity:.75">(' + Math.round(100 * x.amt / sum) + '%)</span></div>').join('') + '</div>';
+}
+/* 체납 총액을 미납 개월 구간별 금액으로 분해한 가로 막대 (히어로 안, 어두운 배경 전용) */
+function ageBar(us, tot) {
+  if (!us.length) return '<div class="cap" style="margin-top:16px">이 보고서에는 세대별 미납 내역이 없어 구성 막대를 그릴 수 없습니다.</div>';
+  const B = [['1개월', u => u.n <= 1, '#8fb4dc'], ['2~3개월', u => u.n >= 2 && u.n <= 3, '#e6c987'], ['4~5개월', u => u.n >= 4 && u.n <= 5, '#ff9c80'], ['6개월 이상', u => u.n >= 6, '#ff5c5c']];
+  const rows = B.map(b => { const g = us.filter(b[1]); return { lb: b[0], col: b[2], n: g.length, amt: g.reduce((a, u) => a + u.total, 0) }; });
+  const sum = rows.reduce((a, x) => a + x.amt, 0) || 1, other = (tot != null && tot > sum) ? tot - sum : 0;
+  return '<div class="cap" style="margin-top:14px">체납 총액 구성 · 미납 개월별 금액' + (other ? ' <span style="opacity:.7">(세대 내역 외 ' + krw(other) + '원 포함)</span>' : '') + '</div>' +
+    '<div class="sbar">' + rows.filter(x => x.amt > 0).map(x => '<i style="width:' + (100 * x.amt / sum).toFixed(1) + '%;background:' + x.col + '" title="' + esc(x.lb + ' ' + x.n + '세대 · ' + won(x.amt)) + '"></i>').join('') + '</div>' +
+    '<div class="sleg">' + rows.map(x => '<div><i style="background:' + x.col + '"></i>' + x.lb + ' <b>' + x.n + '</b>세대 · <b>' + krw(x.amt) + '</b>원 <span style="opacity:.75">(' + Math.round(100 * x.amt / sum) + '%)</span></div>').join('') + '</div>';
 }
 function statusTiles(items) { return '<div class="sts">' + items.map(x => '<div class="st ' + x.lv + '"><div class="stn">' + esc(x.name) + '</div><div class="std">' + esc(x.sub || '') + '</div>' + (x.label ? '<span class="chip ' + x.lv + '">' + esc(x.label) + '</span>' : '') + '</div>').join('') + '</div>'; }
 function listOr(arr) { arr = (arr || []).filter(Boolean); return arr.length ? '<ul class="plain">' + arr.map(x => '<li>' + esc(x.replace(/^[○*•\-]\s*/, '')) + '</li>').join('') + '</ul>' : '<span class="muted">–</span>'; }
@@ -1396,7 +1443,7 @@ function bindItem() { const s = $('#itemSel'); if (s) s.addEventListener('change
 let dailyBound = false;
 function renderDaily() {
   const all = sites();
-  $('#dailyMonth').value = state.dailyMonth; $('#dailyDate').value = state.dailyDate; $('#dailyQ').value = state.dailyQ;
+  $('#dailyMonth').value = state.dailyMonth;
   // 제출 현황 매트릭스
   const [y, m] = state.dailyMonth.split('-').map(Number), days = new Date(y, m, 0).getDate(), td = todayStr();
   const docs = dailyDocsFor(state.dailyMonth), q = state.dailyQ.trim().toLowerCase();
@@ -1409,16 +1456,6 @@ function renderDaily() {
     h = minis([[expN ? Math.round(100 * rate) + '%' : '–', shortMonth(state.dailyMonth) + ' 제출률 (평일)', expN ? (rate >= 0.9 ? 'good' : rate >= 0.6 ? 'warn' : 'crit') : ''], [subN + '/' + expN, '제출 / 기준 건수', ''], [tdN + '/' + rowsS.length, '오늘 제출', isWeekend(td) ? '' : (tdN === rowsS.length ? 'good' : 'warn')], [urgN, '긴급 보고', urgN ? 'crit' : 'good'], [badN, '시설 이상·조치중', badN ? 'serious' : 'good'], [cmpN, '민원 건', cmpN ? 'warn' : 'good'], [openC, '미처리 민원', openC ? 'crit' : 'good']]).replace('mini mini5', 'mini auto');
   }
   $('#dailyMatrix').innerHTML = h;
-  // 일자별 피드 (검색어가 있으면 월 전체에서 검색)
-  let entries;
-  if (q) { entries = dailyList(state.dailyMonth).filter(e => JSON.stringify([e.work, e.complaints, e.issues, e.plans, e.author, e.site]).toLowerCase().includes(q)); $('#dailyFeedTitle').textContent = '검색 결과 ' + entries.length + '건 · ' + monthLabel(state.dailyMonth); }
-  else { entries = dailyList(state.dailyDate.slice(0, 7)).filter(e => e.date === state.dailyDate); $('#dailyFeedTitle').textContent = dateLabel(state.dailyDate) + ' 일일보고 · ' + entries.length + '/' + all.length + ' 개소'; }
-  const missing = q ? [] : all.filter(s => !entries.some(e => e.siteKey === s.key));
-  $('#dailyFeed').innerHTML = (entries.length ? '<div class="dcards">' + entries.map(e => '<div class="dcard' + (e.urgent ? ' urgent' : '') + '"><div class="h"><b>' + esc(e.site) + '</b><span class="small muted">' + (q ? dateLabel(e.date) + ' · ' : '') + esc(e.author || '') + (e.role ? ' ' + esc(e.role) : '') + (e.staff ? ' · 근무 ' + e.staff + '명' : '') + (e.urgent ? ' <span class="chip crit">긴급</span>' : '') + '</span></div>' +
-    '<div class="dcnt">' + [['업무', e.work, ''], ['민원', e.complaints, ' info'], ['특이', e.issues, e.urgent ? ' crit' : ' warn'], ['예정', e.plans, ' na']].map(x => { const n = (x[1] || []).filter(Boolean).length; return n ? '<span class="chip' + x[2] + '">' + x[0] + ' ' + n + '</span>' : ''; }).join('') + '</div>' + ckChips(e) +
-    dsec('업무', e.work) + dsec('민원', e.complaints) + dsec('특이사항', e.issues) + dsec('익일 예정', e.plans) +
-    (state.canWrite ? '<div class="row"><button class="btn sm" data-edit="' + e.siteKey + '|' + e.date + '">수정</button><span class="note">' + (e.updatedAt ? '저장 ' + e.updatedAt.slice(0, 16).replace('T', ' ') : '') + '</span></div>' : '') + '</div>').join('') + '</div>' : '<div class="empty small">' + (q ? '검색 결과가 없습니다.' : '이 날짜에 올라온 일일보고가 없습니다.') + '</div>') +
-    (missing.length && state.dailyDate <= td ? '<div class="note" style="margin-top:10px">미제출: ' + missing.map(s => esc(s.name)).join(', ') + '</div>' : '');
   // 양식
   $('#dailyFormCard').hidden = !state.canWrite;
   if (state.canWrite) renderDailyForm();
@@ -1493,52 +1530,64 @@ function ckChips(e) {
 function setPath(obj, path, val) { const ks = path.split('.'); let o = obj; for (let i = 0; i < ks.length - 1; i++) { const k = ks[i]; if (o[k] == null) o[k] = /^\d+$/.test(ks[i + 1]) ? [] : {}; o = o[k]; } o[ks[ks.length - 1]] = val; }
 function getPath(obj, path) { return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj); }
 const saveDraft = () => { if (!state.editing) lsSet('mwr.draft2', state.draft); };
+const CK_ICON = { elec: 'M13 2 4 14h7l-1 8 9-12h-7l1-8z', fire: 'M12 22c4 0 7-3 7-7 0-3-2-5-3-7-1 2-2 3-3 3 0-3-1-6-4-8 0 3-1 5-3 7s-2 3-2 5c0 4 3 7 8 7z', elev: 'M5 3h14v18H5z M9 9l3-3 3 3 M9 15l3 3 3-3', water: 'M12 3c4 5 7 8 7 12a7 7 0 0 1-14 0c0-4 3-7 7-12z', hvac: 'M3 8h11a3 3 0 1 0-3-3 M3 12h16a3 3 0 1 1-3 3 M3 16h9a2 2 0 1 1-2 2', park: 'M7 20V4h6a5 5 0 0 1 0 10H7', cctv: 'M3 7h11l4-2v12l-4-2H3z M18 10v4', light: 'M9 18h6 M10 21h4 M12 3a6 6 0 0 0-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 0 0-4-10z' };
+function fsec(n, title, hint, right, body, cls) { return '<section class="fsec ' + (cls || '') + '"><div class="fh"><span class="fnum">' + n + '</span><div class="ft"><h3>' + title + '</h3>' + (hint ? '<div class="note">' + hint + '</div>' : '') + '</div><div class="fx">' + (right || '') + '</div></div>' + body + '</section>'; }
+function formSummary(d) {
+  const bad = CHECK_ITEMS.filter(c => d.checks[c[0]] === 'bad').length, fix = CHECK_ITEMS.filter(c => d.checks[c[0]] === 'fix').length, na = CHECK_ITEMS.filter(c => d.checks[c[0]] === 'na').length, ok = CHECK_ITEMS.length - bad - fix - na;
+  const cN = d.complaints.filter(c => c.unit || c.desc).length, oN = d.complaints.filter(c => (c.unit || c.desc) && c.status === 'open').length, iN = d.incidents.filter(i => i.desc || i.type).length, wN = d.works.filter(w => w.vendor || w.desc).length, dN = d.directives.filter(x => x.text.trim()).length;
+  return '<span class="chip ' + (bad ? 'crit' : fix ? 'warn' : 'good') + '">점검 정상 ' + ok + '/' + (CHECK_ITEMS.length - na) + (bad ? ' · 이상 ' + bad : '') + (fix ? ' · 조치중 ' + fix : '') + '</span>' +
+    '<span class="chip' + (wN ? ' info' : '') + '">공사·업체 ' + wN + '</span><span class="chip' + (oN ? ' crit' : cN ? ' info' : '') + '">민원 ' + cN + (oN ? ' · 미처리 ' + oN : '') + '</span><span class="chip' + (iN ? ' serious' : '') + '">사고 ' + iN + '</span>' + (dN ? '<span class="chip">지시 ' + dN + '</span>' : '') + (d.urgent ? '<span class="chip crit">긴급 · 본사 즉시 확인</span>' : '');
+}
+function updateFormSummary() { const el = $('#fsum'); if (el && state.draft) el.innerHTML = formSummary(state.draft); }
 function renderDailyForm(force) {
   const wrap = $('#dailyFormWrap'); if (!wrap) return;
   if (!force && wrap.innerHTML && wrap.contains(document.activeElement)) return;  /* 입력 중에는 데이터 갱신으로 다시 그리지 않는다 */
   if (!state.draft) { const saved = lsGet('mwr.draft2', null); state.draft = saved && saved.date && saved.checks ? saved : newDraft(); }
   const d = state.draft, all = sites(), ed = state.editing;
-  if (d.key && d.key !== '__new' && !all.some(s => s.key === d.key)) d.key = all.length ? (state.site || all[0].key) : '__new';
+  if (d.key && d.key !== '__new' && !all.some(s => s.key === d.key)) d.key = '';
   if ((!d.key || (d.key === '__new' && !d.newName)) && all.length) d.key = (state.site && all.some(x => x.key === state.site)) ? state.site : all[0].key;
   if (!d.key) d.key = '__new';
   $('#dailyFormTitle').textContent = ed ? siteName(ed.key) + ' · ' + dateLabel(ed.date) + ' 수정' : '일일업무 보고 작성';
   const inp = (path, val, attrs) => '<input type="text" data-f="' + path + '" value="' + esc(val == null ? '' : val) + '" ' + (attrs || '') + '>';
-  const numI = (path, val, ph) => '<input type="number" min="0" step="1" inputmode="numeric" data-f="' + path + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + (ph || '') + '" style="width:72px">';
+  const numI = (path, val, lb, unit) => '<label class="sti"><span>' + lb + '</span><input type="number" min="0" step="1" inputmode="numeric" data-f="' + path + '" value="' + esc(val == null ? '' : val) + '" placeholder="0"><small>' + (unit || '') + '</small></label>';
   const sel = (path, val, opts, ph) => { const o = opts.map(x => Array.isArray(x) ? x : [x, x]); return '<select data-f="' + path + '">' + (ph ? '<option value="">' + ph + '</option>' : '') + o.map(x => '<option value="' + esc(x[0]) + '"' + (x[0] === val ? ' selected' : '') + '>' + esc(x[1]) + '</option>').join('') + '</select>'; };
   const rm = (k, i) => '<button type="button" class="btn sm rmrow" data-rm="' + k + ':' + i + '" aria-label="행 삭제">✕</button>';
-  const add = (k, lb) => '<button type="button" class="btn sm" data-add="' + k + '">+ ' + lb + '</button>';
+  const add = (k, lb) => '<button type="button" class="btn sm addrow" data-add="' + k + '">+ ' + lb + '</button>';
+  const rno = i => '<span class="rno">' + (i + 1) + '</span>';
+  const empty = t => '<div class="femp">' + t + '</div>';
   let h = '<form id="dailyForm" autocomplete="off">';
-  h += '<fieldset class="fs"><legend>1. 기본</legend><div class="form">' +
+  h += '<div class="fsum-wrap"><span class="eyebrow">작성 요약</span><div class="fsum" id="fsum">' + formSummary(d) + '</div></div>';
+  h += fsec(1, '기본', '사업소 · 일자 · 작성자 · 근무 인원', (d.key && d.key !== '__new' ? '<button type="button" class="btn sm" id="dPrev">전일 보고 불러오기</button>' : ''),
+    '<div class="form">' +
     '<div class="f"><label for="dSite">사업소</label><select data-f="key" id="dSite">' + all.map(s => '<option value="' + s.key + '"' + (s.key === d.key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '<option value="__new"' + (d.key === '__new' ? ' selected' : '') + '>+ 새 사업소 입력</option></select></div>' +
     (d.key === '__new' ? '<div class="f"><label>새 사업소명</label>' + inp('newName', d.newName, 'placeholder="예: 남산센트럴시티투웨니퍼스트"') + '</div>' : '') +
     '<div class="f"><label>보고 일자</label><input type="date" data-f="date" id="dDate" value="' + esc(d.date) + '" required></div>' +
     '<div class="f"><label>작성자</label>' + inp('author', d.author, 'placeholder="성명" id="dAuthor"') + '</div>' +
-    '<div class="f"><label>직책</label>' + sel('role', d.role, ROLES, '선택') + '</div>' +
-    '<div class="f wide"><label>근무 인원</label><div class="row">' + [['mgr', '소장·과장'], ['worker', '관리원'], ['clean', '미화'], ['guard', '경비']].map(x => '<label class="small fg2">' + x[1] + ' ' + numI('staff.' + x[0], d.staff[x[0]], '명') + '</label>').join('') + '<label class="small fg2 grow">결원·대체 ' + inp('staff.absent', d.staff.absent, 'placeholder="예: 경비 1명 연차 · 대체근무" style="min-width:220px"') + '</label></div></div>' +
-    '</div>' + (d.key && d.key !== '__new' ? '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" id="dPrev">전일 보고 불러오기</button><span class="note">인원 · 점검 상태 · 미완료 지시사항을 가져옵니다</span></div>' : '') + '</fieldset>';
-  h += '<fieldset class="fs"><legend>2. 시설 점검 <span class="note">기본값 정상 · 이상/조치중일 때만 비고</span></legend><div class="cklist">' + CHECK_ITEMS.map(c => { const st = d.checks[c[0]] || 'ok'; return '<div class="ckrow" data-ckrow="' + c[0] + '"><div><b>' + c[1] + '</b><div class="small muted">' + c[2] + '</div></div><div class="seg">' + CHECK_STATES.map(x => '<button type="button" data-ck="' + c[0] + '" data-v="' + x[0] + '" class="' + x[0] + '" aria-pressed="' + (st === x[0]) + '">' + x[1] + '</button>').join('') + '</div><div class="cknote"' + (st === 'bad' || st === 'fix' ? '' : ' hidden') + '>' + inp('checkNotes.' + c[0], d.checkNotes[c[0]], 'placeholder="이상 내용 · 조치 계획 · 업체 연락 여부"') + '</div></div>'; }).join('') + '</div></fieldset>';
-  h += '<fieldset class="fs"><legend>3. 공사 · 외부업체 출입</legend>' + d.works.map((w, i) => '<div class="rrow">' + inp('works.' + i + '.vendor', w.vendor, 'placeholder="업체명"') + inp('works.' + i + '.desc', w.desc, 'placeholder="작업 내용"') + inp('works.' + i + '.time', w.time, 'placeholder="시간 (09:00~12:00)"') + '<div class="row" style="gap:6px">' + SAFETY.map(sf => '<label class="check small"><input type="checkbox" data-f="works.' + i + '.safety" value="' + sf + '"' + (w.safety.includes(sf) ? ' checked' : '') + '> ' + sf + '</label>').join('') + '</div>' + rm('works', i) + '</div>').join('') + add('works', '공사·업체 추가') + '</fieldset>';
-  h += '<fieldset class="fs"><legend>4. 민원 <span class="note">' + d.complaints.length + '건</span></legend>' + d.complaints.map((c, i) => '<div class="rrow">' + inp('complaints.' + i + '.unit', c.unit, 'placeholder="호수"') + sel('complaints.' + i + '.type', c.type, CMP_TYPES, '유형') + inp('complaints.' + i + '.desc', c.desc, 'placeholder="민원 내용"') + inp('complaints.' + i + '.result', c.result, 'placeholder="처리 결과"') + sel('complaints.' + i + '.status', c.status, [['done', '처리완료'], ['open', '미처리·진행중']]) + rm('complaints', i) + '</div>').join('') + add('complaints', '민원 추가') + '</fieldset>';
-  h += '<fieldset class="fs"><legend>5. 관리비 · 체납 독촉</legend><div class="row">' + [['collected', '당일 수납액(원)'], ['calls', '독촉 전화'], ['sms', '독촉 문자'], ['visits', '방문'], ['promises', '납부약속 세대']].map(x => '<label class="small fg2">' + x[1] + ' <input type="number" min="0" inputmode="numeric" data-f="arrears.' + x[0] + '" value="' + esc(d.arrears[x[0]]) + '" style="width:' + (x[0] === 'collected' ? '130px' : '70px') + '"></label>').join('') + '</div></fieldset>';
-  h += '<fieldset class="fs' + (d.urgent ? ' urgentfs' : '') + '"><legend>6. 안전 · 사고 · 긴급</legend>' + d.incidents.map((x, i) => '<div class="rrow">' + sel('incidents.' + i + '.type', x.type, INC_TYPES, '유형') + inp('incidents.' + i + '.time', x.time, 'placeholder="발생 시각"') + inp('incidents.' + i + '.desc', x.desc, 'placeholder="내용"') + inp('incidents.' + i + '.action', x.action, 'placeholder="조치"') + '<div class="row" style="gap:6px">' + [['r119', '119'], ['r112', '112'], ['rins', '보험']].map(r => '<label class="check small"><input type="checkbox" data-f="incidents.' + i + '.' + r[0] + '"' + (x[r[0]] ? ' checked' : '') + '> ' + r[1] + '</label>').join('') + '</div>' + rm('incidents', i) + '</div>').join('') + '<div class="row" style="margin-top:8px">' + add('incidents', '사고·특이사항 추가') + '<label class="check"><input type="checkbox" data-f="urgent" id="dUrgent"' + (d.urgent ? ' checked' : '') + '> <b style="color:var(--crit)">본사 즉시 확인 필요 (긴급)</b></label></div></fieldset>';
-  h += '<fieldset class="fs"><legend>7. 입주 변동</legend><div class="row">' + [['in', '전입'], ['out', '전출'], ['vacant', '공실(현재)']].map(x => '<label class="small fg2">' + x[1] + ' ' + numI('moves.' + x[0], d.moves[x[0]], '세대') + '</label>').join('') + '</div></fieldset>';
-  h += '<fieldset class="fs"><legend>8. 본사 지시사항 이행</legend>' + d.directives.map((x, i) => '<div class="rrow r2">' + inp('directives.' + i + '.text', x.text, 'placeholder="지시 내용"') + sel('directives.' + i + '.status', x.status, [['todo', '미착수'], ['doing', '진행중'], ['done', '완료']]) + rm('directives', i) + '</div>').join('') + add('directives', '지시사항 추가') + '</fieldset>';
-  h += '<fieldset class="fs"><legend>9. 익일 예정 · 본사 요청 · 업무 메모</legend><div class="form"><div class="f"><label>익일 예정 (한 줄에 한 건)</label><textarea data-f="plans" style="min-height:60px">' + esc(d.plans) + '</textarea></div><div class="f"><label>본사 요청 (예산 · 인력 · 업체)</label><textarea data-f="requests" style="min-height:60px">' + esc(d.requests) + '</textarea></div><div class="f wide"><label>업무 메모 (그 밖의 수행 업무, 한 줄에 한 건)</label><textarea data-f="memo" style="min-height:60px">' + esc(d.memo) + '</textarea></div></div></fieldset>';
-  h += '<div class="row"><button type="submit" class="btn primary" id="dSave">저장</button><button type="button" class="btn" id="dReset">새로 작성</button>' + (ed ? '<button type="button" class="btn danger" id="dDelete">이 보고 삭제</button>' : '') + '<span class="note" id="dMsg"></span></div></form>';
+    '<div class="f"><label>직책</label>' + sel('role', d.role, ROLES, '선택') + '</div></div>' +
+    '<div class="statin" style="margin-top:12px">' + [['mgr', '소장·과장'], ['worker', '관리원'], ['clean', '미화'], ['guard', '경비']].map(x => numI('staff.' + x[0], d.staff[x[0]], x[1], '명')).join('') + '<label class="sti wide"><span>결원 · 대체</span>' + inp('staff.absent', d.staff.absent, 'placeholder="예: 경비 1명 연차 · 대체근무"') + '</label></div>');
+  h += fsec(2, '시설 점검', '기본값 정상 · 이상/조치중일 때만 비고를 적습니다', '<span class="chip good">정상 ' + CHECK_ITEMS.filter(c => (d.checks[c[0]] || 'ok') === 'ok').length + '/' + CHECK_ITEMS.length + '</span>',
+    '<div class="cktiles">' + CHECK_ITEMS.map(c => { const st = d.checks[c[0]] || 'ok'; return '<div class="cktile ckrow ' + st + '" data-ckrow="' + c[0] + '"><div class="ckh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + CK_ICON[c[0]] + '"/></svg><div><b>' + c[1] + '</b><div class="small muted">' + c[2] + '</div></div></div><div class="seg">' + CHECK_STATES.map(x => '<button type="button" data-ck="' + c[0] + '" data-v="' + x[0] + '" class="' + x[0] + '" aria-pressed="' + (st === x[0]) + '">' + x[1] + '</button>').join('') + '</div><div class="cknote"' + (st === 'bad' || st === 'fix' ? '' : ' hidden') + '>' + inp('checkNotes.' + c[0], d.checkNotes[c[0]], 'placeholder="이상 내용 · 조치 계획 · 업체 연락 여부"') + '</div></div>'; }).join('') + '</div>');
+  h += fsec(3, '공사 · 외부업체 출입', '업체명 · 작업 · 시간 · 안전조치', add('works', '추가'),
+    (d.works.length ? d.works.map((w, i) => '<div class="rrow">' + rno(i) + inp('works.' + i + '.vendor', w.vendor, 'placeholder="업체명"') + inp('works.' + i + '.desc', w.desc, 'placeholder="작업 내용"') + inp('works.' + i + '.time', w.time, 'placeholder="시간 (09:00~12:00)"') + '<div class="row ckbox">' + SAFETY.map(sf => '<label class="check small"><input type="checkbox" data-f="works.' + i + '.safety" value="' + sf + '"' + (w.safety.includes(sf) ? ' checked' : '') + '> ' + sf + '</label>').join('') + '</div>' + rm('works', i) + '</div>').join('') : empty('오늘 공사·외부업체 출입이 없으면 비워 두세요.')));
+  h += fsec(4, '민원', '호수 · 유형 · 내용 · 처리 결과 · 상태', add('complaints', '민원 추가'),
+    (d.complaints.length ? d.complaints.map((c, i) => '<div class="rrow' + (c.status === 'open' ? ' openrow' : '') + '">' + rno(i) + inp('complaints.' + i + '.unit', c.unit, 'placeholder="호수"') + sel('complaints.' + i + '.type', c.type, CMP_TYPES, '유형') + inp('complaints.' + i + '.desc', c.desc, 'placeholder="민원 내용"') + inp('complaints.' + i + '.result', c.result, 'placeholder="처리 결과"') + sel('complaints.' + i + '.status', c.status, [['done', '처리완료'], ['open', '미처리·진행중']]) + rm('complaints', i) + '</div>').join('') : empty('접수된 민원이 없으면 비워 두세요.')));
+  h += fsec(5, '관리비 · 체납 독촉', '당일 수납과 독촉 활동', '',
+    '<div class="statin">' + numI('arrears.collected', d.arrears.collected, '당일 수납액', '원') + numI('arrears.calls', d.arrears.calls, '독촉 전화', '건') + numI('arrears.sms', d.arrears.sms, '독촉 문자', '건') + numI('arrears.visits', d.arrears.visits, '방문', '건') + numI('arrears.promises', d.arrears.promises, '납부약속', '세대') + '</div>');
+  h += fsec(6, '안전 · 사고 · 긴급', '유형 · 시각 · 내용 · 조치 · 신고', add('incidents', '사고·특이사항 추가') + '<label class="check urg"><input type="checkbox" data-f="urgent" id="dUrgent"' + (d.urgent ? ' checked' : '') + '> 본사 즉시 확인 (긴급)</label>',
+    (d.incidents.length ? d.incidents.map((x, i) => '<div class="rrow">' + rno(i) + sel('incidents.' + i + '.type', x.type, INC_TYPES, '유형') + inp('incidents.' + i + '.time', x.time, 'placeholder="발생 시각"') + inp('incidents.' + i + '.desc', x.desc, 'placeholder="내용"') + inp('incidents.' + i + '.action', x.action, 'placeholder="조치"') + '<div class="row ckbox">' + [['r119', '119'], ['r112', '112'], ['rins', '보험']].map(r => '<label class="check small"><input type="checkbox" data-f="incidents.' + i + '.' + r[0] + '"' + (x[r[0]] ? ' checked' : '') + '> ' + r[1] + '</label>').join('') + '</div>' + rm('incidents', i) + '</div>').join('') : empty('사고·특이사항이 없으면 비워 두세요.')), d.urgent ? 'urgentfs' : '');
+  h += fsec(7, '입주 변동', '전입 · 전출 · 공실', '', '<div class="statin">' + numI('moves.in', d.moves.in, '전입', '세대') + numI('moves.out', d.moves.out, '전출', '세대') + numI('moves.vacant', d.moves.vacant, '공실 (현재)', '세대') + '</div>');
+  h += fsec(8, '본사 지시사항 이행', '미착수 · 진행중 · 완료', add('directives', '지시사항 추가'),
+    (d.directives.length ? d.directives.map((x, i) => '<div class="rrow r2">' + rno(i) + inp('directives.' + i + '.text', x.text, 'placeholder="지시 내용"') + sel('directives.' + i + '.status', x.status, [['todo', '미착수'], ['doing', '진행중'], ['done', '완료']]) + rm('directives', i) + '</div>').join('') : empty('전일 보고 불러오기를 누르면 미완료 지시가 이어집니다.')));
+  h += fsec(9, '익일 예정 · 본사 요청 · 업무 메모', '한 줄에 한 건', '',
+    '<div class="form"><div class="f"><label>익일 예정</label><textarea data-f="plans" style="min-height:64px">' + esc(d.plans) + '</textarea></div><div class="f"><label>본사 요청 (예산 · 인력 · 업체)</label><textarea data-f="requests" style="min-height:64px">' + esc(d.requests) + '</textarea></div><div class="f wide"><label>업무 메모 (그 밖의 수행 업무)</label><textarea data-f="memo" style="min-height:64px">' + esc(d.memo) + '</textarea></div></div>');
+  h += '<div class="savebar"><button type="submit" class="btn primary" id="dSave">저장</button><button type="button" class="btn" id="dReset">새로 작성</button>' + (ed ? '<button type="button" class="btn danger" id="dDelete">이 보고 삭제</button>' : '') + '<span class="note" id="dMsg"></span></div></form>';
   wrap.innerHTML = h;
 }
 function bindDaily() {
   dailyBound = true;
   $('#dailyMonth').addEventListener('change', e => { if (e.target.value) { state.dailyMonth = e.target.value; if (state.dailyDate.slice(0, 7) !== state.dailyMonth) state.dailyDate = state.dailyMonth + '-01'; render(); } });
-  $('#dailyDate').addEventListener('change', e => { if (e.target.value) { state.dailyDate = e.target.value; state.dailyMonth = e.target.value.slice(0, 7); state.dailyQ = ''; render(); } });
-  $('#dayPrev').addEventListener('click', () => { state.dailyDate = addDays(state.dailyDate, -1); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
-  $('#dayNext').addEventListener('click', () => { state.dailyDate = addDays(state.dailyDate, 1); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
-  $('#dayToday').addEventListener('click', () => { state.dailyDate = todayStr(); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
-  let qt; $('#dailyQ').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { state.dailyQ = e.target.value; renderDaily(); }, 250); });
-  $('#dailyMatrix').addEventListener('click', e => { const b = e.target.closest('button.cell'); if (!b || b.disabled) return; state.dailyDate = b.dataset.day; state.dailyQ = ''; if (dailyEntry(b.dataset.key, b.dataset.day)) loadDailyForm(b.dataset.key, b.dataset.day); else { state.editing = null; state.draft = newDraft(b.dataset.key, b.dataset.day); } render(); renderDailyForm(true); $('#dailyFeed').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  $('#dailyFeed').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (!b) return; const [k, dt] = b.dataset.edit.split('|'); loadDailyForm(k, dt); renderDailyForm(true); $('#dailyFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   const wrap = $('#dailyFormWrap');
-  wrap.addEventListener('input', e => { const f = e.target.dataset.f; if (!f || e.target.type === 'checkbox' || e.target.tagName === 'SELECT') return; setPath(state.draft, f, e.target.value); saveDraft(); });
+  wrap.addEventListener('input', e => { const f = e.target.dataset.f; if (!f || e.target.type === 'checkbox' || e.target.tagName === 'SELECT') return; setPath(state.draft, f, e.target.value); saveDraft(); updateFormSummary(); });
   wrap.addEventListener('change', e => {
     const t = e.target, f = t.dataset.f; if (!f) return;
     if (t.type === 'checkbox') {
@@ -1548,12 +1597,13 @@ function bindDaily() {
       setPath(state.draft, f, t.value);
       if (f === 'key') { if (t.value !== '__new') state.site = t.value; renderDailyForm(true); }
       if (f === 'date' && t.value) { state.dailyDate = t.value; state.dailyMonth = t.value.slice(0, 7); }
+      if (/\.status$/.test(f)) renderDailyForm(true);
     }
-    saveDraft();
+    saveDraft(); updateFormSummary();
   });
   wrap.addEventListener('click', async e => {
     const ck = e.target.closest('[data-ck]');
-    if (ck) { const k = ck.dataset.ck, v = ck.dataset.v; state.draft.checks[k] = v; $$('[data-ck="' + k + '"]', wrap).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); const row = ck.closest('.ckrow'), note = $('.cknote', row); note.hidden = !(v === 'bad' || v === 'fix'); if (!note.hidden) $('input', note).focus(); saveDraft(); return; }
+    if (ck) { const k = ck.dataset.ck, v = ck.dataset.v; state.draft.checks[k] = v; $$('[data-ck="' + k + '"]', wrap).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); const row = ck.closest('.ckrow'), note = $('.cknote', row); row.className = 'cktile ckrow ' + v; note.hidden = !(v === 'bad' || v === 'fix'); if (!note.hidden) $('input', note).focus(); saveDraft(); updateFormSummary(); return; }
     const ad = e.target.closest('[data-add]');
     if (ad) { const k = ad.dataset.add; state.draft[k].push(ROW[k]()); renderDailyForm(true); const first = $('[data-f^="' + k + '.' + (state.draft[k].length - 1) + '."]', wrap); if (first) first.focus(); saveDraft(); return; }
     const rmb = e.target.closest('[data-rm]');
