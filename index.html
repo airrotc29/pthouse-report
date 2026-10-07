@@ -810,6 +810,7 @@ function renderHome() {
     tile(mgrN ? 'crit' : 'good', mgrN, '건', '선임자 공란', mgrN ? '전기·소방 등 확인' : '공란 없음', 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-3A3.5 3.5 0 0 0 6 18.5V20 M11 11.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19 8v5 M21.5 10.5h-5') +
     tile(ltN >= 3 ? 'warn' : 'good', ltN, '세대', '2개월 이상 미납', ltN ? '장기 미납 관리 대상' : '장기 미납 없음', 'M12 7v5l3 2 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18') +
     '</div>';
+  const hHero = h; h = '';
   h += '<div class="grid2">' + todayCard() + trendCard() + '</div>';
   h += '<div class="card"><div class="hd"><h2>사업소 리스크 히트맵</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>양호</span><span><i style="background:var(--warn-soft)"></i>확인</span><span><i style="background:var(--serious-soft)"></i>주의</span><span><i style="background:var(--crit)"></i>긴급</span></span></div><div class="bd tight tw">' + heatmap(reps) + '</div></div>';
   h += '<div class="grid2">';
@@ -828,7 +829,7 @@ function renderHome() {
     h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td>' + esc(r.author) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + won(tot) + '</td><td class="r' + (d > 0 ? '" style="color:var(--crit)' : (d < 0 ? '" style="color:var(--good)' : '')) + '">' + (d == null ? '–' : (d > 0 ? '+' : '') + comma(d)) + '</td><td>' + sparkline(siteSeries(s.key)) + '</td><td class="r">' + longTerm(r).length + '</td><td>' + (ia.length ? ia.map(i => '<span class="chip ' + i.st.lv + '">' + esc(i.item + ' ' + i.st.label) + '</span>').join(' ') : '<span class="chip good">정상</span>') + '</td><td>' + (ma.length ? ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td><td class="small wrap"><div class="clamp2">' + esc([isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–') + '</div></td></tr>';
   });
   h += '</tbody></table></div></div>';
-  h += hRest;
+  h = hHero + h + hRest;
   el.innerHTML = h;
   drawTrend();
   hbarChart($('#homeBar'), reps.filter(r => arrearsTotal(r) != null).map(r => ({ label: r.site, value: arrearsTotal(r), key: r.siteKey })).sort((a, b) => b.value - a.value), { fmt: won, title: '사업소별 체납 총액', onClick: r => go('site', r.key) });
