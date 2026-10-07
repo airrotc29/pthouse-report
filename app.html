@@ -461,6 +461,24 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .dstrip.sm .dc { width: 18px; height: 18px; border-radius: 5px; font-size: 0; }
 .chip.na { background: var(--surface-2); color: var(--muted); }
 @media (max-width: 640px) { .tgrid { grid-template-columns: 1fr; } .dbars { height: 92px; } }
+/* upload tab: site × month matrix */
+.utbl td { vertical-align: middle; }
+.utbl th.m { text-align: center; }
+.utbl td.m { padding: 3px 3px; width: 1%; }
+.utbl th.m { width: 1%; white-space: nowrap; }
+.utbl .sname { min-width: 180px; }
+.ucell { position: relative; min-width: 88px; height: 44px; border-radius: 8px; display: grid; place-content: center; text-align: center; font-size: 12px; line-height: 1.2; }
+.ucell.has { background: var(--accent-soft); color: var(--accent); cursor: pointer; }
+.ucell.has:hover { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ucell .amt { font-weight: 700; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ucell .sub { font-size: 10.5px; opacity: .75; }
+.ucell.miss { background: var(--surface-2); color: var(--muted); font-size: 11.5px; }
+.ucell .x { position: absolute; top: 2px; right: 3px; border: 0; background: none; color: var(--muted); font-size: 11px; cursor: pointer; padding: 1px 4px; border-radius: 4px; opacity: .55; font: inherit; font-size: 11px; }
+.ucell:hover .x, .ucell .x:focus-visible { opacity: 1; }
+.ucell .x:hover { color: var(--crit); background: var(--crit-soft); }
+.drop { padding: 20px 16px; }
+.ringsA { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; align-content: center; }
+@media (max-width: 420px) { .ringsA { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -551,6 +569,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
     </div>
   </section>
   <section class="view" id="view-upload" hidden>
+    <div id="upMinis"></div>
     <div class="card">
       <div class="hd"><h2>월간업무보고 파일 업로드</h2><span class="note">사업소에서 보내온 엑셀(.xlsx)을 그대로 올리면 건물명·보고월·체납·법정검사·선임·자격증·미납세대를 자동으로 읽습니다. 여러 파일을 한 번에 올릴 수 있습니다.</span></div>
       <div class="bd">
@@ -563,11 +582,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
       </div>
     </div>
     <div class="card">
-      <div class="hd"><h2>저장된 월간보고</h2><span class="note" id="storedCount"></span></div>
-      <div class="bd tight tw" id="storedList"></div>
-    </div>
-    <div class="card">
-      <div class="hd"><h2>사업소 목록 <span class="muted small" id="siteCount"></span></h2><span class="note">월간보고가 없는 사업소도 여기 등록해 두면 제출·미제출 집계에 포함됩니다. 이름을 고치면 바로 저장됩니다.</span></div>
+      <div class="hd"><h2>사업소 × 월 제출 현황 <span class="muted small" id="siteCount"></span></h2><span class="note">셀을 누르면 그 달 보고서 상세 · ✕는 보고서 삭제 · 월간보고가 없는 사업소는 이름 칸에서 바로 수정</span></div>
       <div class="bd tight tw" id="siteMgr"></div>
     </div>
   </section>
@@ -1246,6 +1261,7 @@ function renderCompare() {
   if (!reps.length) { h += '<div class="card"><div class="empty"><h2>' + monthLabel(month) + ' 보고서가 없습니다</h2><p>상단에서 다른 월을 고르거나 업로드하세요.</p></div></div>'; el.innerHTML = h; return; }
   h += ({ unpaid: cmpUnpaid, insp: cmpInsp, mgr: cmpMgr, notes: cmpNotes, complaints: cmpComplaints, tasks: cmpTasks })[cmp](reps, month);
   el.innerHTML = h; bindItem();
+  if (cmp === 'mgr' && $('#certBar')) hbarChart($('#certBar'), certCounts(reps).slice(0, 15).map(x => ({ label: x.label, value: x.value })), { fmt: v => comma(v) + '명', title: '자격증 종류별 보유 인원' });
   if (cmp === 'unpaid') { const item = METRICS.find(i => i.id === state.item) || METRICS[0]; hbarChart($('#cmpBar'), reps.map(r => ({ label: r.site, value: item.get(r), key: r.siteKey })).filter(x => x.value != null).sort((a, b) => b.value - a.value), { fmt: item.fmt, title: item.name, onClick: r => go('site', r.key) }); }
 }
 function minis(arr) { return '<div class="mini mini5">' + arr.map(x => '<div class="mt ' + (x[2] || '') + '"><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>'; }
@@ -1270,14 +1286,36 @@ function cmpInsp(reps) {
     reps.map(r => '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + items.map(it => { const i = r.inspections.find(x => x.item === it); if (!i) return '<td><div class="cellv na">–</div></td>'; const st = inspStatus(i); return '<td><div class="cellv two ' + (st.lv || 'na') + '"><span>' + esc(st.label || i.done || '–') + '</span><small>' + esc(i.due || '') + '</small></div></td>'; }).join('') + '</tr>').join('') + '</tbody></table></div></div>';
   return h;
 }
-/* 선임관리자 현황: 사업소 × 선임항목 매트릭스 + 자격증 */
+/* 선임관리자 현황: 충족률 히어로(항목별 링) + 사업소 매트릭스 + 자격증 종류별 인원 */
+const isAuxItem = it => /보조|기타/.test(sq(it));
+function mgrStat(reps, it) {
+  const rows = reps.map(r => r.managers.find(x => x.item === it)).filter(Boolean);
+  const na = rows.filter(m => m.name && isNA(m.name)).length, ok = rows.filter(m => m.name && !isNA(m.name)).length, gap = rows.filter(m => !m.name).length;
+  return { rows: rows.length, ok, na, gap, need: rows.length - na };
+}
+function certCounts(reps) {
+  const cm = new Map();
+  reps.forEach(r => r.certs.forEach(c => String(c.certs || '').split(/[,·/]\s*/).map(x => x.trim()).filter(Boolean).forEach(x => { const k = x.replace(/\s+/g, ''); if (!cm.has(k)) cm.set(k, { label: x, people: new Set() }); cm.get(k).people.add(r.siteKey + '|' + c.name); })));
+  return Array.from(cm.values()).map(v => ({ label: v.label, value: v.people.size })).sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, 'ko'));
+}
 function cmpMgr(reps) {
-  const items = Array.from(new Set(reps.flatMap(r => r.managers.map(i => i.item))));
-  const gaps = reps.flatMap(r => managerAlerts(r)), critN = gaps.filter(g => g.lv === 'crit').length;
-  let h = minis([[critN, '전기·소방 공란', critN ? 'crit' : 'good'], [gaps.length - critN, '기타 공란', gaps.length - critN ? 'warn' : 'good'], [reps.reduce((a, r) => a + r.managers.filter(m => m.name && !isNA(m.name)).length, 0), '선임 완료', 'good'], [reps.reduce((a, r) => a + r.managers.filter(m => m.name && isNA(m.name)).length, 0), '해당 없음', ''], [reps.reduce((a, r) => a + new Set(r.certs.map(c => c.name)).size, 0), '자격 보유 인원', '']]);
-  h += '<div class="card"><div class="hd"><h2>선임관리자 현황</h2><span class="note">행을 누르면 사업소 상세</span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>미선임 대처</th></tr></thead><tbody>' +
-    reps.map(r => '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + items.map(it => { const m = r.managers.find(x => x.item === it); if (!m) return '<td><div class="cellv na">–</div></td>'; if (!m.name) return '<td><div class="cellv ' + (/보조|기타/.test(sq(it)) ? 'na' : (/전기|소방/.test(it) ? 'crit' : 'warn')) + '">' + (/보조|기타/.test(sq(it)) ? '공란' : '확인 필요') + '</div></td>'; return '<td><div class="cellv two ' + (isNA(m.name) ? 'na' : 'good') + '"><span>' + esc(isNA(m.name) ? '해당 없음' : m.name) + '</span><small>' + esc(m.date || '') + '</small></div></td>'; }).join('') + '<td class="small wrap sm" style="white-space:normal;min-width:140px">' + esc(r.managerGap || '–') + '</td></tr>').join('') + '</tbody></table></div></div>';
-  h += '<div class="card"><div class="hd"><h2>근무직원 자격증 보유</h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th class="c">인원</th><th>성명 · 자격증</th></tr></thead><tbody>' + reps.map(r => '<tr><td class="site">' + esc(r.site) + '</td><td class="c">' + new Set(r.certs.map(c => c.name)).size + '명</td><td class="wrap" style="max-width:none">' + (r.certs.length ? '<div class="certs">' + r.certs.map(c => '<div class="certl"><b>' + esc(c.name) + '</b>' + String(c.certs || '').split(/,\s*/).filter(Boolean).map(x => '<span class="chip">' + esc(x) + '</span>').join('') + '</div>').join('') + '</div>' : '<span class="muted">기록 없음</span>') + '</td></tr>').join('') + '</tbody></table></div></div>';
+  const items = Array.from(new Set(reps.flatMap(r => r.managers.map(i => i.item)))), main = items.filter(it => !isAuxItem(it));
+  const tot = main.reduce((a, it) => { const st = mgrStat(reps, it); a.ok += st.ok; a.need += st.need; a.gap += st.gap; a.na += st.na; return a; }, { ok: 0, need: 0, gap: 0, na: 0 });
+  const gaps = reps.flatMap(r => managerAlerts(r)), critN = gaps.filter(g => g.lv === 'crit').length, pctV = tot.need ? Math.round(100 * tot.ok / tot.need) : 100;
+  const people = reps.reduce((a, r) => a + new Set(r.certs.map(c => c.name)).size, 0), certs = certCounts(reps);
+  let h = '<div class="hero"><div><div class="eyebrow">선임관리자 충족률 · ' + monthLabel(state.month) + '</div><div class="big">' + pctV + '<small>%</small></div>' +
+    '<span class="delta ' + (critN ? 'up' : tot.gap ? '' : 'down') + '">' + (tot.gap ? '공란 ' + tot.gap + '건 · 전기·소방 ' + critN + '건' : '선임이 필요한 항목 모두 충족') + '</span>' +
+    '<div class="hchips"><span>선임 완료 <b>' + tot.ok + '</b> / 필요 ' + tot.need + '</span><span>해당 없음 <b>' + tot.na + '</b></span><span>자격 보유 인원 <b>' + people + '</b>명</span><span>자격증 <b>' + certs.length + '</b>종</span></div>' +
+    '<div class="cap" style="margin-top:16px">링: 선임된 사업소 / 선임이 필요한 사업소 (해당 없음 제외) · 전기·소방 공란은 빨강</div></div>' +
+    '<div class="ringsA">' + (main.length ? main.map(it => { const st = mgrStat(reps, it), f = st.need ? st.ok / st.need : 1; return ring(f, f >= 1 ? 'g' : (/전기|소방/.test(it) ? 'c' : 'w'), st.ok + '/' + st.need, it, st.gap ? '공란 ' + st.gap : (st.need ? '충족' : '해당 없음')); }).join('') : '<div class="cap">선임 항목 기록이 없습니다.</div>') + '</div></div>';
+  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>선임</span><span><i style="background:var(--warn-soft)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">행을 누르면 사업소 상세</span></span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>충족</th><th>미선임 대처</th></tr></thead><tbody>' +
+    reps.slice().sort((a, b) => managerAlerts(b).length - managerAlerts(a).length).map(r => {
+      const need = r.managers.filter(m => !isAuxItem(m.item) && !(m.name && isNA(m.name))).length, ok = r.managers.filter(m => !isAuxItem(m.item) && m.name && !isNA(m.name)).length, ga = managerAlerts(r);
+      return '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + items.map(it => { const m = r.managers.find(x => x.item === it); if (!m) return '<td><div class="cellv na">–</div></td>'; if (!m.name) return '<td><div class="cellv ' + (isAuxItem(it) ? 'na' : (/전기|소방/.test(it) ? 'crit' : 'warn')) + '">' + (isAuxItem(it) ? '공란' : '확인 필요') + '</div></td>'; return '<td><div class="cellv two ' + (isNA(m.name) ? 'na' : 'good') + '"><span>' + esc(isNA(m.name) ? '해당 없음' : m.name) + '</span><small>' + esc(m.date || '') + '</small></div></td>'; }).join('') +
+        '<td class="c"><span class="lpill ' + (need && ok >= need ? 'g' : ga.some(g => g.lv === 'crit') ? 'c' : ga.length ? 'w' : 'g') + '">' + ok + '/' + need + '</span></td><td class="small wrap sm" style="white-space:normal;min-width:140px">' + esc(r.managerGap || '–') + '</td></tr>';
+    }).join('') + '</tbody></table></div></div>';
+  h += '<div class="grid2"><div class="card"><div class="hd"><h2>자격증 종류별 보유 인원</h2><span class="note">' + certs.length + '종 · ' + people + '명</span></div><div class="bd">' + (certs.length ? '<div class="chart" id="certBar"></div>' : '<span class="muted small">자격증 기록이 없습니다.</span>') + '</div></div>' +
+    '<div class="card"><div class="hd"><h2>사업소별 자격증</h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th class="c">인원</th><th>성명 · 자격증</th></tr></thead><tbody>' + reps.map(r => '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="site">' + esc(r.site) + '</td><td class="c"><span class="lpill ' + (r.certs.length ? 'g' : '') + '">' + new Set(r.certs.map(c => c.name)).size + '</span></td><td class="wrap" style="max-width:none">' + (r.certs.length ? '<div class="certs">' + r.certs.map(c => '<div class="certl"><b>' + esc(c.name) + '</b>' + String(c.certs || '').split(/[,·/]\s*/).filter(Boolean).map(x => '<span class="chip">' + esc(x.trim()) + '</span>').join('') + '</div>').join('') + '</div>' : '<span class="muted">기록 없음</span>') + '</td></tr>').join('') + '</tbody></table></div></div></div>';
   return h;
 }
 /* 특이사항: 사업소별 특이·지시·예정·대처 */
@@ -1413,21 +1451,23 @@ function renderUpload() {
   const wrap = $('#pendWrap');
   if (!state.canWrite) { wrap.innerHTML = '<div class="inline-msg">이 계정은 읽기 전용이라 업로드할 수 없습니다. 공유 설정에서 참여자(Contributor) 이상으로 권한을 받으면 저장할 수 있습니다.</div>'; }
   else wrap.innerHTML = state.pending.length ? state.pending.map((p, i) => pendCard(p, i)).join('') + '<div class="row"><button class="btn primary" id="saveAll">' + state.pending.length + '건 모두 저장</button><button class="btn" id="clearAll">목록 비우기</button><span class="note">같은 사업소·같은 월의 보고서가 이미 있으면 새 파일로 교체됩니다.</span></div>' : '';
-  const list = state.reports.slice().sort((a, b) => b.period.localeCompare(a.period) || (a.site || '').localeCompare(b.site || '', 'ko'));
-  $('#storedCount').textContent = list.length + '건 · 사업소 ' + new Set(list.map(r => r.siteKey)).size + '개소';
+  const all = sites(), repsM = reportsFor(state.month).length, monthsN = new Set(state.reports.map(r => r.period)).size;
+  $('#upMinis').innerHTML = minis([[state.reports.length, '저장된 월간보고', ''], [all.length, '등록 사업소', ''], [repsM + '/' + all.length, shortMonth(state.month) + ' 제출', all.length && repsM >= all.length ? 'good' : 'warn'], [Math.max(0, all.length - repsM), shortMonth(state.month) + ' 미제출', all.length - repsM > 0 ? 'warn' : 'good'], [monthsN, '보유 월', '']]);
   renderSiteMgr();
-  $('#storedList').innerHTML = list.length ? '<table><thead><tr><th>보고 월</th><th>사업소</th><th>작성자</th><th class="r">체납총액</th><th class="r">미납세대</th><th>파일</th><th>업로드</th><th></th></tr></thead><tbody>' + list.map(r => '<tr><td class="num">' + monthLabel(r.period) + '</td><td class="site">' + esc(r.site) + '</td><td>' + esc(r.author) + '</td><td class="r">' + won(arrearsTotal(r)) + '</td><td class="r">' + (r.unpaidSummary ? comma(r.unpaidSummary.units) : '–') + '</td><td class="small wrap sm">' + esc(r.fileName) + '</td><td class="small num">' + (r.uploadedAt || '').slice(0, 10) + '</td><td class="r"><button class="btn link" data-go="site" data-key="' + r.siteKey + '" data-month="' + r.period + '">보기</button>' + (state.canWrite ? ' <button class="btn link" data-del="' + r.id + '" style="color:var(--crit)">삭제</button>' : '') + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">저장된 월간보고가 없습니다.</div>';
 }
 function renderSiteMgr() {
-  const all = sites(), masterIds = new Set((state.siteList || []).map(x => x.id));
-  $('#siteCount').textContent = all.length + '개소';
+  const all = sites(), masterIds = new Set((state.siteList || []).map(x => x.id)), cur = todayStr().slice(0, 7);
+  let ms = Array.from(new Set(state.reports.map(r => r.period))); if (!ms.includes(cur)) ms.push(cur); ms.sort(); ms = ms.slice(-8);
+  $('#siteCount').textContent = all.length + '개소 · ' + state.reports.length + '건';
   const rows = all.map(s => {
     const nR = siteReports(s.key).length, nD = state.dailies.filter(d => d.siteKey === s.key).length, locked = nR > 0;
-    return '<tr><td>' + (state.canWrite && !locked ? '<input type="text" class="sname" data-sk="' + s.key + '" value="' + esc(s.name) + '" aria-label="사업소명" style="min-width:220px">' : '<b>' + esc(s.name) + '</b>') + '</td>' +
-      '<td class="small">' + (nR ? '<span class="chip good">월간보고 ' + nR + '건</span>' : '<span class="chip warn">월간보고 없음</span>') + ' ' + (nD ? '<span class="chip info">일일보고 ' + nD + '개월</span>' : '') + (masterIds.has(s.key) ? '' : ' <span class="chip na">보고서에서 자동 생성</span>') + '</td>' +
-      '<td class="r">' + (state.canWrite ? (locked || nD ? '<span class="note">' + (locked ? '보고서가 있어 이름 변경·삭제 불가' : '') + '</span>' : '<button class="btn link" data-sdel="' + s.key + '" style="color:var(--crit)">삭제</button>') : '') + '</td></tr>';
+    const cells = ms.map(m => { const r = reportBy(s.key, m); if (!r) return '<td class="m"><div class="ucell miss" title="' + esc(s.name + ' ' + monthLabel(m) + ' 미제출') + '">미제출</div></td>';
+      return '<td class="m"><div class="ucell has" data-go="site" data-key="' + s.key + '" data-month="' + m + '" title="' + esc(monthLabel(m) + ' · ' + (r.fileName || '') + ' · 업로드 ' + (r.uploadedAt || '').slice(0, 10) + (r.author ? ' · ' + r.author : '')) + '"><span class="amt">' + krw(arrearsTotal(r)) + '</span><span class="sub">' + esc((r.uploadedAt || '').slice(5, 10).replace('-', '/')) + '</span>' + (state.canWrite ? '<button class="x" data-del="' + r.id + '" aria-label="' + esc(s.name + ' ' + monthLabel(m) + ' 보고서 삭제') + '">✕</button>' : '') + '</div></td>'; }).join('');
+    return '<tr><td>' + (state.canWrite && !locked ? '<input type="text" class="sname" data-sk="' + s.key + '" value="' + esc(s.name) + '" aria-label="사업소명">' : '<b>' + esc(s.name) + '</b>') +
+      '<div class="small muted">' + (nR ? '월간 ' + nR + '건' : '월간보고 없음') + (nD ? ' · 일일 ' + nD + '개월' : '') + (masterIds.has(s.key) ? '' : ' · 자동 생성') + '</div></td>' + cells +
+      '<td class="r">' + (state.canWrite && !locked && !nD ? '<button class="btn link" data-sdel="' + s.key + '" style="color:var(--crit)">삭제</button>' : '') + '</td></tr>';
   }).join('');
-  $('#siteMgr').innerHTML = '<table><thead><tr><th>사업소명</th><th>보고 현황</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="3" class="muted">등록된 사업소가 없습니다.</td></tr>') + '</tbody></table>' +
+  $('#siteMgr').innerHTML = '<table class="utbl"><thead><tr><th>사업소</th>' + ms.map(m => '<th class="m">' + esc(m.slice(0, 4) === cur.slice(0, 4) ? shortMonth(m) : m.slice(2).replace('-', '.')) + '<div class="small muted" style="font-weight:400">' + reportsFor(m).length + '/' + all.length + '</div></th>').join('') + '<th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (ms.length + 2) + '" class="muted">등록된 사업소가 없습니다.</td></tr>') + '</tbody></table>' +
     (state.canWrite ? '<div class="row" style="padding:10px 12px;border-top:1px solid var(--line-soft)"><input type="text" id="siteNew" placeholder="새 사업소명" aria-label="새 사업소명" style="min-width:240px"><button class="btn primary sm" id="siteAdd">사업소 추가</button><span class="note" id="siteMsg"></span></div>' : '');
 }
 async function addSite(name) {
@@ -1470,6 +1510,9 @@ function bindUpload() {
     p.id = p.siteKey && p.period ? p.siteKey + '_' + p.period : ''; renderUpload();
   });
   $('#siteMgr').addEventListener('click', async e => {
+    const x = e.target.closest('[data-del]');
+    if (x) { e.stopPropagation(); if (!x.dataset.arm) { x.dataset.arm = '1'; x.textContent = '삭제?'; x.style.opacity = '1'; setTimeout(() => { x.dataset.arm = ''; x.textContent = '✕'; x.style.opacity = ''; }, 4000); return; }
+      try { await store.deleteReport(x.dataset.del); toast('삭제했습니다'); } catch (err) { toast('삭제 실패: ' + err.message); } return; }
     if (e.target.id === 'siteAdd') { const inp = $('#siteNew'); await addSite(inp.value); inp.value = ''; return; }
     const b = e.target.closest('[data-sdel]'); if (!b) return;
     if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '삭제'; }, 4000); return; }
@@ -1482,11 +1525,6 @@ function bindUpload() {
     if (!name) { toast('사업소명을 비울 수 없습니다'); renderSiteMgr(); return; }
     if (sites().some(s => s.key === ReportParser.siteKey(name) && s.key !== old)) { toast('같은 이름의 사업소가 이미 있습니다'); renderSiteMgr(); return; }
     try { await store.renameSite(old, name); if (state.site === old) state.site = ReportParser.siteKey(name); toast('이름을 바꿨습니다'); } catch (err) { toast('저장 실패: ' + (err.message || err.code || err)); }
-  });
-  $('#storedList').addEventListener('click', async e => {
-    const b = e.target.closest('[data-del]'); if (!b) return;
-    if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '삭제'; }, 4000); return; }
-    try { await store.deleteReport(b.dataset.del); toast('삭제했습니다'); } catch (err) { toast('삭제 실패: ' + err.message); }
   });
 }
 async function addFiles(files) {
