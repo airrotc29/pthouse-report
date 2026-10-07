@@ -1169,15 +1169,14 @@ function sparkArea(vals) {
 }
 function sumTable(month) {
   const known = sites();
-  const have = known.map(s => reportBy(s.key, month)).filter(Boolean).map(siteCalc).sort((a, b) => a.score - b.score);
+  const have = known.map(s => reportBy(s.key, month)).filter(Boolean).map(siteCalc).sort((a, b) => (b.t || 0) - (a.t || 0) || a.r.site.localeCompare(b.r.site, 'ko'));
   const miss = known.filter(s => !reportBy(s.key, month));
   const maxT = Math.max(1, ...have.map(x => x.t || 0));
-  const cnt = lv => have.filter(x => (x.score >= 80 ? 'g' : x.score >= 60 ? 'w' : x.score >= 40 ? 's' : 'c') === lv).length;
-  let h = '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="legend"><span><i style="background:var(--good)"></i>양호 ' + cnt('g') + '</span><span><i style="background:var(--gold)"></i>관찰 ' + cnt('w') + '</span><span><i style="background:var(--serious)"></i>주의 ' + cnt('s') + '</span><span><i style="background:var(--crit)"></i>위험 ' + cnt('c') + '</span><span class="muted">위험도 높은 순 · 행을 누르면 상세</span></span></div><div class="bd tight tw"><table class="sumtbl"><thead><tr><th class="c">종합</th><th>사업소</th><th>체납률</th><th>체납총액</th><th>전월 대비</th><th>추이</th><th class="c">2개월↑</th><th>법정검사</th><th>선임</th></tr></thead><tbody>';
+  let h = '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="note">체납총액 많은 순 · 행을 누르면 상세</span></div><div class="bd tight tw"><table class="sumtbl"><thead><tr><th>사업소</th><th>체납률</th><th>체납총액</th><th>전월 대비</th><th>추이</th><th class="c">2개월↑</th><th>법정검사</th><th>선임</th></tr></thead><tbody>';
   have.forEach(x => {
     const r = x.r, rc = x.rt == null ? 'var(--muted)' : x.rt < 10 ? 'var(--good)' : x.rt < 20 ? 'var(--gold)' : x.rt < 25 ? 'var(--serious)' : 'var(--crit)';
     const note = [isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–';
-    h += '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="c">' + scoreRing(x.score) + '</td>' +
+    h += '<tr class="click" data-go="site" data-key="' + r.siteKey + '">' +
       '<td class="site"><div class="sn">' + esc(r.site) + '</div></td>' +
       '<td><div class="cs"><div class="cv"><b>' + (x.rt == null ? '–' : x.rt.toFixed(1) + '%') + '</b><span class="muted small">' + comma(arrearsUnits(r)) + '/' + comma(r.arrears.units) + '</span></div>' + (x.rt == null ? '' : pbar(x.rt / 40, rc)) + '</div></td>' +
       '<td><div class="cs"><div class="cv"><b>' + (x.t == null ? '–' : comma(x.t) + '원') + '</b></div>' + (x.t == null ? '' : pbar(x.t / maxT, 'linear-gradient(90deg, var(--s1), var(--s1))')) + '</div></td>' +
@@ -1188,7 +1187,7 @@ function sumTable(month) {
       '<td>' + (x.ma.length ? x.ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td>' +
       '</tr>';
   });
-  miss.forEach(s => { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="c">' + scoreRing(0) + '</td><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td colspan="7"><span class="chip warn">미제출</span> <span class="muted small">' + (siteReports(s.key).length ? '최근 보고: ' + siteReports(s.key).slice(-1)[0].period : '월간보고 업로드 이력 없음') + '</span></td></tr>'; });
+  miss.forEach(s => { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td colspan="6"><span class="chip warn">미제출</span> <span class="muted small">' + (siteReports(s.key).length ? '최근 보고: ' + siteReports(s.key).slice(-1)[0].period : '월간보고 업로드 이력 없음') + '</span></td></tr>'; });
   return h + '</tbody></table></div></div>';
 }
 
