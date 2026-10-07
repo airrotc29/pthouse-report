@@ -626,6 +626,56 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .smh b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .sm .spa { width: 100%; height: 30px; }
 .smv { font-weight: 700; font-size: 13.5px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+/* 미납 상위 세대: ranking cards */
+.mini.inpad { padding: 12px 14px 0; }
+.uu { display: flex; flex-direction: column; }
+.ur { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); align-items: start; }
+.ur:last-child { border-bottom: 0; }
+.ur.top { background: color-mix(in srgb, var(--gold-soft) 45%, var(--surface)); }
+.urk { width: 30px; height: 30px; border-radius: 50%; display: grid; place-content: center; font-weight: 700; font-size: 12.5px; background: var(--surface-2); color: var(--fg-2); border: 1px solid var(--line); margin-top: 2px; }
+.urk.g1 { background: linear-gradient(135deg, #f1d58a, #b08a4a); color: #2b2000; border-color: #b08a4a; }
+.urk.g2 { background: linear-gradient(135deg, #e6e9ee, #a9b2bd); color: #1d232b; border-color: #a9b2bd; }
+.urk.g3 { background: linear-gradient(135deg, #e3b28a, #a86a3c); color: #2b1200; border-color: #a86a3c; }
+.urb { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.urh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.urh .unit { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.usite { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-2); background: var(--surface-2); border-radius: 999px; padding: 2px 9px 2px 7px; }
+.usite i { width: 8px; height: 8px; border-radius: 50%; }
+.since { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.uamt { margin-left: auto; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.uamt small { font-size: 11.5px; font-weight: 500; color: var(--muted); margin-left: 1px; }
+.mdots { display: inline-flex; align-items: center; gap: 2px; }
+.mdots i { width: 7px; height: 11px; border-radius: 2px; background: var(--surface-2); }
+.mdots i.on { background: var(--good); } .mdots.w i.on { background: var(--warn); } .mdots.s i.on { background: var(--serious); } .mdots.c i.on { background: var(--crit); }
+.mdots b { margin-left: 6px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ur .pbar { height: 7px; }
+.urn { font-size: 12.5px; color: var(--fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-left: 10px; border-left: 2px solid var(--gold); }
+@media (max-width: 640px) { .ur { grid-template-columns: 28px 1fr; gap: 8px; padding: 10px 12px; } .urk { width: 26px; height: 26px; font-size: 11.5px; } .uamt { margin-left: 0; width: 100%; } }
+/* compare: ranking secondary line, bullets, timeline, status board */
+.rks { margin-top: 4px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rks b { color: var(--fg-2); }
+.dleg .lbl { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dleg .num { white-space: nowrap; }
+.dleg b { margin-left: 0; min-width: 36px; text-align: right; }
+.bullets { display: flex; flex-direction: column; gap: 8px; }
+.bl { display: grid; grid-template-columns: minmax(110px, 1fr) 2fr 52px; gap: 10px; align-items: center; font-size: 13px; }
+.bln { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blt { position: relative; height: 10px; background: var(--surface-2); border-radius: 5px; }
+.blt i { position: absolute; left: 0; top: 0; height: 100%; border-radius: 5px; }
+.blt u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); opacity: .6; }
+.bl b { text-align: right; font-variant-numeric: tabular-nums; }
+.tl { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.tli { border-left: 4px solid var(--warn); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; cursor: pointer; min-width: 0; }
+.tli:hover { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tli.serious { border-left-color: var(--serious); } .tli.crit { border-left-color: var(--crit); background: var(--crit-soft); }
+.tli b { grid-row: 1 / span 3; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.tli.crit b { color: var(--crit); } .tli.serious b { color: #9a3f1b; }
+.tli .tls { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tli .tlk { font-size: 12px; color: var(--fg-2); }
+.tli small { font-size: 11px; color: var(--muted); }
+.nmr { display: flex; align-items: center; gap: 8px; }
+.nmr .sring { width: 32px; height: 32px; margin: 0; } .nmr .sring b { font-size: 10.5px; }
+.cellv .ci { font-style: normal; font-weight: 800; margin-right: 4px; }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -1424,27 +1474,50 @@ function cmpUnpaid(reps, month) {
   const rows = reps.map(r => { const p = prevReport(r.siteKey, month); return { r, v: item.get(r), p: p ? item.get(p) : null }; }).filter(x => x.v != null).sort((a, b) => b.v - a.v);
   const max = Math.max(1, ...rows.map(x => x.v));
   let h = '<div class="row"><label class="small fg2" for="itemSel">지표</label><select id="itemSel">' + METRICS.map(i => '<option value="' + i.id + '"' + (i.id === item.id ? ' selected' : '') + '>' + i.name + '</option>').join('') + '</select><span class="muted small">' + monthLabel(month) + ' · ' + rows.length + '개소</span></div>';
+  const sumV = rows.reduce((a2, x) => a2 + x.v, 0) || 1, isRate = item.id === 'rate', pal = ['#2f5f93', '#b08a4a', '#5b92cc', '#c97b57', '#6f9f7a', '#8a6fb8', '#9aa7b5', '#d6ae66'];
   h += '<div class="grid2"><div class="card"><div class="hd"><h2>' + item.name + ' 순위</h2><span class="note">높은 순</span></div><div class="bd tight"><div class="rank">' +
-    (rows.length ? rows.map((x, i) => { const d = (x.p != null) ? x.v - x.p : null; return '<div class="rk"><span class="rno' + (i < 3 ? ' top' : '') + '">' + (i + 1) + '</span><div class="rkb"><div class="rkh"><b>' + esc(x.r.site) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + item.fmt(Math.abs(d)) + '</span>') + '<span class="rkv">' + item.fmt(x.v) + '</span></div>' + pbar(x.v / max, i < 3 ? 'linear-gradient(90deg, var(--accent), var(--s1))' : 'color-mix(in srgb, var(--s1) 55%, var(--surface))') + '</div></div>'; }).join('') : '<div class="empty small">값이 있는 보고서가 없습니다.</div>') + '</div></div></div>';
-  const axis = item.fmt === won ? krw : (item.id === 'rate' ? v => v.toFixed(0) + '%' : v => comma(v));
-  const agg = m => { const vs = reportsFor(m).map(r => item.get(r)).filter(v => v != null); return vs.length ? (item.id === 'rate' ? vs.reduce((a, b) => a + b, 0) / vs.length : vs.reduce((a, b) => a + b, 0)) : null; };
-  const known = sites().filter(s => state.reports.some(r => r.siteKey === s.key));
-  h += '<div class="card"><div class="hd"><h2>' + (item.id === 'rate' ? '평균' : '합계') + ' 추이 <span class="muted small">최근 ' + ms.length + '개월</span></h2><span class="note">' + (ms.length > 1 ? '선 위에 마우스를 올리면 월별 값' : '월간보고가 2개월 이상 쌓이면 선이 그려집니다') + '</span></div><div class="bd"><div class="chart" id="cmpLine"></div></div>' +
-    '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>사업소별 추이</h3></div><div class="smg">' +
-    known.map(s2 => { const vals = ms.map(m => { const r = reportBy(s2.key, m); return r ? item.get(r) : null; }), nn = vals.filter(v => v != null), last = nn.length ? nn[nn.length - 1] : null, prev = nn.length > 1 ? nn[nn.length - 2] : null, d = (last != null && prev != null) ? last - prev : null;
-      return '<div class="sm"><div class="smh"><b title="' + esc(s2.name) + '">' + esc(s2.name) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲' : d < 0 ? '▼' : '–') + '</span>') + '</div>' + (nn.length > 1 ? sparkArea(vals) : '<div class="small muted" style="height:30px;display:flex;align-items:center">자료 ' + nn.length + '개월</div>') + '<div class="smv">' + (last == null ? '–' : item.fmt(last)) + '</div></div>'; }).join('') + '</div></div></div>';
-  const topRows = reps.flatMap(r => unitSummary(r).slice(0, 5).map(u => Object.assign({ site: r.site, key: r.siteKey }, u))).sort((a, b) => b.total - a.total).slice(0, 20), maxU = Math.max(1, ...topRows.map(u => u.total));
-  h += '<div class="card"><div class="hd"><h2>미납 상위 세대 <span class="muted small">사업소별 상위 5세대 · 전체 20위</span></h2></div><div class="bd tight tw"><table class="sumtbl cmp"><thead><tr><th class="c">순위</th><th>사업소</th><th>세대</th><th class="c">개월</th><th>최초 부과월</th><th>미납 합계</th><th>비고</th></tr></thead><tbody>' + (topRows.length ? topRows.map((u, i) => '<tr><td class="c num">' + (i + 1) + '</td><td class="site">' + esc(u.site) + '</td><td class="num"><b>' + esc(u.unit) + '</b></td><td class="c"><span class="lpill ' + (u.n >= 6 ? 'c' : u.n >= 3 ? 's' : u.n >= 2 ? 'w' : 'g') + '">' + u.n + '</span></td><td class="num small">' + esc(u.oldest) + '</td><td><div class="cs"><div class="cv"><b>' + comma(u.total) + '</b></div>' + pbar(u.total / maxU, u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + '</div></td><td class="small wrap sm"><div class="clamp2">' + esc(u.notes.join(' ') || '–') + '</div></td></tr>').join('') : '<tr><td colspan="7" class="muted">미납 세대 내역이 없습니다.</td></tr>') + '</tbody></table></div></div>';
-  cmpUnpaid._line = { pts: ms.map(m => ({ x: shortMonth(m), y: agg(m), extra: reportsFor(m).length + '개소' })).filter(p => p.y != null), fmt: item.fmt, axis, title: item.name + ' 추이' };
+    (rows.length ? rows.map((x, i) => { const d = (x.p != null) ? x.v - x.p : null, au = arrearsUnits(x.r), un = x.r.arrears && x.r.arrears.units; return '<div class="rk"><span class="rno' + (i < 3 ? ' top' : '') + '">' + (i + 1) + '</span><div class="rkb"><div class="rkh"><b>' + esc(x.r.site) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + item.fmt(Math.abs(d)) + '</span>') + '<span class="rkv">' + item.fmt(x.v) + '</span></div>' + pbar(x.v / max, i < 3 ? 'linear-gradient(90deg, var(--accent), var(--s1))' : 'color-mix(in srgb, var(--s1) 55%, var(--surface))') + '<div class="rks">' + (au != null && un ? '체납 ' + comma(au) + ' / ' + comma(un) + '세대 · 체납률 ' + pct(au, un) : '') + (isRate ? '' : ' · 비중 <b>' + Math.round(100 * x.v / sumV) + '%</b>') + '</div></div></div>'; }).join('') : '<div class="empty small">값이 있는 보고서가 없습니다.</div>') + '</div></div></div>';
+  const axis = item.fmt === won ? krw : (isRate ? v => v.toFixed(0) + '%' : v => comma(v));
+  const agg = m => { const vs = reportsFor(m).map(r => item.get(r)).filter(v => v != null); return vs.length ? (isRate ? vs.reduce((a2, b2) => a2 + b2, 0) / vs.length : vs.reduce((a2, b2) => a2 + b2, 0)) : null; };
+  let right = '';
+  if (!isRate && rows.length) {
+    const top = rows.slice(0, 7).map((x, i) => ({ lb: x.r.site, v: x.v, col: pal[i] })); const rest = rows.slice(7); if (rest.length) top.push({ lb: '기타 ' + rest.length + '개소', v: rest.reduce((a2, x) => a2 + x.v, 0), col: pal[7] });
+    const R = 52, C = 2 * Math.PI * R; let off = 0, segs = '';
+    top.forEach(t => { const len = C * t.v / sumV; segs += '<circle class="sg" cx="66" cy="66" r="' + R + '" stroke-dasharray="' + Math.max(0, len - 2).toFixed(1) + ' ' + (C - Math.max(0, len - 2)).toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" style="stroke:' + t.col + '"><title>' + esc(t.lb + ' ' + item.fmt(t.v)) + '</title></circle>'; off += len; });
+    right = '<div class="card"><div class="hd"><h2>' + item.name + ' 구성</h2><span class="note">' + monthLabel(month) + ' · ' + rows.length + '개소</span></div><div class="bd"><div class="donutwrap"><div class="donut"><svg viewBox="0 0 132 132" role="img" aria-label="' + esc(item.name + ' 사업소별 구성') + '"><circle class="c0" cx="66" cy="66" r="' + R + '"/>' + segs + '</svg><div class="ct"><div>' + (item.fmt === won ? krw(sumV) : comma(sumV)) + '<small>' + (item.fmt === won ? '원 합계' : '합계') + '</small></div></div></div><div class="dleg">' + top.map(t => '<div><i style="background:' + t.col + '"></i><span class="lbl">' + esc(t.lb) + '</span><b>' + Math.round(100 * t.v / sumV) + '%</b><span class="muted small num">' + item.fmt(t.v) + '</span></div>').join('') + '</div></div></div></div>';
+  } else if (rows.length) {
+    const avg = rows.reduce((a2, x) => a2 + x.v, 0) / rows.length;
+    right = '<div class="card"><div class="hd"><h2>체납률 분포</h2><span class="note">평균 ' + avg.toFixed(1) + '% · 평균 이상 ' + rows.filter(x => x.v >= avg).length + '개소</span></div><div class="bd"><div class="bullets">' + rows.map(x => '<div class="bl"><span class="bln">' + esc(x.r.site) + '</span><div class="blt"><i style="width:' + Math.min(100, x.v * 2).toFixed(1) + '%;background:' + (x.v >= 25 ? 'var(--crit)' : x.v >= 15 ? 'var(--serious)' : x.v >= 10 ? 'var(--warn)' : 'var(--good)') + '"></i><u style="left:' + Math.min(100, avg * 2).toFixed(1) + '%"></u></div><b>' + x.v.toFixed(1) + '%</b></div>').join('') + '</div><div class="note" style="margin-top:8px">막대 눈금 0~50% · 세로선은 평균</div></div></div>';
+  }
+  if (ms.length >= 2) {
+    const known = sites().filter(s2 => state.reports.some(r => r.siteKey === s2.key));
+    right = right.replace(/<\/div>$/, '') + '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>' + (isRate ? '평균' : '합계') + ' 추이 <span class="muted small">최근 ' + ms.length + '개월</span></h3></div><div class="bd"><div class="chart" id="cmpLine"></div></div>' +
+      '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>사업소별 추이</h3></div><div class="smg">' + known.map(s2 => { const vals = ms.map(m => { const r = reportBy(s2.key, m); return r ? item.get(r) : null; }), nn = vals.filter(v => v != null); if (nn.length < 2) return ''; const last = nn[nn.length - 1], d = last - nn[nn.length - 2]; return '<div class="sm"><div class="smh"><b title="' + esc(s2.name) + '">' + esc(s2.name) + '</b><span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲' : d < 0 ? '▼' : '–') + '</span></div>' + sparkArea(vals) + '<div class="smv">' + item.fmt(last) + '</div></div>'; }).join('') + '</div></div>';
+  }
+  h += right + '</div>';
+  const allU = reps.flatMap(r => unitSummary(r).map(u => Object.assign({ site: r.site, key: r.siteKey }, u))), topRows = allU.slice().sort((a, b) => b.total - a.total).slice(0, 20), maxU = Math.max(1, ...topRows.map(u => u.total));
+  const allSum = allU.reduce((a, u) => a + u.total, 0) || 1, topSum = topRows.reduce((a, u) => a + u.total, 0), avgN = topRows.length ? topRows.reduce((a, u) => a + u.n, 0) / topRows.length : 0;
+  const siteIdx = new Map(reps.map((r, i) => [r.siteKey, i]));
+  const mdots = n => { const k = Math.min(n, 12); return '<span class="mdots ' + (n >= 6 ? 'c' : n >= 3 ? 's' : n >= 2 ? 'w' : 'g') + '" title="' + n + '개월 미납">' + Array.from({ length: 12 }, (_, i) => '<i' + (i < k ? ' class="on"' : '') + '></i>').join('') + '<b>' + n + '개월' + (n > 12 ? '+' : '') + '</b></span>'; };
+  h += '<div class="card"><div class="hd"><h2>미납 상위 세대 <span class="muted small">사업소별 상위 5세대 · 전체 20위</span></h2></div>' +
+    (topRows.length ? minis([[krw(topSum) + '원', '상위 20세대 합계', ''], [Math.round(100 * topSum / allSum) + '%', '전체 미납액 대비', topSum / allSum >= 0.5 ? 'warn' : ''], [avgN.toFixed(1), '평균 미납 개월', avgN >= 6 ? 'crit' : avgN >= 3 ? 'serious' : ''], [topRows.filter(u => u.n >= 6).length, '6개월 이상 세대', topRows.filter(u => u.n >= 6).length ? 'crit' : 'good'], [topRows.filter(u => u.notes.length).length, '조치 비고 기재', '']]).replace('mini mini5', 'mini mini5 inpad') : '') +
+    '<div class="bd tight"><div class="uu">' + (topRows.length ? topRows.map((u, i) => '<div class="ur' + (i < 3 ? ' top' : '') + '"><div class="urk ' + (i === 0 ? 'g1' : i === 1 ? 'g2' : i === 2 ? 'g3' : '') + '">' + (i + 1) + '</div><div class="urb"><div class="urh"><b class="unit">' + esc(u.unit) + '</b><span class="usite"><i style="background:' + pal[(siteIdx.get(u.key) || 0) % pal.length] + '"></i>' + esc(u.site) + '</span>' + mdots(u.n) + '<span class="since">' + esc(u.oldest) + '부터</span><span class="uamt">' + comma(u.total) + '<small>원</small></span></div>' + pbar(u.total / maxU, u.n >= 6 ? 'linear-gradient(90deg, var(--serious), var(--crit))' : u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + (u.notes.length ? '<div class="urn" title="' + esc(u.notes.join(' ')) + '">' + esc(u.notes.join(' ')) + '</div>' : '') + '</div></div>').join('') : '<div class="empty small">미납 세대 내역이 없습니다.</div>') + '</div></div></div>';
+  cmpUnpaid._line = ms.length >= 2 ? { pts: ms.map(m => ({ x: shortMonth(m), y: agg(m), extra: reportsFor(m).length + '개소' })).filter(p => p.y != null), fmt: item.fmt, axis, title: item.name + ' 추이' } : null;
   return h;
 }
-/* 법정검사: 사업소 × 검사항목 상태 매트릭스 */
+/* 법정검사: 다가오는 일정 타임라인 + 사업소×항목 상태 보드 */
 function cmpInsp(reps) {
   const items = Array.from(new Set(reps.flatMap(r => r.inspections.map(i => i.item))));
-  const all = reps.flatMap(r => r.inspections.map(i => inspStatus(i).lv)), n = lv => all.filter(x => x === lv).length;
+  const all = reps.flatMap(r => r.inspections.map(i => ({ r, i, st: inspStatus(i) }))), n = lv => all.filter(x => x.st.lv === lv).length;
+  const ICON = { good: '✓', crit: '!', serious: '◔', warn: '○', na: '–' };
   let h = minis([[n('crit'), '기한 경과', n('crit') ? 'crit' : 'good'], [n('serious'), '임박 (30일 내)', n('serious') ? 'serious' : 'good'], [n('warn'), '예정·미완료', n('warn') ? 'warn' : 'good'], [n('good'), '완료', 'good'], [n('na'), '기록 없음', '']]);
-  h += '<div class="card"><div class="hd"><h2>법정 정기검사 현황</h2><span class="note">행을 누르면 사업소 상세</span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '</tr></thead><tbody>' +
-    reps.map(r => '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + items.map(it => { const i = r.inspections.find(x => x.item === it); if (!i) return '<td><div class="cellv na">–</div></td>'; const st = inspStatus(i); return '<td><div class="cellv two ' + (st.lv || 'na') + '"><span>' + esc(st.label || i.done || '–') + '</span><small>' + esc(i.due || '') + '</small></div></td>'; }).join('') + '</tr>').join('') + '</tbody></table></div></div>';
+  const up = all.filter(x => typeof x.st.dd === 'number' && ((x.st.dd < 0 && !isDone(x.i.done)) || (x.st.dd >= 0 && x.st.dd <= 120))).sort((a2, b2) => a2.st.dd - b2.st.dd).slice(0, 12);
+  h += '<div class="card"><div class="hd"><h2>다가오는 검사 일정 <span class="muted small">기한 경과 → 120일 이내</span></h2><span class="note">' + (up.length ? up.length + '건' : '해당 없음') + '</span></div><div class="bd">' +
+    (up.length ? '<div class="tl">' + up.map(x => { const lv = x.st.dd < 0 && !isDone(x.i.done) ? 'crit' : x.st.dd <= 30 ? 'serious' : 'warn'; return '<div class="tli ' + lv + '" data-go="site" data-key="' + x.r.siteKey + '"><b>' + (x.st.dd < 0 ? 'D+' + Math.abs(x.st.dd) : x.st.dd === 0 ? 'D-DAY' : 'D-' + x.st.dd) + '</b><span class="tls">' + esc(x.r.site) + '</span><span class="tlk">' + esc(x.i.item) + '</span><small>' + esc(x.i.due) + (x.i.done ? ' · ' + esc(x.i.done) : '') + '</small></div>'; }).join('') + '</div>' : '<div class="empty small">120일 이내에 예정되거나 기한이 지난 검사가 없습니다.</div>') + '</div></div>';
+  const colStat = it => { const rs = all.filter(x => x.i.item === it); return { ok: rs.filter(x => x.st.lv === 'good').length, tot: rs.filter(x => x.st.lv !== 'na').length }; };
+  h += '<div class="card"><div class="hd"><h2>법정 정기검사 현황</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>완료</span><span><i style="background:var(--warn-soft)"></i>예정·미완료</span><span><i style="background:var(--serious-soft)"></i>임박</span><span><i style="background:var(--crit)"></i>기한 경과</span><span class="muted">행을 누르면 사업소 상세</span></span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(it => { const c = colStat(it); return '<th>' + esc(it) + '<div class="small muted" style="font-weight:400">' + c.ok + '/' + c.tot + ' 완료</div></th>'; }).join('') + '</tr></thead><tbody>' +
+    reps.map(r => { const rs = r.inspections.map(i => inspStatus(i)), tot = rs.filter(x => x.lv !== 'na').length, ok = rs.filter(x => x.lv === 'good').length, sc = tot ? Math.round(100 * ok / tot) : 100;
+      return '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm"><div class="nmr">' + scoreRing(sc) + '<div><b>' + esc(r.site) + '</b><div class="small muted">' + ok + '/' + tot + ' 완료</div></div></div></td>' + items.map(it => { const i = r.inspections.find(x => x.item === it); if (!i) return '<td><div class="cellv na">–</div></td>'; const st = inspStatus(i), lv = st.lv || 'na'; return '<td><div class="cellv two ' + lv + '"><span><em class="ci">' + ICON[lv] + '</em>' + esc(st.label || i.done || '–') + '</span><small>' + esc(i.due || '') + '</small></div></td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></div>';
   return h;
 }
 /* 선임관리자 현황: 충족률 히어로(항목별 링) + 사업소 매트릭스 + 자격증 종류별 인원 */
@@ -1465,11 +1538,11 @@ function cmpMgr(reps) {
   const gaps = reps.flatMap(r => managerAlerts(r)), critN = gaps.filter(g => g.lv === 'crit').length, pctV = tot.need ? Math.round(100 * tot.ok / tot.need) : 100;
   const people = reps.reduce((a, r) => a + new Set(r.certs.map(c => c.name)).size, 0), certs = certCounts(reps);
   let h = minis([[critN, '전기·소방 공란', critN ? 'crit' : 'good'], [gaps.length - critN, '기타 공란', gaps.length - critN ? 'warn' : 'good'], [tot.ok + '/' + tot.need, '선임 완료 / 필요', tot.need && tot.ok >= tot.need ? 'good' : 'warn'], [tot.na, '해당 없음', ''], [people, '자격 보유 인원', '']]);
-  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>선임</span><span><i style="background:var(--warn-soft)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">행을 누르면 사업소 상세</span></span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>충족</th><th>미선임 대처</th></tr></thead><tbody>' +
+  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>선임</span><span><i style="background:var(--warn-soft)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">행을 누르면 사업소 상세</span></span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>미선임 대처</th></tr></thead><tbody>' +
     reps.slice().sort((a, b) => managerAlerts(b).length - managerAlerts(a).length).map(r => {
       const need = r.managers.filter(m => !isAuxItem(m.item) && !(m.name && isNA(m.name))).length, ok = r.managers.filter(m => !isAuxItem(m.item) && m.name && !isNA(m.name)).length, ga = managerAlerts(r);
       return '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + items.map(it => { const m = r.managers.find(x => x.item === it); if (!m) return '<td><div class="cellv na">–</div></td>'; if (!m.name) return '<td><div class="cellv ' + (isAuxItem(it) ? 'na' : (/전기|소방/.test(it) ? 'crit' : 'warn')) + '">' + (isAuxItem(it) ? '공란' : '확인 필요') + '</div></td>'; return '<td><div class="cellv two ' + (isNA(m.name) ? 'na' : 'good') + '"><span>' + esc(isNA(m.name) ? '해당 없음' : m.name) + '</span><small>' + esc(m.date || '') + '</small></div></td>'; }).join('') +
-        '<td class="c"><span class="lpill ' + (need && ok >= need ? 'g' : ga.some(g => g.lv === 'crit') ? 'c' : ga.length ? 'w' : 'g') + '">' + ok + '/' + need + '</span></td><td class="small wrap sm" style="white-space:normal;min-width:140px">' + esc(r.managerGap || '–') + '</td></tr>';
+        '<td class="small wrap sm" style="white-space:normal;min-width:140px">' + esc(r.managerGap || '–') + '</td></tr>';
     }).join('') + '</tbody></table></div></div>';
   h += '<div class="grid2"><div class="card"><div class="hd"><h2>자격증 종류별 보유 인원</h2><span class="note">' + certs.length + '종 · ' + people + '명</span></div><div class="bd">' + (certs.length ? '<div class="chart" id="certBar"></div>' : '<span class="muted small">자격증 기록이 없습니다.</span>') + '</div></div>' +
     '<div class="card"><div class="hd"><h2>사업소별 자격증</h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th class="c">인원</th><th>성명 · 자격증</th></tr></thead><tbody>' + reps.map(r => '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="site">' + esc(r.site) + '</td><td class="c"><span class="lpill ' + (r.certs.length ? 'g' : '') + '">' + new Set(r.certs.map(c => c.name)).size + '</span></td><td class="wrap" style="max-width:none">' + (r.certs.length ? '<div class="certs">' + r.certs.map(c => '<div class="certl"><b>' + esc(c.name) + '</b>' + String(c.certs || '').split(/[,·/]\s*/).filter(Boolean).map(x => '<span class="chip">' + esc(x.trim()) + '</span>').join('') + '</div>').join('') + '</div>' : '<span class="muted">기록 없음</span>') + '</td></tr>').join('') + '</tbody></table></div></div></div>';
