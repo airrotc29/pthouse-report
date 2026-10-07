@@ -1,0 +1,1162 @@
+<title>사업소 보고 현황판</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky top bar (name · month · tabs) → 1180px column; every tab opens with its summary before its detail */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #e9edf2; --line: #d5dbe3; --line-soft: #e6eaf0;
+  --fg: #16212c; --fg-2: #4f5b68; --muted: #7f8a96;
+  --accent: #1b5a8a; --accent-ink: #ffffff; --accent-soft: #dfeaf4;
+  --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
+  --good-soft: #e1f3e1; --warn-soft: #fff1d2; --serious-soft: #fde6dc; --crit-soft: #f8dcdc;
+  --s1: #2a78d6; --s2: #eb6834; --grid: #e1e0d9; --axis: #c3c2b7;
+  --font: "IBM Plex Sans KR", "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --radius: 6px; --shadow: 0 1px 2px rgba(22,33,44,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111519; --surface: #1a2027; --surface-2: #222a33; --line: #303a46; --line-soft: #28313c;
+    --fg: #edf1f5; --fg-2: #b3bcc7; --muted: #7d8793;
+    --accent: #6ea8dd; --accent-ink: #0d1a26; --accent-soft: #1d2f3f;
+    --good-soft: #163b16; --warn-soft: #4a3a10; --serious-soft: #4a2a1c; --crit-soft: #4a1d1d;
+    --s1: #3987e5; --s2: #d95926; --grid: #2c2c2a; --axis: #383835;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111519; --surface: #1a2027; --surface-2: #222a33; --line: #303a46; --line-soft: #28313c;
+  --fg: #edf1f5; --fg-2: #b3bcc7; --muted: #7d8793;
+  --accent: #6ea8dd; --accent-ink: #0d1a26; --accent-soft: #1d2f3f;
+  --good-soft: #163b16; --warn-soft: #4a3a10; --serious-soft: #4a2a1c; --crit-soft: #4a1d1d;
+  --s1: #3987e5; --s2: #d95926; --grid: #2c2c2a; --axis: #383835;
+  --shadow: 0 1px 2px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-weight: 600; }
+h2 { font-size: 17px; }
+h3 { font-size: 15px; }
+a { color: var(--accent); }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.fg2 { color: var(--fg-2); }
+.small { font-size: 12.5px; }
+.eyebrow { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+[hidden] { display: none !important; }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-in { max-width: 1180px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.brand h1 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+.brand .sub { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.top-ctl { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12px; background: var(--surface-2); color: var(--fg-2); white-space: nowrap; }
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.badge.on .dot { background: var(--good); }
+nav.tabs { max-width: 1180px; margin: 0 auto; padding: 6px 16px 0; display: flex; gap: 2px; overflow-x: auto; }
+nav.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px 9px; color: var(--fg-2); cursor: pointer; white-space: nowrap; font-weight: 500; }
+nav.tabs button:hover { color: var(--fg); }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+nav.tabs button:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+main { max-width: 1180px; margin: 0 auto; padding-block: 20px 56px; padding-inline: 16px; }
+section.view { display: flex; flex-direction: column; gap: 18px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.row.between { justify-content: space-between; }
+.grow { flex: 1 1 auto; min-width: 0; }
+
+/* controls */
+select, input[type="text"], input[type="month"], input[type="date"], input[type="number"], input[type="search"], textarea {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 9px; min-height: 34px; max-width: 100%;
+}
+textarea { width: 100%; min-height: 72px; resize: vertical; line-height: 1.45; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--crit); border-color: var(--crit); background: transparent; }
+.btn.sm { padding: 4px 9px; font-size: 12.5px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.link { border: 0; background: none; color: var(--accent); padding: 2px 4px; }
+
+/* cards & panels */
+.card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card .hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap; }
+.card .bd { padding: 14px 16px; }
+.card .bd.tight { padding: 0; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kpi .lb { font-size: 12.5px; color: var(--fg-2); }
+.kpi .v { font-size: 24px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
+.kpi .v small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.kpi .d { font-size: 12.5px; color: var(--muted); }
+.kpi .d.up { color: var(--crit); } .kpi .d.down { color: var(--good); }
+.kpi.alert { border-left: 3px solid var(--crit); }
+.kpi.warnb { border-left: 3px solid var(--warn); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.grid2 > *, .grid3 > * { min-width: 0; }
+
+/* chips */
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap; background: var(--surface-2); color: var(--fg-2); }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .9; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: #7a5300; }
+.chip.serious { background: var(--serious-soft); color: #9a3f1b; }
+.chip.crit { background: var(--crit-soft); color: var(--crit); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.na { opacity: .7; }
+.chip.na::before { opacity: .4; }
+:root[data-theme="dark"] .chip.warn, :root[data-theme="dark"] .chip.serious { color: #ffd48a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip.warn, :root:not([data-theme="light"]) .chip.serious { color: #ffd48a; } }
+
+/* tables */
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line-soft); vertical-align: top; white-space: nowrap; }
+td.wrap { white-space: normal; min-width: 220px; max-width: 460px; }
+td.wrap.sm { min-width: 160px; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .02em; background: var(--surface); position: sticky; top: 0; }
+td .chip { vertical-align: middle; }
+tr.noterow td { padding-top: 0; padding-bottom: 8px; font-size: 12.5px; color: var(--fg-2); white-space: normal; }
+tr.noterow td > div { max-width: min(640px, calc(100vw - 72px)); }
+tr.noterow td > div::before { content: "비고 "; color: var(--muted); font-size: 11.5px; font-weight: 600; margin-right: 4px; }
+tr.has-note td { border-bottom: 0; padding-bottom: 4px; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td.c, th.c { text-align: center; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+td .site { font-weight: 600; }
+tfoot td { font-weight: 600; background: var(--surface-2); }
+
+/* issues */
+.issues { display: flex; flex-direction: column; }
+.issue { display: grid; grid-template-columns: 4px 1fr; gap: 12px; padding: 9px 14px 9px 0; border-bottom: 1px solid var(--line-soft); }
+.issue:last-child { border-bottom: 0; }
+.issue .bar { border-radius: 2px; background: var(--muted); }
+.issue.crit .bar { background: var(--crit); } .issue.serious .bar { background: var(--serious); } .issue.warn .bar { background: var(--warn); } .issue.info .bar { background: var(--s1); }
+.issue .t { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.issue .t b { font-weight: 600; }
+.issue .d { color: var(--fg-2); font-size: 13px; }
+.issue button.link { font-size: 12.5px; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 18px; }
+ul.plain li { margin: 2px 0; }
+.lines { white-space: pre-wrap; }
+.dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
+.dl dt { color: var(--muted); font-size: 12.5px; }
+.dl dd { margin: 0; }
+.tasklist { display: flex; flex-direction: column; gap: 10px; }
+.tasklist .cat { font-weight: 600; margin-bottom: 2px; }
+.empty { padding: 36px 20px; text-align: center; color: var(--fg-2); }
+.empty h2 { margin-bottom: 8px; }
+.empty p { max-width: 56ch; margin: 0 auto 14px; }
+.note { font-size: 12.5px; color: var(--muted); }
+.inline-msg { padding: 10px 14px; border-radius: var(--radius); background: var(--accent-soft); color: var(--fg); font-size: 13px; }
+.inline-msg.err { background: var(--crit-soft); }
+.inline-msg.ok { background: var(--good-soft); }
+
+/* charts */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; font-size: 12px; box-shadow: var(--shadow); white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); z-index: 5; }
+.chart text { fill: var(--fg-2); font-size: 11.5px; font-family: var(--font); }
+.chart .gl { stroke: var(--grid); stroke-width: 1; }
+.chart .ax { stroke: var(--axis); stroke-width: 1; }
+.chart .bar { fill: var(--s1); }
+.chart .bar.hl { fill: var(--s2); }
+.chart .bar:hover { opacity: .85; }
+.chart .ln { fill: none; stroke: var(--s1); stroke-width: 2; stroke-linejoin: round; }
+.chart .ar { fill: var(--s1); opacity: .10; }
+.chart .mk { fill: var(--s1); stroke: var(--surface); stroke-width: 2; }
+.chart .mk.end { r: 5; }
+.chart .ch { stroke: var(--muted); stroke-dasharray: 3 3; }
+.chart .vl { fill: var(--fg); font-weight: 500; }
+
+/* daily matrix */
+.matrix { overflow-x: auto; }
+.matrix table { font-size: 12px; }
+.matrix th, .matrix td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
+.matrix th.site, .matrix td.site { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--surface); z-index: 1; padding-right: 10px; }
+.matrix th.today, .matrix td.today { background: var(--accent-soft); }
+.matrix .cell { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--line); background: transparent; cursor: pointer; padding: 0; }
+.matrix .cell.has { background: var(--s1); border-color: var(--s1); }
+.matrix .cell.urgent { background: var(--crit); border-color: var(--crit); }
+.matrix .cell.future { border-style: dashed; opacity: .4; cursor: default; }
+.matrix .cell.wk { border-color: var(--line-soft); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--fg-2); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
+.legend i.has { background: var(--s1); border-color: var(--s1); } .legend i.urgent { background: var(--crit); border-color: var(--crit); }
+
+/* daily cards */
+.dcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.dcard { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.dcard.urgent { border-left: 3px solid var(--crit); }
+.dcard .h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.dcard .h b { font-size: 15px; }
+.dcard .sec .lb { font-size: 11.5px; color: var(--muted); font-weight: 600; letter-spacing: .04em; }
+.dcard .sec ul { margin: 2px 0 0; padding-left: 16px; }
+
+/* forms */
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 14px; }
+.form .f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.form .f label { font-size: 12.5px; color: var(--fg-2); font-weight: 500; }
+.form .f.wide { grid-column: 1 / -1; }
+.form .f input, .form .f select { width: 100%; }
+.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.check input { width: 16px; height: 16px; }
+
+/* upload */
+.drop { border: 2px dashed var(--line); border-radius: var(--radius); padding: 28px 20px; text-align: center; background: var(--surface); transition: border-color .15s, background .15s; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop p { margin: 6px 0 0; color: var(--fg-2); }
+.pend { display: flex; flex-direction: column; gap: 12px; }
+.pcard { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.pcard .pr { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.pcard .pr input[type="text"] { min-width: 220px; }
+.pcard .sum { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--fg-2); }
+.pcard .sum b { color: var(--fg); }
+.pcard .warns { font-size: 12.5px; color: #9a3f1b; }
+:root[data-theme="dark"] .pcard .warns { color: #ffd48a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pcard .warns { color: #ffd48a; } }
+details summary { cursor: pointer; color: var(--accent); font-size: 12.5px; }
+details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2); padding: 8px; border-radius: 4px; max-height: 320px; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 16px; border-radius: 6px; font-size: 13px; z-index: 50; box-shadow: 0 4px 16px rgba(0,0,0,.25); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+@media (max-width: 640px) {
+  .brand .sub { display: none; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kpi { padding: 10px 12px; }
+  .kpi .v { font-size: 19px; }
+  .kpi .d { font-size: 12px; }
+  table { font-size: 12.5px; }
+  th, td { padding: 6px 8px; }
+  td.wrap { min-width: 180px; }
+  .card .hd { padding: 10px 12px; }
+  .card .bd { padding: 12px; }
+  main { padding-block: 14px 48px; }
+  section.view { gap: 12px; }
+  .issue { gap: 10px; padding-right: 10px; }
+  .dl { grid-template-columns: 1fr; gap: 2px 0; }
+  .dl dt { margin-top: 6px; }
+  .pcard .pr input[type="text"] { min-width: 0; width: 100%; }
+}
+/* filters, segmented control, issue triage */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.fchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); }
+.fbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 11px; font-size: 12.5px; cursor: pointer; color: var(--fg-2); }
+.fbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.issue.done .t b, .issue.done .t > span, .issue.done .d { text-decoration: line-through; text-decoration-color: var(--muted); }
+.issue.done { opacity: .62; }
+.issue .memo { margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.issue .memo input { flex: 1 1 200px; min-height: 28px; font-size: 12.5px; padding: 3px 8px; }
+.issue .ackbtn { margin-left: auto; }
+.missing { display: flex; flex-wrap: wrap; gap: 6px; }
+.missing .btn { padding: 3px 9px; font-size: 12.5px; }
+.todaybox { display: flex; flex-direction: column; gap: 12px; }
+.todaybox .lbl { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.xbox { width: 100%; min-height: 160px; font-family: var(--font); font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><h1>사업소 보고 현황판</h1><span class="sub">월간업무보고 · 일일업무보고 통합 관리</span></div>
+    <div class="top-ctl">
+      <label class="small fg2" for="monthSel">보고 월</label>
+      <select id="monthSel" aria-label="보고 월"></select>
+      <span class="badge" id="storeBadge"><span class="dot"></span><span id="storeBadgeText">연결 중</span></span>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="home">종합 현황</button>
+    <button role="tab" data-tab="site">사업소별</button>
+    <button role="tab" data-tab="compare">항목 비교</button>
+    <button role="tab" data-tab="daily">일일보고</button>
+    <button role="tab" data-tab="upload">업로드</button>
+    <button role="tab" data-tab="export">내보내기</button>
+  </nav>
+</header>
+
+<main>
+  <section class="view" id="view-home"></section>
+  <section class="view" id="view-site" hidden></section>
+  <section class="view" id="view-compare" hidden></section>
+  <section class="view" id="view-daily" hidden>
+    <div class="card">
+      <div class="hd"><h2>일일보고 제출 현황</h2>
+        <div class="row">
+          <input type="month" id="dailyMonth" aria-label="일일보고 월">
+          <input type="search" id="dailyQ" placeholder="키워드 검색 (업무·민원·특이사항)" aria-label="일일보고 검색" style="min-width:230px">
+        </div>
+      </div>
+      <div class="bd" id="dailyMatrix"></div>
+    </div>
+    <div class="card">
+      <div class="hd"><h2 id="dailyFeedTitle">일자별 보고</h2>
+        <div class="row">
+          <button class="btn sm" id="dayPrev" aria-label="전날">◀</button>
+          <input type="date" id="dailyDate" aria-label="일자">
+          <button class="btn sm" id="dayNext" aria-label="다음날">▶</button>
+          <button class="btn sm" id="dayToday">오늘</button>
+        </div>
+      </div>
+      <div class="bd" id="dailyFeed"></div>
+    </div>
+    <div class="card" id="dailyFormCard">
+      <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="note">사업소 담당자가 매일 작성하거나, 본사에서 전달받은 내용을 대신 입력합니다.</span></div>
+      <div class="bd">
+        <form id="dailyForm" class="form" autocomplete="off">
+          <div class="f"><label for="dSite">사업소</label><select id="dSite"></select></div>
+          <div class="f" id="dSiteNewWrap" hidden><label for="dSiteNew">새 사업소명</label><input type="text" id="dSiteNew" placeholder="예: 남산센트럴시티투웨니퍼스트"></div>
+          <div class="f"><label for="dDate">보고 일자</label><input type="date" id="dDate" required></div>
+          <div class="f"><label for="dAuthor">작성자</label><input type="text" id="dAuthor" placeholder="성명"></div>
+          <div class="f"><label for="dStaff">근무 인원</label><input type="number" id="dStaff" min="0" step="1" placeholder="명"></div>
+          <div class="f wide"><label for="dWork">업무 내용 (한 줄에 한 건)</label><textarea id="dWork" placeholder="9/7 기계식주차장 점검 : 정현오토파킹(이상없음)&#10;승강기 월 정기점검 입회"></textarea></div>
+          <div class="f wide"><label for="dComplaints">민원 처리</label><textarea id="dComplaints" placeholder="1008호 온수 수압 민원 → 감압밸브 조정 완료" style="min-height:56px"></textarea></div>
+          <div class="f wide"><label for="dIssues">특이사항 · 사고 · 긴급</label><textarea id="dIssues" placeholder="없으면 비워 두세요" style="min-height:56px"></textarea></div>
+          <div class="f"><label class="check"><input type="checkbox" id="dUrgent"> 본사 즉시 확인 필요 (긴급)</label></div>
+          <div class="f wide"><label for="dPlans">익일 예정</label><textarea id="dPlans" style="min-height:48px"></textarea></div>
+          <div class="f wide row">
+            <button type="submit" class="btn primary" id="dSave">저장</button>
+            <button type="button" class="btn" id="dReset">새로 작성</button>
+            <button type="button" class="btn danger" id="dDelete" hidden>이 보고 삭제</button>
+            <span class="note" id="dMsg"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+  <section class="view" id="view-upload" hidden>
+    <div class="card">
+      <div class="hd"><h2>월간업무보고 파일 업로드</h2><span class="note">사업소에서 보내온 엑셀(.xlsx)을 그대로 올리면 건물명·보고월·체납·법정검사·선임·자격증·미납세대를 자동으로 읽습니다. 여러 파일을 한 번에 올릴 수 있습니다.</span></div>
+      <div class="bd">
+        <div class="drop" id="drop">
+          <input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls" multiple hidden>
+          <button class="btn primary" id="pickBtn" type="button">파일 선택</button>
+          <p>또는 이 영역에 파일을 끌어다 놓으세요</p>
+        </div>
+        <div id="pendWrap" class="pend" style="margin-top:14px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="hd"><h2>저장된 월간보고</h2><span class="note" id="storedCount"></span></div>
+      <div class="bd tight tw" id="storedList"></div>
+    </div>
+  </section>
+  <section class="view" id="view-export" hidden></section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="parser.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* ===================== 유틸 ===================== */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sq = v => String(v == null ? '' : v).replace(/\s+/g, '');
+const pad2 = n => (n < 10 ? '0' : '') + n;
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+const comma = n => (n == null || isNaN(n)) ? '–' : Math.round(n).toLocaleString('ko-KR');
+const won = n => (n == null || isNaN(n)) ? '–' : comma(n) + '원';
+function krw(n) {
+  if (n == null || isNaN(n)) return '–';
+  const a = Math.abs(n), sign = n < 0 ? '-' : '';
+  if (a >= 1e8) return sign + (a / 1e8).toFixed(a >= 1e9 ? 0 : 1) + '억';
+  if (a >= 1e4) return sign + Math.round(a / 1e4).toLocaleString('ko-KR') + '만';
+  return sign + comma(a);
+}
+const pct = (a, b) => (a == null || !b) ? '–' : (100 * a / b).toFixed(1) + '%';
+const monthLabel = p => p ? p.slice(0, 4) + '년 ' + (+p.slice(5, 7)) + '월' : '';
+const shortMonth = p => p ? (+p.slice(5, 7)) + '월' : '';
+const dateLabel = d => { if (!d) return ''; const [y, m, dd] = d.split('-'); const w = '일월화수목금토'[new Date(+y, +m - 1, +dd).getDay()]; return y + '.' + (+m) + '.' + (+dd) + ' (' + w + ')'; };
+function addDays(d, n) { const [y, m, dd] = d.split('-').map(Number); const x = new Date(y, m - 1, dd + n); return x.getFullYear() + '-' + pad2(x.getMonth() + 1) + '-' + pad2(x.getDate()); }
+function diffDays(a, b) { const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number); return Math.round((new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2)) / 864e5); }
+const isDateStr = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+const isNothing = t => !t || /^(없음|이상없음|해당없음|해당무|해당사항없음|특이사항없음|-)$/.test(sq(t));
+const isDone = t => /완료|합격|적합|이상없|정상|실시/.test(sq(t));
+const isNA = t => /^(해당없음|해당무|해당사항없음|없음|-|x|X)$/.test(sq(t));
+let toastT; function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2600); }
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+/* ===================== 상태 ===================== */
+const state = {
+  tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
+  reports: [], dailies: [], acks: [], issueLv: 'all', showDone: false, trend: 'total', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+};
+const hot = window.claude && window.claude.hot;
+if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend }));
+
+/* ===================== 저장소 (db 또는 이 브라우저) ===================== */
+const store = {
+  db: null, unsub: [],
+  async init() {
+    let db = null;
+    try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+    if (db) {
+      this.db = db; state.mode = 'db';
+      try {
+        const user = await window.claude.use('user');
+        if (user) { const w = await user.can('data.write'); if (w === false) state.canWrite = false; }
+      } catch (e) {}
+      let gotR = false, gotD = false;
+      this.unsub.push(db.collection('reports').onSnapshot(snap => {
+        state.reports = snap.docs.filter(d => d.exists).map(d => d.data());
+        gotR = true; if (gotD) state.loaded = true; onData();
+      }, err => { console.error('reports', err); }));
+      this.unsub.push(db.collection('dailies').onSnapshot(snap => {
+        state.dailies = snap.docs.filter(d => d.exists).map(d => d.data());
+        gotD = true; if (gotR) state.loaded = true; onData();
+      }, err => { console.error('dailies', err); }));
+      this.unsub.push(db.collection('acks').onSnapshot(snap => {
+        state.acks = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
+      }, err => { console.error('acks', err); }));
+    } else {
+      state.mode = 'local';
+      state.reports = lsGet('mwr.reports', []);
+      state.dailies = lsGet('mwr.dailies', []);
+      state.acks = lsGet('mwr.acks', []);
+      state.loaded = true;
+      onData();
+    }
+    renderBadge();
+  },
+  async saveReport(rec) {
+    const doc = Object.assign({}, rec, { uploadedAt: new Date().toISOString() });
+    delete doc.warnings;
+    if (this.db) { await this.db.doc('reports/' + doc.id).set(doc); }
+    else { state.reports = state.reports.filter(r => r.id !== doc.id).concat([doc]); lsSet('mwr.reports', state.reports); onData(); }
+  },
+  async deleteReport(id) {
+    if (this.db) { await this.db.doc('reports/' + id).delete(); }
+    else { state.reports = state.reports.filter(r => r.id !== id); lsSet('mwr.reports', state.reports); onData(); }
+  },
+  async setAck(doc) {
+    if (this.db) await this.db.doc('acks/' + doc.id).set(doc);
+    else { state.acks = state.acks.filter(a => a.id !== doc.id).concat([doc]); lsSet('mwr.acks', state.acks); onData(); }
+  },
+  async clearAck(id) {
+    if (this.db) await this.db.doc('acks/' + id).delete();
+    else { state.acks = state.acks.filter(a => a.id !== id); lsSet('mwr.acks', state.acks); onData(); }
+  },
+  async saveDaily(siteKey, site, date, entry) {
+    const period = date.slice(0, 7), dd = date.slice(8, 10), id = siteKey + '_' + period;
+    if (this.db) {
+      const ref = this.db.doc('dailies/' + id);
+      const snap = await ref.get();
+      if (snap.exists) await ref.update({ site, days: { [dd]: entry } });
+      else await ref.set({ id, siteKey, site, period, days: { [dd]: entry } });
+    } else {
+      let doc = state.dailies.find(d => d.id === id);
+      if (!doc) { doc = { id, siteKey, site, period, days: {} }; state.dailies.push(doc); }
+      doc.site = site; doc.days = Object.assign({}, doc.days, { [dd]: entry });
+      lsSet('mwr.dailies', state.dailies); onData();
+    }
+  },
+  async deleteDaily(siteKey, date) {
+    const period = date.slice(0, 7), dd = date.slice(8, 10), id = siteKey + '_' + period;
+    const doc = state.dailies.find(d => d.id === id);
+    if (!doc) return;
+    const days = Object.assign({}, doc.days); delete days[dd];
+    if (this.db) {
+      const ref = this.db.doc('dailies/' + id);
+      if (Object.keys(days).length) await ref.set(Object.assign({}, doc, { days })); else await ref.delete();
+    } else {
+      if (Object.keys(days).length) doc.days = days; else state.dailies = state.dailies.filter(d => d.id !== id);
+      lsSet('mwr.dailies', state.dailies); onData();
+    }
+  },
+};
+function renderBadge() {
+  const b = $('#storeBadge'), t = $('#storeBadgeText');
+  if (state.mode === 'db') { b.classList.add('on'); t.textContent = state.canWrite ? '공유 저장소 연결됨' : '공유 저장소 (읽기 전용)'; }
+  else if (state.mode === 'local') { b.classList.remove('on'); t.textContent = '이 브라우저에만 저장'; }
+  else { t.textContent = '연결 중'; }
+}
+
+/* ===================== 파생 데이터 ===================== */
+function months() {
+  const set = new Set();
+  state.reports.forEach(r => r.period && set.add(r.period));
+  state.dailies.forEach(d => d.period && set.add(d.period));
+  return Array.from(set).sort();
+}
+function sites() {
+  const m = new Map();
+  const put = (key, name, period) => { if (!key) return; const cur = m.get(key); if (!cur || (period || '') >= (cur.last || '')) m.set(key, { key, name: name || (cur && cur.name) || key, last: period || (cur && cur.last) || '' }); };
+  state.reports.forEach(r => put(r.siteKey, r.site, r.period));
+  state.dailies.forEach(d => put(d.siteKey, d.site, d.period));
+  return Array.from(m.values()).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+}
+const siteName = key => { const s = sites().find(x => x.key === key); return s ? s.name : key; };
+const reportsFor = month => state.reports.filter(r => r.period === month).sort((a, b) => (a.site || '').localeCompare(b.site || '', 'ko'));
+const reportBy = (key, month) => state.reports.find(r => r.siteKey === key && r.period === month) || null;
+const siteReports = key => state.reports.filter(r => r.siteKey === key).sort((a, b) => a.period.localeCompare(b.period));
+function prevReport(key, month) { const list = siteReports(key).filter(r => r.period < month); return list.length ? list[list.length - 1] : null; }
+const isWeekend = d => { const [y, m, dd] = d.split('-').map(Number); const w = new Date(y, m - 1, dd).getDay(); return w === 0 || w === 6; };
+const prevMonthOf = p => { const y = +p.slice(0, 4), m = +p.slice(5, 7); return m === 1 ? (y - 1) + '-12' : y + '-' + pad2(m - 1); };
+/* 전월 체납액: 전월 보고서가 있으면 그 값, 없으면 이번 보고서에 적힌 '전월 체납잔액' */
+function prevTotalOf(r) {
+  const p = prevReport(r.siteKey, r.period);
+  if (p && arrearsTotal(p) != null) return { v: arrearsTotal(p), period: p.period, src: 'report' };
+  if (r.arrears && r.arrears.prevBalance != null) return { v: r.arrears.prevBalance, period: prevMonthOf(r.period), src: 'balance' };
+  return { v: null, period: '', src: '' };
+}
+const arrearsTotal = r => r && r.arrears ? (r.arrears.total != null ? r.arrears.total : (r.unpaidSummary ? r.unpaidSummary.total : null)) : null;
+const arrearsUnits = r => r && r.arrears ? (r.arrears.arrearsUnits != null ? r.arrears.arrearsUnits : (r.unpaidSummary ? r.unpaidSummary.units : null)) : null;
+function unitSummary(r) {
+  const m = new Map();
+  const multiDong = new Set((r.unpaid || []).map(x => x.dong || '')).size > 1;
+  (r.unpaid || []).forEach(x => {
+    const k = (multiDong && x.dong ? x.dong + '동 ' : '') + x.unit + '호';
+    const u = m.get(k) || { unit: k, months: new Set(), total: 0, charge: 0, late: 0, notes: [], type: x.type };
+    u.months.add(x.month); u.total += x.total; u.charge += x.charge; u.late += x.late; if (x.note) u.notes.push(x.note);
+    m.set(k, u);
+  });
+  return Array.from(m.values()).map(u => Object.assign(u, { n: u.months.size, oldest: Array.from(u.months).sort()[0] })).sort((a, b) => b.total - a.total);
+}
+const longTerm = r => unitSummary(r).filter(u => u.n >= 2);
+function inspStatus(ins) {
+  const t = todayStr(), done = isDone(ins.done);
+  if (isDateStr(ins.due)) {
+    const dd = diffDays(ins.due, t);
+    if (!done && dd < 0) return { lv: 'crit', label: '기한 경과 ' + Math.abs(dd) + '일', dd };
+    if (!done && dd <= 30) return { lv: 'serious', label: 'D-' + dd, dd };
+    if (!done) return { lv: 'warn', label: '미완료', dd };
+    if (dd >= 0 && dd <= 30) return { lv: 'warn', label: '예정 D-' + dd, dd };
+    if (dd < 0 && dd >= -400 && done) return { lv: 'good', label: '완료', dd };
+    return { lv: 'good', label: done ? '완료' : '', dd };
+  }
+  if (!ins.due && !ins.done) return { lv: 'na', label: '기록 없음' };
+  if (done) return { lv: 'good', label: '완료' };
+  return { lv: 'na', label: ins.done || ins.due || '' };
+}
+function inspAlerts(r) { return (r.inspections || []).map(i => Object.assign({ st: inspStatus(i) }, i)).filter(i => ['crit', 'serious', 'warn'].includes(i.st.lv)); }
+function managerAlerts(r) {
+  return (r.managers || []).filter(m => !m.name && !/보조|기타/.test(sq(m.item))).map(m => ({ item: m.item, lv: /전기|소방/.test(m.item) ? 'crit' : 'warn' }));
+}
+function dailyDocsFor(month) { return state.dailies.filter(d => d.period === month); }
+function dailyEntry(key, date) { const doc = state.dailies.find(d => d.id === key + '_' + date.slice(0, 7)); return doc && doc.days ? doc.days[date.slice(8, 10)] || null : null; }
+function allDaily() {
+  const out = [];
+  state.dailies.forEach(d => Object.keys(d.days || {}).forEach(dd => out.push(Object.assign({ siteKey: d.siteKey, site: d.site, date: d.period + '-' + dd }, d.days[dd]))));
+  return out.sort((a, b) => a.date.localeCompare(b.date) || a.site.localeCompare(b.site, 'ko'));
+}
+function dailyList(month) {
+  const out = [];
+  dailyDocsFor(month).forEach(d => Object.keys(d.days || {}).sort().forEach(dd => out.push(Object.assign({ siteKey: d.siteKey, site: d.site, date: d.period + '-' + dd }, d.days[dd]))));
+  return out.sort((a, b) => a.date.localeCompare(b.date) || a.site.localeCompare(b.site, 'ko'));
+}
+
+function issuesFor(month) {
+  const out = [], all = sites(), reps = reportsFor(month);
+  const known = all.filter(s => state.reports.some(r => r.siteKey === s.key));
+  known.forEach(s => { if (!reps.some(r => r.siteKey === s.key) && month <= todayStr().slice(0, 7)) out.push({ lv: 'warn', key: s.key, site: s.name, title: '월간보고 미제출', detail: monthLabel(month) + ' 보고서가 아직 올라오지 않았습니다.', tab: 'upload' }); });
+  reps.forEach(r => {
+    const tot = arrearsTotal(r), pt = prevTotalOf(r), ptot = pt.v;
+    if (tot != null && ptot != null && ptot > 0) {
+      const d = tot - ptot, p = d / ptot;
+      if (p >= 0.1) out.push({ lv: p >= 0.3 ? 'crit' : 'serious', key: r.siteKey, site: r.site, title: '체납액 증가 ' + (p * 100).toFixed(0) + '%', detail: shortMonth(pt.period) + (pt.src === 'balance' ? '(전월잔액)' : '') + ' ' + won(ptot) + ' → ' + shortMonth(month) + ' ' + won(tot) + ' (+' + won(d) + ')', tab: 'site' });
+      else if (p <= -0.2) out.push({ lv: 'info', key: r.siteKey, site: r.site, title: '체납액 감소 ' + Math.abs(p * 100).toFixed(0) + '%', detail: won(ptot) + ' → ' + won(tot), tab: 'site' });
+    }
+    const au = arrearsUnits(r), un = r.arrears && r.arrears.units;
+    if (au != null && un) { const rate = au / un; if (rate >= 0.15) out.push({ lv: rate >= 0.25 ? 'serious' : 'warn', key: r.siteKey, site: r.site, title: '체납세대 비율 ' + (rate * 100).toFixed(1) + '%', detail: au + '세대 / 총 ' + un + '세대', tab: 'site' }); }
+    const lt = longTerm(r);
+    if (lt.length >= 3) out.push({ lv: 'warn', key: r.siteKey, site: r.site, title: '2개월 이상 미납 ' + lt.length + '세대', detail: lt.slice(0, 5).map(u => u.unit + ' ' + u.n + '개월 ' + krw(u.total)).join(' · ') + (lt.length > 5 ? ' 외' : ''), tab: 'site' });
+    inspAlerts(r).forEach(i => out.push({ lv: i.st.lv, key: r.siteKey, site: r.site, title: '법정검사 ' + i.item + ' ' + i.st.label, detail: (i.due ? '기일 ' + i.due : '') + (i.done ? ' · ' + i.done : ''), tab: 'site' }));
+    managerAlerts(r).forEach(m => out.push({ lv: m.lv, key: r.siteKey, site: r.site, title: m.item + ' 선임자 공란', detail: r.managerGap ? '대처방안: ' + r.managerGap : '선임자가 비어 있습니다. 미선임 여부를 확인하세요.', tab: 'site' }));
+    if (!isNothing(r.complaints)) out.push({ lv: 'info', key: r.siteKey, site: r.site, title: '민원 처리 보고', detail: r.complaints, tab: 'site' });
+    const notes = (r.notes || []).filter(n => !isNothing(n));
+    if (notes.length) out.push({ lv: 'info', key: r.siteKey, site: r.site, title: '특이사항', detail: notes.join(' / '), tab: 'site' });
+  });
+  allDaily().filter(e => e.urgent && (e.date.slice(0, 7) === month || (diffDays(todayStr(), e.date) >= 0 && diffDays(todayStr(), e.date) <= 7))).forEach(e => out.push({ lv: 'crit', key: e.siteKey, site: e.site, title: '일일보고 긴급 (' + dateLabel(e.date) + ')', detail: (e.issues || []).join(' / ') || '긴급 표시된 보고', tab: 'daily', date: e.date }));
+  out.forEach(i => { i.id = ReportParser.siteKey(month + '|' + i.key + '|' + i.title.replace(/[\d.]+/g, '#') + (i.date || '')); });
+  const rank = { crit: 0, serious: 1, warn: 2, info: 3 };
+  return out.sort((a, b) => rank[a.lv] - rank[b.lv] || a.site.localeCompare(b.site, 'ko'));
+}
+const chipFor = lv => ({ crit: '긴급', serious: '주의', warn: '확인', info: '참고', good: '정상', na: '' }[lv] || '');
+
+/* ===================== 차트 (SVG) ===================== */
+function hbarChart(el, rows, opt) {
+  opt = opt || {};
+  const fmt = opt.fmt || comma, W = 640, rowH = 30, padL = Math.min(220, 20 + 11 * Math.max(4, ...rows.map(r => r.label.length))), padR = 90, H = rows.length * rowH + 12;
+  const max = Math.max(1, ...rows.map(r => r.value || 0));
+  const x = v => padL + (W - padL - padR) * (v / max);
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opt.title || '') + '">';
+  [0.25, 0.5, 0.75, 1].forEach(f => { svg += '<line class="gl" x1="' + x(max * f) + '" y1="4" x2="' + x(max * f) + '" y2="' + (H - 8) + '"/>'; });
+  svg += '<line class="ax" x1="' + padL + '" y1="4" x2="' + padL + '" y2="' + (H - 8) + '"/>';
+  rows.forEach((r, i) => {
+    const y = 8 + i * rowH, w = Math.max(0, x(r.value || 0) - padL), hl = r.key === opt.highlight ? ' hl' : '';
+    svg += '<text x="' + (padL - 8) + '" y="' + (y + 14) + '" text-anchor="end">' + esc(r.label) + '</text>';
+    svg += '<path class="bar' + hl + '" data-i="' + i + '" d="M' + padL + ' ' + y + ' h' + Math.max(0, w - 4) + ' a4 4 0 0 1 4 4 v12 a4 4 0 0 1 -4 4 H' + padL + ' z"><title>' + esc(r.label + ': ' + fmt(r.value)) + '</title></path>';
+    svg += '<text class="vl num" x="' + (padL + w + 6) + '" y="' + (y + 14) + '">' + esc(fmt(r.value)) + '</text>';
+  });
+  svg += '</svg>';
+  el.innerHTML = svg;
+  if (opt.onClick) $$('.bar', el).forEach(p => { p.style.cursor = 'pointer'; p.addEventListener('click', () => opt.onClick(rows[+p.dataset.i])); });
+}
+function lineChart(el, pts, opt) {
+  opt = opt || {};
+  const fmt = opt.fmt || comma, W = 640, H = 220, pl = 64, pr = 20, pt = 16, pb = 30;
+  if (!pts.length) { el.innerHTML = '<p class="muted small">표시할 월별 데이터가 없습니다.</p>'; return; }
+  const vals = pts.map(p => p.y || 0), max = Math.max(1, ...vals) * 1.1, min = Math.min(0, ...vals);
+  const x = i => pts.length === 1 ? (pl + (W - pl - pr) / 2) : pl + (W - pl - pr) * (i / (pts.length - 1));
+  const y = v => pt + (H - pt - pb) * (1 - (v - min) / (max - min || 1));
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opt.title || '') + '">';
+  for (let k = 0; k <= 4; k++) { const v = min + (max - min) * k / 4; svg += '<line class="gl" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text x="' + (pl - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" class="num">' + esc((opt.axis || krw)(v)) + '</text>'; }
+  svg += '<line class="ax" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(min) + '" y2="' + y(min) + '"/>';
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(p.y || 0)).join(' ');
+  svg += '<path class="ar" d="' + d + ' L' + x(pts.length - 1) + ' ' + y(min) + ' L' + x(0) + ' ' + y(min) + ' z"/>';
+  svg += '<path class="ln" d="' + d + '"/>';
+  pts.forEach((p, i) => { svg += '<circle class="mk' + (i === pts.length - 1 ? ' end' : '') + '" cx="' + x(i) + '" cy="' + y(p.y || 0) + '" r="4"/><text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(p.x) + '</text>'; });
+  const last = pts[pts.length - 1];
+  svg += '<text class="vl num" x="' + Math.min(x(pts.length - 1), W - pr - 40) + '" y="' + (y(last.y || 0) - 10) + '" text-anchor="middle">' + esc(fmt(last.y)) + '</text>';
+  svg += '<line class="ch" id="chx" x1="0" x2="0" y1="' + pt + '" y2="' + y(min) + '" visibility="hidden"/>';
+  svg += '</svg><div class="tip" hidden></div>';
+  el.innerHTML = svg;
+  const svgEl = $('svg', el), tip = $('.tip', el), ch = $('#chx', el);
+  svgEl.addEventListener('mousemove', ev => {
+    const rect = svgEl.getBoundingClientRect(), mx = (ev.clientX - rect.left) * W / rect.width;
+    let bi = 0; pts.forEach((p, i) => { if (Math.abs(x(i) - mx) < Math.abs(x(bi) - mx)) bi = i; });
+    ch.setAttribute('x1', x(bi)); ch.setAttribute('x2', x(bi)); ch.setAttribute('visibility', 'visible');
+    tip.hidden = false; tip.textContent = pts[bi].x + ' · ' + fmt(pts[bi].y) + (pts[bi].extra ? ' · ' + pts[bi].extra : '');
+    tip.style.left = (x(bi) * rect.width / W) + 'px'; tip.style.top = (y(pts[bi].y || 0) * rect.height / H) + 'px';
+  });
+  svgEl.addEventListener('mouseleave', () => { tip.hidden = true; ch.setAttribute('visibility', 'hidden'); });
+}
+
+/* ===================== 렌더 ===================== */
+function onData() {
+  const ms = months(), rm = Array.from(new Set(state.reports.map(r => r.period))).sort();
+  if (!state.month || !ms.includes(state.month)) state.month = rm.length ? rm[rm.length - 1] : (ms.length ? ms[ms.length - 1] : todayStr().slice(0, 7));
+  if (!state.site || !sites().some(s => s.key === state.site)) state.site = sites().length ? sites()[0].key : '';
+  renderMonthSel(); render();
+}
+function renderMonthSel() {
+  const sel = $('#monthSel'), ms = months().slice().reverse();
+  const cur = todayStr().slice(0, 7); if (!ms.includes(cur)) ms.unshift(cur);
+  sel.innerHTML = ms.map(m => '<option value="' + m + '"' + (m === state.month ? ' selected' : '') + '>' + monthLabel(m) + (reportsFor(m).length ? ' (' + reportsFor(m).length + '개소)' : '') + '</option>').join('');
+}
+function setTab(t) { state.tab = t; $$('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t ? 'true' : 'false')); $$('section.view').forEach(s => s.hidden = s.id !== 'view-' + t); render(); window.scrollTo({ top: 0 }); }
+function go(tab, key, extra) { if (key) state.site = key; if (extra && extra.date) { state.dailyDate = extra.date; state.dailyMonth = extra.date.slice(0, 7); } setTab(tab); }
+function render() {
+  renderBadge();
+  ({ home: renderHome, site: renderSite, compare: renderCompare, daily: renderDaily, upload: renderUpload, export: renderExport })[state.tab]();
+}
+
+/* ---------- 종합 현황 ---------- */
+function renderHome() {
+  const el = $('#view-home'), month = state.month, reps = reportsFor(month), all = sites();
+  if (!state.loaded) { el.innerHTML = '<div class="empty"><p>저장된 보고서를 불러오는 중입니다…</p></div>'; return; }
+  if (!state.reports.length && !state.dailies.length) {
+    el.innerHTML = '<div class="card"><div class="empty"><h2>아직 올라온 보고서가 없습니다</h2><p>사업소에서 보내온 월간업무보고 엑셀 파일을 업로드하면 이 화면에 사업소별 체납 현황, 법정검사 기일, 선임관리자 공석, 주요업무가 한눈에 정리됩니다. 일일보고는 일일보고 탭에서 바로 입력할 수 있습니다.</p><button class="btn primary" data-go="upload">월간보고 업로드</button> <button class="btn" data-go="daily">일일보고 작성</button></div></div>';
+    return;
+  }
+  const tot = reps.reduce((a, r) => a + (arrearsTotal(r) || 0), 0);
+  const pairs = reps.map(r => ({ cur: arrearsTotal(r), prev: prevTotalOf(r).v })).filter(p => p.cur != null && p.prev != null);
+  const delta = pairs.length ? pairs.reduce((a, p) => a + p.cur - p.prev, 0) : null;
+  const au = reps.reduce((a, r) => a + (arrearsUnits(r) || 0), 0), un = reps.reduce((a, r) => a + ((r.arrears && r.arrears.units) || 0), 0);
+  const inspN = reps.reduce((a, r) => a + inspAlerts(r).length, 0), mgrN = reps.reduce((a, r) => a + managerAlerts(r).length, 0);
+  const ltN = reps.reduce((a, r) => a + longTerm(r).length, 0);
+  const knownN = all.filter(s => state.reports.some(r => r.siteKey === s.key)).length;
+  const td = todayStr(), dToday = all.filter(s => dailyEntry(s.key, td)).length;
+  const issues = issuesFor(month);
+  let h = '<div class="kpis">';
+  h += kpi('월간보고 제출', reps.length + '<small>/ ' + knownN + ' 개소</small>', knownN > reps.length ? (knownN - reps.length) + '개소 미제출' : '전 사업소 제출', knownN > reps.length ? 'warnb' : '');
+  h += kpi('체납 총액', krw(tot) + '<small>원</small>', delta == null ? '보고서에 전월 잔액이 없어 비교 불가' : (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비 (' + pairs.length + '/' + reps.length + '개소)', '', delta == null ? '' : (delta > 0 ? 'up' : 'down'));
+  h += kpi('체납 세대', comma(au) + '<small>/ ' + comma(un) + ' 세대</small>', '체납률 ' + pct(au, un) + ' · 2개월 이상 ' + ltN + '세대');
+  h += kpi('법정검사 주의', inspN + '<small>건</small>', inspN ? '기한 경과·임박·미완료' : '이상 없음', inspN ? 'alert' : '');
+  h += kpi('선임자 공란', mgrN + '<small>건</small>', mgrN ? '전기·소방 등 선임 확인 필요' : '공란 없음', mgrN ? 'alert' : '');
+  const dMiss = all.length - dToday, wkd = isWeekend(td);
+  h += kpi('오늘 일일보고', dToday + '<small>/ ' + all.length + ' 개소</small>', dateLabel(td) + (wkd ? ' · 휴일' : (dMiss ? ' · 미제출 ' + dMiss + '개소' : ' · 전원 제출')), (!wkd && dMiss && all.length) ? 'warnb' : '');
+  h += '</div>';
+  h += '<div class="grid2">' + todayCard() + trendCard() + '</div>';
+  h += '<div class="grid2">';
+  h += issueCard(issues, month);
+  h += '<div class="card"><div class="hd"><h2>사업소별 체납 총액</h2><span class="note">막대를 누르면 사업소 상세로 이동</span></div><div class="bd"><div class="chart" id="homeBar"></div></div></div>';
+  h += '</div>';
+  h += '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="note">행을 누르면 상세 보기</span></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th>작성자</th><th class="r">총세대</th><th class="r">체납세대</th><th class="r">체납률</th><th class="r">체납총액</th><th class="r">전월 대비</th><th class="r">2개월↑</th><th>법정검사</th><th>선임</th><th>민원·특이</th></tr></thead><tbody>';
+  const rows = all.filter(s => state.reports.some(r => r.siteKey === s.key));
+  rows.forEach(s => {
+    const r = reportBy(s.key, month);
+    if (!r) { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td colspan="10"><span class="chip warn">미제출</span> <span class="muted small">최근 보고: ' + (siteReports(s.key).slice(-1)[0] || {}).period + '</span></td></tr>'; return; }
+    const tot = arrearsTotal(r), prev = prevTotalOf(r).v, d = (tot != null && prev != null) ? tot - prev : null;
+    const ia = inspAlerts(r), ma = managerAlerts(r);
+    h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td>' + esc(r.author) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + won(tot) + '</td><td class="r' + (d > 0 ? '" style="color:var(--crit)' : (d < 0 ? '" style="color:var(--good)' : '')) + '">' + (d == null ? '–' : (d > 0 ? '+' : '') + comma(d)) + '</td><td class="r">' + longTerm(r).length + '</td><td>' + (ia.length ? ia.map(i => '<span class="chip ' + i.st.lv + '">' + esc(i.item + ' ' + i.st.label) + '</span>').join(' ') : '<span class="chip good">정상</span>') + '</td><td>' + (ma.length ? ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td><td class="small wrap">' + esc([isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–') + '</td></tr>';
+  });
+  h += '</tbody></table></div></div>';
+  el.innerHTML = h;
+  drawTrend();
+  hbarChart($('#homeBar'), reps.filter(r => arrearsTotal(r) != null).map(r => ({ label: r.site, value: arrearsTotal(r), key: r.siteKey })).sort((a, b) => b.value - a.value), { fmt: won, title: '사업소별 체납 총액', onClick: r => go('site', r.key) });
+}
+/* ---- 경영 주의사항 (필터 · 확인 처리) ---- */
+function issueCard(issues, month) {
+  const ackMap = new Map(state.acks.map(a => [a.id, a]));
+  const list = issues.map(i => Object.assign({}, i, { ack: ackMap.get(i.id) || null }));
+  const open = list.filter(i => !i.ack), doneN = list.length - open.length;
+  const cnt = lv => open.filter(i => i.lv === lv).length;
+  const shown = list.filter(i => (state.showDone || !i.ack) && (state.issueLv === 'all' || i.lv === state.issueLv));
+  const fb = (lv, lb, n) => '<button class="fbtn" data-ilv="' + lv + '" aria-pressed="' + (state.issueLv === lv) + '">' + lb + ' ' + n + '</button>';
+  let h = '<div class="card"><div class="hd"><h2>경영 주의 사항 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="chip crit">미처리 긴급 ' + cnt('crit') + '</span></div>';
+  h += '<div class="fchips">' + fb('all', '전체', open.length) + fb('crit', '긴급', cnt('crit')) + fb('serious', '주의', cnt('serious')) + fb('warn', '확인', cnt('warn')) + fb('info', '참고', cnt('info')) +
+    '<label class="check small" style="margin-left:auto"><input type="checkbox" id="showDone"' + (state.showDone ? ' checked' : '') + '> 확인 완료 ' + doneN + '건 포함</label></div>';
+  h += '<div class="bd tight"><div class="issues">' + (shown.length ? shown.slice(0, 60).map(i => {
+    const a = i.ack;
+    return '<div class="issue ' + i.lv + (a ? ' done' : '') + '"><div class="bar"></div><div><div class="t"><span class="chip ' + i.lv + '">' + chipFor(i.lv) + '</span><b>' + esc(i.site) + '</b><span>' + esc(i.title) + '</span>' +
+      '<button class="btn link" data-go="' + i.tab + '" data-key="' + i.key + '"' + (i.date ? ' data-date="' + i.date + '"' : '') + '>보기</button>' +
+      (state.canWrite ? '<button class="btn sm ackbtn" data-ack="' + i.id + '">' + (a ? '되돌리기' : '확인 완료') + '</button>' : '') + '</div>' +
+      (i.detail ? '<div class="d">' + esc(i.detail) + '</div>' : '') +
+      (a ? '<div class="memo"><span class="note">' + esc((a.at || '').slice(0, 10)) + ' 확인</span>' + (state.canWrite ? '<input type="text" data-memo="' + i.id + '" value="' + esc(a.memo || '') + '" placeholder="조치 내용 메모" aria-label="조치 내용 메모">' : (a.memo ? '<span class="small">' + esc(a.memo) + '</span>' : '')) + '</div>' : '') +
+      '</div></div>';
+  }).join('') : '<div class="empty">' + (list.length ? '표시할 미처리 사항이 없습니다.' : '이 달에 특별히 주의할 사항이 없습니다.') + '</div>') + '</div></div></div>';
+  return h;
+}
+async function toggleAck(id) {
+  const cur = state.acks.find(a => a.id === id);
+  try { if (cur) await store.clearAck(id); else await store.setAck({ id, at: new Date().toISOString(), memo: '', month: state.month }); }
+  catch (e) { toast('저장 실패: ' + (e.message || e.code || e)); }
+}
+
+/* ---- 오늘의 일일보고 (보고 월과 무관하게 항상 오늘 기준) ---- */
+function todayCard() {
+  const all = sites(), td = todayStr(), yd = addDays(td, -1);
+  if (!all.length) return '<div class="card"><div class="hd"><h2>오늘의 일일보고</h2></div><div class="bd"><div class="empty small">아직 사업소가 없습니다. 일일보고를 작성하면 여기에 제출 현황이 나타납니다.</div></div></div>';
+  const miss = all.filter(s => !dailyEntry(s.key, td)), wkd = isWeekend(td);
+  const ydDone = all.filter(s => dailyEntry(s.key, yd)).length;
+  const urg = allDaily().filter(e => e.urgent && diffDays(td, e.date) >= 0 && diffDays(td, e.date) <= 7).reverse();
+  let h = '<div class="card"><div class="hd"><h2>오늘의 일일보고 <span class="muted small">' + dateLabel(td) + '</span></h2><span class="chip ' + (wkd ? 'na' : miss.length ? 'warn' : 'good') + '">' + (all.length - miss.length) + ' / ' + all.length + ' 제출</span></div><div class="bd todaybox">';
+  h += '<div><div class="lbl">' + (wkd ? '휴일 · 미제출 ' + miss.length + '개소 (참고)' : '미제출 사업소') + '</div>' + (miss.length ? '<div class="missing">' + miss.map(s => '<button class="btn" data-go="daily" data-key="' + s.key + '" data-date="' + td + '">' + esc(s.name) + '</button>').join('') + '</div>' : '<span class="small fg2">모든 사업소가 오늘 보고를 올렸습니다.</span>') + '</div>';
+  h += '<div class="small fg2">어제(' + dateLabel(yd) + ') 제출 ' + ydDone + ' / ' + all.length + ' 개소</div>';
+  h += '<div><div class="lbl">최근 7일 긴급 보고 ' + urg.length + '건</div>' + (urg.length ? '<ul class="plain">' + urg.slice(0, 5).map(e => '<li><b>' + esc(e.site) + '</b> ' + esc(dateLabel(e.date)) + ' · ' + esc((e.issues || []).join(' / ') || '긴급 표시') + ' <button class="btn link" data-go="daily" data-key="' + e.siteKey + '" data-date="' + e.date + '">보기</button></li>').join('') + '</ul>' : '<span class="small fg2">없음</span>') + '</div>';
+  return h + '</div></div>';
+}
+
+/* ---- 월별 추이 (전 사업소 합산) ---- */
+const TRENDS = {
+  total: { name: '체납 총액', fmt: won, axis: krw, val: reps => { const v = reps.map(arrearsTotal).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; } },
+  rate: { name: '체납률', fmt: v => v == null ? '–' : v.toFixed(1) + '%', axis: v => v.toFixed(0) + '%', val: reps => { const a = reps.reduce((s, r) => s + (arrearsUnits(r) || 0), 0), u = reps.reduce((s, r) => s + ((r.arrears && r.arrears.units) || 0), 0); return u ? 100 * a / u : null; } },
+  units: { name: '체납 세대', fmt: v => comma(v) + '세대', axis: v => comma(v), val: reps => reps.reduce((s, r) => s + (arrearsUnits(r) || 0), 0) },
+};
+function trendPoints() {
+  const T = TRENDS[state.trend] || TRENDS.total, ms = months().filter(m => reportsFor(m).length).slice(-12);
+  const pts = ms.map(m => { const reps = reportsFor(m); return { m, x: shortMonth(m), y: T.val(reps), extra: reps.length + '개소 보고' }; });
+  if (state.trend === 'total' && ms.length) {
+    const first = reportsFor(ms[0]), pm = prevMonthOf(ms[0]);
+    if (!reportsFor(pm).length && first.every(r => r.arrears && r.arrears.prevBalance != null)) pts.unshift({ m: pm, x: shortMonth(pm), y: first.reduce((a, r) => a + r.arrears.prevBalance, 0), extra: '보고서에 적힌 전월 잔액' });
+  }
+  return pts.filter(p => p.y != null);
+}
+function trendCard() {
+  const pts = trendPoints(), T = TRENDS[state.trend] || TRENDS.total;
+  const cur = pts.find(p => p.m === state.month), idx = cur ? pts.indexOf(cur) : -1, prev = idx > 0 ? pts[idx - 1] : null;
+  let sub = '';
+  if (cur && prev) { const d = cur.y - prev.y; sub = shortMonth(prev.m) + ' ' + T.fmt(prev.y) + ' → ' + shortMonth(cur.m) + ' ' + T.fmt(cur.y) + ' · ' + (d >= 0 ? '▲ ' : '▼ ') + T.fmt(Math.abs(d)) + (state.trend === 'total' && prev.y ? ' (' + (d >= 0 ? '+' : '-') + Math.abs(100 * d / prev.y).toFixed(1) + '%)' : ''); }
+  else sub = '월간보고가 2개월 이상 쌓이면 추이가 표시됩니다.';
+  return '<div class="card"><div class="hd"><h2>월별 추이 <span class="muted small">전 사업소 합산</span></h2><div class="seg" role="group" aria-label="추이 항목">' +
+    Object.keys(TRENDS).map(k => '<button data-trend="' + k + '" aria-pressed="' + (state.trend === k) + '">' + TRENDS[k].name + '</button>').join('') + '</div></div><div class="bd"><div class="chart" id="trendChart"></div><div class="small fg2" style="margin-top:8px">' + esc(sub) + '</div></div></div>';
+}
+function drawTrend() {
+  const el = $('#trendChart'); if (!el) return;
+  const T = TRENDS[state.trend] || TRENDS.total;
+  lineChart(el, trendPoints(), { fmt: T.fmt, axis: T.axis, title: '월별 ' + T.name + ' 추이' });
+}
+
+function kpi(lb, v, d, cls, dcls) { return '<div class="kpi ' + (cls || '') + '"><div class="lb">' + lb + '</div><div class="v">' + v + '</div><div class="d ' + (dcls || '') + '">' + esc(d) + '</div></div>'; }
+
+/* ---------- 사업소별 ---------- */
+function renderSite() {
+  const el = $('#view-site'), all = sites();
+  if (!all.length) { el.innerHTML = '<div class="card"><div class="empty"><h2>사업소 자료가 없습니다</h2><p>월간보고를 업로드하거나 일일보고를 작성하면 사업소가 생깁니다.</p><button class="btn primary" data-go="upload">업로드</button></div></div>'; return; }
+  const key = state.site, list = siteReports(key), r = reportBy(key, state.month);
+  let h = '<div class="row"><select id="siteSel" aria-label="사업소">' + all.map(s => '<option value="' + s.key + '"' + (s.key === key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>';
+  h += '<span class="muted small">보고 월은 상단에서 선택 · 보유 보고서: ' + (list.map(x => shortMonth(x.period)).join(', ') || '없음') + '</span></div>';
+  if (!r) {
+    h += '<div class="card"><div class="empty"><h2>' + esc(siteName(key)) + ' · ' + monthLabel(state.month) + ' 보고서 없음</h2><p>' + (list.length ? '다른 월을 선택하거나 이 달 파일을 업로드하세요.' : '이 사업소의 월간보고가 아직 없습니다.') + '</p><button class="btn primary" data-go="upload">업로드</button></div></div>';
+    h += renderSiteDaily(key);
+    el.innerHTML = h; bindSiteSel(); return;
+  }
+  const tot = arrearsTotal(r), pt0 = prevTotalOf(r), prev = pt0.v == null ? null : { period: pt0.period }, ptot = pt0.v, d = (tot != null && ptot != null) ? tot - ptot : null;
+  const us = unitSummary(r), lt = us.filter(u => u.n >= 2), top = us[0];
+  h += '<div class="card"><div class="hd"><div><h2>' + esc(r.site) + ' <span class="muted small">' + monthLabel(r.period) + '</span></h2><div class="small fg2">작성자 ' + esc(r.author || '–') + ' · 작성기간 ' + esc(r.periodText || '–') + (r.unpaidAsOf ? ' · 미납 기준일 ' + esc(r.unpaidAsOf) : '') + ' · 파일 ' + esc(r.fileName || '') + (r.uploadedAt ? ' · 업로드 ' + r.uploadedAt.slice(0, 10) : '') + '</div></div>' + (state.canWrite ? '<button class="btn sm danger" id="delRep">이 보고서 삭제</button>' : '') + '</div></div>';
+  h += '<div class="kpis">';
+  h += kpi('체납 총액', krw(tot) + '<small>원</small>', d == null ? (prev ? '' : '비교할 전월 보고 없음') : (d >= 0 ? '▲ ' : '▼ ') + won(Math.abs(d)) + ' (' + shortMonth(prev.period) + ' 대비)', '', d == null ? '' : d > 0 ? 'up' : 'down');
+  h += kpi('체납 세대', comma(arrearsUnits(r)) + '<small>/ ' + comma(r.arrears.units) + '</small>', '체납률 ' + pct(arrearsUnits(r), r.arrears.units));
+  h += kpi('당월 발생', (r.arrears.monthChange == null ? '–' : (r.arrears.monthChange > 0 ? '+' : '') + krw(r.arrears.monthChange)) + '<small>원</small>', r.arrears.prevBalance != null ? '전월 잔액 ' + won(r.arrears.prevBalance) : '전월 잔액 기록 없음');
+  h += kpi('2개월 이상 미납', lt.length + '<small>세대</small>', lt.length ? '합계 ' + won(lt.reduce((a, u) => a + u.total, 0)) : '장기 미납 없음', lt.length >= 3 ? 'warnb' : '');
+  h += kpi('최대 미납 세대', top ? esc(top.unit) : '–', top ? won(top.total) + ' · ' + top.n + '개월' : '');
+  h += kpi('법정검사 · 선임', inspAlerts(r).length + '<small>건</small> / ' + managerAlerts(r).length + '<small>건</small>', '주의 건수 / 선임 공란', (inspAlerts(r).length + managerAlerts(r).length) ? 'alert' : '');
+  h += '</div>';
+  h += '<div class="grid2"><div class="card"><div class="hd"><h2>체납 총액 추이</h2><span class="note">월간보고 기준</span></div><div class="bd"><div class="chart" id="siteLine"></div></div></div>';
+  h += '<div class="card"><div class="hd"><h2>체납 대처 · 특이사항 · 지시사항</h2></div><div class="bd"><dl class="dl">' +
+    '<dt>대처방안</dt><dd>' + esc(r.arrears.action || '–') + '</dd>' +
+    '<dt>민원 처리</dt><dd>' + esc(r.complaints || '–') + '</dd>' +
+    '<dt>특이사항</dt><dd>' + listOr(r.notes) + '</dd>' +
+    '<dt>지시사항</dt><dd>' + listOr(r.instructions) + '</dd>' +
+    '<dt>예정사항</dt><dd>' + listOr(r.plans) + '</dd>' +
+    (r.etc && r.etc.length ? '<dt>기타</dt><dd>' + listOr(r.etc) + '</dd>' : '') + '</dl></div></div></div>';
+  h += '<div class="grid2">';
+  h += '<div class="card"><div class="hd"><h2>금월 주요업무</h2><span class="note">' + r.tasks.reduce((a, t) => a + t.items.length, 0) + '건</span></div><div class="bd"><div class="tasklist">' + (r.tasks.length ? r.tasks.map(t => '<div><div class="cat">' + esc(t.category) + '</div>' + (t.items.length ? '<ul class="plain">' + t.items.map(i => '<li>' + esc(i.replace(/^[○*•\-]\s*/, '')) + '</li>').join('') + '</ul>' : '') + '</div>').join('') : '<span class="muted">기록 없음</span>') + '</div></div></div>';
+  h += '<div class="card"><div class="hd"><h2>법정 정기검사</h2></div><div class="bd tight tw"><table><thead><tr><th>항목</th><th>기안·검사일</th><th>완료여부</th><th>상태</th></tr></thead><tbody>' + (r.inspections.length ? r.inspections.map(i => { const st = inspStatus(i); return '<tr><td>' + esc(i.item) + '</td><td class="num">' + esc(i.due || '–') + '</td><td>' + esc(i.done || '–') + '</td><td>' + (st.label ? '<span class="chip ' + st.lv + '">' + esc(st.label) + '</span>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="muted">기록 없음</td></tr>') + '</tbody></table></div></div>';
+  h += '</div><div class="grid2">';
+  h += '<div class="card"><div class="hd"><h2>선임관리자</h2>' + (r.managerGap ? '<span class="note">미선임 대처: ' + esc(r.managerGap) + '</span>' : '') + '</div><div class="bd tight tw"><table><thead><tr><th>항목</th><th>선임자</th><th>선임일</th><th>상태</th></tr></thead><tbody>' + (r.managers.length ? r.managers.map(m => '<tr><td>' + esc(m.item) + '</td><td>' + esc(m.name || '–') + '</td><td class="num">' + esc(m.date || '') + '</td><td>' + (m.name ? (isNA(m.name) ? '<span class="chip na">해당 없음</span>' : '<span class="chip good">선임</span>') : (/보조|기타/.test(sq(m.item)) ? '<span class="chip na">공란</span>' : '<span class="chip ' + (/전기|소방/.test(m.item) ? 'crit' : 'warn') + '">확인 필요</span>')) + '</td></tr>').join('') : '<tr><td colspan="4" class="muted">기록 없음</td></tr>') + '</tbody></table></div></div>';
+  h += '<div class="card"><div class="hd"><h2>근무직원 자격증</h2><span class="note">' + r.certs.length + '건</span></div><div class="bd tight tw"><table><thead><tr><th>성명</th><th>자격증</th>' + (r.certs.some(c => c.date) ? '<th>취득</th>' : '') + (r.certs.some(c => c.issuer) ? '<th>발급기관</th>' : '') + (r.certs.some(c => c.etc) ? '<th>기타</th>' : '') + '</tr></thead><tbody>' + (r.certs.length ? r.certs.map(c => '<tr><td>' + esc(c.name) + '</td><td class="wrap">' + esc(c.certs) + '</td>' + (r.certs.some(x => x.date) ? '<td class="num">' + esc(c.date) + '</td>' : '') + (r.certs.some(x => x.issuer) ? '<td>' + esc(c.issuer) + '</td>' : '') + (r.certs.some(x => x.etc) ? '<td>' + esc(c.etc) + '</td>' : '') + '</tr>').join('') : '<tr><td colspan="5" class="muted">기록 없음</td></tr>') + '</tbody></table></div></div>';
+  h += '</div>';
+  h += '<div class="card"><div class="hd"><h2>미납 세대 <span class="muted small">세대별 합산</span></h2><div class="row"><span class="note">' + us.length + '세대 · ' + (r.unpaid || []).length + '건 · 합계 ' + won(r.unpaidSummary ? r.unpaidSummary.total : us.reduce((a, u) => a + u.total, 0)) + '</span><label class="check small"><input type="checkbox" id="ltOnly"> 2개월 이상만</label><label class="check small"><input type="checkbox" id="showAllU"> 전체 보기</label></div></div><div class="bd tight tw" id="unpaidTbl"></div></div>';
+  h += renderSiteDaily(key);
+  el.innerHTML = h;
+  bindSiteSel();
+  const pts = list.filter(x => arrearsTotal(x) != null).map(x => ({ x: shortMonth(x.period), y: arrearsTotal(x), extra: '체납 ' + comma(arrearsUnits(x)) + '세대' }));
+  { const f = list[0]; if (f && f.arrears && f.arrears.prevBalance != null && f.period && !list.some(x => x.period === prevMonthOf(f.period))) pts.unshift({ x: shortMonth(prevMonthOf(f.period)), y: f.arrears.prevBalance, extra: '보고서에 적힌 전월 잔액' }); }
+  lineChart($('#siteLine'), pts, { fmt: won, title: r.site + ' 체납 총액 추이' });
+  const drawU = () => {
+    const only = $('#ltOnly').checked, all = $('#showAllU').checked;
+    let rows = only ? lt : us; if (!all) rows = rows.slice(0, 15);
+    $('#unpaidTbl').innerHTML = '<table><thead><tr><th>세대</th><th>구분</th><th class="r">미납 개월</th><th>최초 부과월</th><th class="r">부과액</th><th class="r">연체료</th><th class="r">미납 합계</th></tr></thead><tbody>' + (rows.length ? rows.map(u => '<tr' + (u.notes.length ? ' class="has-note"' : '') + '><td class="num"><b>' + esc(u.unit) + '</b></td><td>' + esc(u.type || '') + '</td><td class="r">' + (u.n >= 2 ? '<span class="chip ' + (u.n >= 6 ? 'crit' : 'warn') + '">' + u.n + '개월</span>' : u.n + '개월') + '</td><td class="num">' + esc(u.oldest) + '</td><td class="r">' + comma(u.charge) + '</td><td class="r">' + comma(u.late) + '</td><td class="r"><b>' + comma(u.total) + '</b></td></tr>' + (u.notes.length ? '<tr class="noterow"><td colspan="7"><div>' + esc(u.notes.join(' ')) + '</div></td></tr>' : '')).join('') : '<tr><td colspan="7" class="muted">미납 세대 내역이 없습니다.</td></tr>') + '</tbody></table>' + (!all && (only ? lt : us).length > 15 ? '<div class="note" style="padding:8px 10px">상위 15세대만 표시 중 · 전체 보기를 켜면 ' + (only ? lt : us).length + '세대 모두 표시</div>' : '');
+  };
+  $('#ltOnly').addEventListener('change', drawU); $('#showAllU').addEventListener('change', drawU); drawU();
+  const del = $('#delRep');
+  if (del) del.addEventListener('click', () => { if (del.dataset.arm) { store.deleteReport(r.id).then(() => toast('삭제했습니다')).catch(e => toast('삭제 실패: ' + e.message)); } else { del.dataset.arm = '1'; del.textContent = '정말 삭제하려면 한 번 더 누르세요'; setTimeout(() => { del.dataset.arm = ''; del.textContent = '이 보고서 삭제'; }, 4000); } });
+}
+function listOr(arr) { arr = (arr || []).filter(Boolean); return arr.length ? '<ul class="plain">' + arr.map(x => '<li>' + esc(x.replace(/^[○*•\-]\s*/, '')) + '</li>').join('') + '</ul>' : '<span class="muted">–</span>'; }
+function bindSiteSel() { const s = $('#siteSel'); if (s) s.addEventListener('change', () => { state.site = s.value; render(); }); }
+function renderSiteDaily(key) {
+  const entries = dailyList(state.month).filter(e => e.siteKey === key);
+  const urgent = entries.filter(e => e.urgent);
+  return '<div class="card"><div class="hd"><h2>이 달의 일일보고 <span class="muted small">' + monthLabel(state.month) + '</span></h2><span class="note">' + entries.length + '일 제출' + (urgent.length ? ' · 긴급 ' + urgent.length + '건' : '') + ' <button class="btn link" data-go="daily" data-key="' + key + '">일일보고 탭에서 보기</button></span></div><div class="bd tight tw">' + (entries.length ? '<table><thead><tr><th>일자</th><th>작성자</th><th>업무</th><th>민원</th><th>특이사항</th></tr></thead><tbody>' + entries.slice().reverse().slice(0, 31).map(e => '<tr class="click" data-go="daily" data-key="' + key + '" data-date="' + e.date + '"><td class="num" style="white-space:nowrap">' + esc(dateLabel(e.date)) + (e.urgent ? ' <span class="chip crit">긴급</span>' : '') + '</td><td>' + esc(e.author || '') + '</td><td class="small wrap">' + esc((e.work || []).join(' / ')) + '</td><td class="small wrap sm">' + esc((e.complaints || []).join(' / ')) + '</td><td class="small wrap sm">' + esc((e.issues || []).join(' / ')) + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">이 달 일일보고가 없습니다.</div>') + '</div></div>';
+}
+
+/* ---------- 항목 비교 ---------- */
+const ITEMS = [
+  { id: 'total', name: '체납 총액', num: true, fmt: won, get: r => arrearsTotal(r) },
+  { id: 'aunits', name: '체납 세대수', num: true, fmt: v => comma(v) + '세대', get: r => arrearsUnits(r) },
+  { id: 'rate', name: '체납률 (%)', num: true, fmt: v => v == null ? '–' : v.toFixed(1) + '%', get: r => (arrearsUnits(r) != null && r.arrears.units) ? 100 * arrearsUnits(r) / r.arrears.units : null },
+  { id: 'change', name: '당월 발생금액', num: true, fmt: won, get: r => r.arrears.monthChange },
+  { id: 'prev', name: '전월 체납잔액', num: true, fmt: won, get: r => r.arrears.prevBalance },
+  { id: 'units', name: '총 세대수', num: true, fmt: v => comma(v) + '세대', get: r => r.arrears.units },
+  { id: 'lt', name: '2개월 이상 미납 세대수', num: true, fmt: v => comma(v) + '세대', get: r => longTerm(r).length },
+  { id: 'ltamt', name: '2개월 이상 미납 금액', num: true, fmt: won, get: r => longTerm(r).reduce((a, u) => a + u.total, 0) },
+  { id: 'tasks', name: '주요업무 건수', num: true, fmt: v => comma(v) + '건', get: r => r.tasks.reduce((a, t) => a + t.items.length, 0) },
+  { id: 'insp', name: '법정 정기검사 현황', num: false },
+  { id: 'mgr', name: '선임관리자 현황', num: false },
+  { id: 'certs', name: '직원 자격증 보유', num: false },
+  { id: 'taskl', name: '주요업무 내용', num: false },
+  { id: 'notes', name: '민원 · 특이사항 · 대처방안', num: false },
+  { id: 'topu', name: '미납 상위 세대', num: false },
+];
+function renderCompare() {
+  const el = $('#view-compare'), month = state.month, reps = reportsFor(month), item = ITEMS.find(i => i.id === state.item) || ITEMS[0];
+  let h = '<div class="row"><label class="small fg2" for="itemSel">비교 항목</label><select id="itemSel">' + ITEMS.map(i => '<option value="' + i.id + '"' + (i.id === item.id ? ' selected' : '') + '>' + i.name + '</option>').join('') + '</select><span class="muted small">' + monthLabel(month) + ' · ' + reps.length + '개소</span></div>';
+  if (!reps.length) { h += '<div class="card"><div class="empty"><h2>' + monthLabel(month) + ' 보고서가 없습니다</h2><p>상단에서 다른 월을 고르거나 업로드하세요.</p></div></div>'; el.innerHTML = h; bindItem(); return; }
+  if (item.num) {
+    const rows = reps.map(r => ({ label: r.site, value: item.get(r), key: r.siteKey })).filter(x => x.value != null).sort((a, b) => b.value - a.value);
+    const ms = months().filter(m => m <= month).slice(-6);
+    h += '<div class="grid2"><div class="card"><div class="hd"><h2>' + item.name + ' 비교</h2><span class="note">높은 순</span></div><div class="bd"><div class="chart" id="cmpBar"></div></div></div>';
+    h += '<div class="card"><div class="hd"><h2>월별 추이 <span class="muted small">최근 ' + ms.length + '개월</span></h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th>' + ms.map(m => '<th class="r">' + shortMonth(m) + '</th>').join('') + '<th class="r">전월 대비</th></tr></thead><tbody>' +
+      sites().filter(s => state.reports.some(r => r.siteKey === s.key)).map(s => { const vals = ms.map(m => { const r = reportBy(s.key, m); return r ? item.get(r) : null; }); const l = vals[vals.length - 1], p = vals.length > 1 ? vals[vals.length - 2] : null; const d = (l != null && p != null) ? l - p : null; return '<tr><td class="site">' + esc(s.name) + '</td>' + vals.map(v => '<td class="r">' + (v == null ? '<span class="muted">–</span>' : item.fmt(v)) + '</td>').join('') + '<td class="r"' + (d > 0 ? ' style="color:var(--crit)"' : d < 0 ? ' style="color:var(--good)"' : '') + '>' + (d == null ? '–' : (d > 0 ? '+' : '') + item.fmt(d)) + '</td></tr>'; }).join('') +
+      '</tbody><tfoot><tr><td>합계</td>' + ms.map(m => { const vs = reportsFor(m).map(r => item.get(r)).filter(v => v != null); return '<td class="r">' + (vs.length ? (item.id === 'rate' ? item.fmt(vs.reduce((a, b) => a + b, 0) / vs.length) : item.fmt(vs.reduce((a, b) => a + b, 0))) : '–') + '</td>'; }).join('') + '<td></td></tr></tfoot></table></div></div></div>';
+    el.innerHTML = h; bindItem();
+    hbarChart($('#cmpBar'), rows, { fmt: item.fmt, title: item.name, onClick: r => go('site', r.key) });
+    return;
+  }
+  if (item.id === 'insp') {
+    const items = Array.from(new Set(reps.flatMap(r => r.inspections.map(i => i.item))));
+    h += '<div class="card"><div class="hd"><h2>법정 정기검사 현황</h2><span class="legend"><span><span class="chip good">완료</span></span><span><span class="chip warn">예정·미완료</span></span><span><span class="chip serious">임박</span></span><span><span class="chip crit">기한 경과</span></span></span></div><div class="bd tight tw"><table><thead><tr><th>사업소</th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '</tr></thead><tbody>' + reps.map(r => '<tr><td class="site">' + esc(r.site) + '</td>' + items.map(it => { const i = r.inspections.find(x => x.item === it); if (!i) return '<td class="muted">–</td>'; const st = inspStatus(i); return '<td><div class="num small">' + esc(i.due || '') + '</div>' + (st.label ? '<span class="chip ' + st.lv + '">' + esc(st.label) + '</span>' : '<span class="small">' + esc(i.done) + '</span>') + '</td>'; }).join('') + '</tr>').join('') + '</tbody></table></div></div>';
+  } else if (item.id === 'mgr') {
+    const items = Array.from(new Set(reps.flatMap(r => r.managers.map(i => i.item))));
+    h += '<div class="card"><div class="hd"><h2>선임관리자 현황</h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>미선임 대처</th></tr></thead><tbody>' + reps.map(r => '<tr><td class="site">' + esc(r.site) + '</td>' + items.map(it => { const m = r.managers.find(x => x.item === it); if (!m) return '<td class="muted">–</td>'; if (!m.name) return '<td>' + (/보조|기타/.test(sq(it)) ? '<span class="muted">공란</span>' : '<span class="chip ' + (/전기|소방/.test(it) ? 'crit' : 'warn') + '">확인 필요</span>') + '</td>'; return '<td>' + (isNA(m.name) ? '<span class="chip na">해당 없음</span>' : esc(m.name) + '<div class="num small muted">' + esc(m.date) + '</div>') + '</td>'; }).join('') + '<td class="small wrap sm">' + esc(r.managerGap || '') + '</td></tr>').join('') + '</tbody></table></div></div>';
+  } else if (item.id === 'certs') {
+    h += '<div class="card"><div class="hd"><h2>직원 자격증 보유 현황</h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th>인원</th><th>성명 · 자격증</th></tr></thead><tbody>' + reps.map(r => '<tr><td class="site">' + esc(r.site) + '</td><td class="r">' + new Set(r.certs.map(c => c.name)).size + '명</td><td class="wrap">' + (r.certs.length ? '<ul class="plain">' + r.certs.map(c => '<li><b>' + esc(c.name) + '</b> ' + esc(c.certs) + (c.etc ? ' <span class="muted">(' + esc(c.etc) + ')</span>' : '') + '</li>').join('') + '</ul>' : '<span class="muted">기록 없음</span>') + '</td></tr>').join('') + '</tbody></table></div></div>';
+  } else if (item.id === 'taskl') {
+    h += '<div class="grid2">' + reps.map(r => '<div class="card"><div class="hd"><h3>' + esc(r.site) + '</h3><span class="note">' + r.tasks.reduce((a, t) => a + t.items.length, 0) + '건</span></div><div class="bd"><div class="tasklist">' + (r.tasks.length ? r.tasks.map(t => '<div><div class="cat">' + esc(t.category) + '</div><ul class="plain">' + t.items.map(i => '<li>' + esc(i.replace(/^[○*•\-]\s*/, '')) + '</li>').join('') + '</ul></div>').join('') : '<span class="muted">기록 없음</span>') + '</div></div></div>').join('') + '</div>';
+  } else if (item.id === 'notes') {
+    h += '<div class="card"><div class="bd tight tw"><table><thead><tr><th>사업소</th><th>체납 대처방안</th><th>민원 처리</th><th>특이사항</th><th>직원 지시사항</th><th>예정사항</th></tr></thead><tbody>' + reps.map(r => '<tr><td class="site">' + esc(r.site) + '</td><td class="small wrap">' + esc(r.arrears.action || '–') + '</td><td class="small wrap sm">' + esc(r.complaints || '–') + '</td><td class="small wrap">' + listOr(r.notes) + '</td><td class="small wrap">' + listOr(r.instructions) + '</td><td class="small wrap sm">' + listOr(r.plans) + '</td></tr>').join('') + '</tbody></table></div></div>';
+  } else if (item.id === 'topu') {
+    const rows = reps.flatMap(r => unitSummary(r).slice(0, 5).map(u => Object.assign({ site: r.site, key: r.siteKey }, u))).sort((a, b) => b.total - a.total).slice(0, 30);
+    h += '<div class="card"><div class="hd"><h2>미납 상위 세대 <span class="muted small">사업소별 상위 5세대, 전체 30위까지</span></h2></div><div class="bd tight tw"><table><thead><tr><th>순위</th><th>사업소</th><th>세대</th><th class="r">미납 개월</th><th>최초 부과월</th><th class="r">미납 합계</th></tr></thead><tbody>' + rows.map((u, i) => '<tr class="click' + (u.notes.length ? ' has-note' : '') + '" data-go="site" data-key="' + u.key + '"><td class="r">' + (i + 1) + '</td><td class="site">' + esc(u.site) + '</td><td class="num">' + esc(u.unit) + '</td><td class="r">' + (u.n >= 2 ? '<span class="chip ' + (u.n >= 6 ? 'crit' : 'warn') + '">' + u.n + '개월</span>' : u.n + '개월') + '</td><td class="num">' + esc(u.oldest) + '</td><td class="r"><b>' + comma(u.total) + '</b></td></tr>' + (u.notes.length ? '<tr class="noterow"><td colspan="6"><div>' + esc(u.notes.join(' ')) + '</div></td></tr>' : '')).join('') + '</tbody></table></div></div>';
+  }
+  el.innerHTML = h; bindItem();
+}
+function bindItem() { const s = $('#itemSel'); if (s) s.addEventListener('change', () => { state.item = s.value; render(); }); }
+
+/* ---------- 일일보고 ---------- */
+let dailyBound = false;
+function renderDaily() {
+  const all = sites();
+  $('#dailyMonth').value = state.dailyMonth; $('#dailyDate').value = state.dailyDate; $('#dailyQ').value = state.dailyQ;
+  // 제출 현황 매트릭스
+  const [y, m] = state.dailyMonth.split('-').map(Number), days = new Date(y, m, 0).getDate(), td = todayStr();
+  const docs = dailyDocsFor(state.dailyMonth), q = state.dailyQ.trim().toLowerCase();
+  const rowsS = all.length ? all : [];
+  let h = '';
+  if (!rowsS.length) h = '<div class="empty small">아직 사업소가 없습니다. 아래 양식에서 사업소명을 입력해 첫 일일보고를 작성하세요.</div>';
+  else {
+    h = '<div class="legend" style="margin-bottom:8px"><span><i class="has"></i>제출</span><span><i class="urgent"></i>긴급</span><span><i></i>미제출</span><span class="muted">셀을 누르면 해당 일자 보고로 이동</span></div><div class="matrix"><table><thead><tr><th class="site">사업소</th>' + Array.from({ length: days }, (_, i) => { const d = state.dailyMonth + '-' + pad2(i + 1); const wd = new Date(y, m - 1, i + 1).getDay(); return '<th class="' + (d === td ? 'today' : '') + '" style="' + (wd === 0 ? 'color:var(--crit)' : wd === 6 ? 'color:var(--s1)' : '') + '">' + (i + 1) + '</th>'; }).join('') + '<th class="r">제출</th></tr></thead><tbody>';
+    rowsS.forEach(s => {
+      const doc = docs.find(d => d.siteKey === s.key), dd = doc ? doc.days || {} : {}; let n = 0;
+      h += '<tr><td class="site">' + esc(s.name) + '</td>' + Array.from({ length: days }, (_, i) => { const k = pad2(i + 1), d = state.dailyMonth + '-' + k, e = dd[k], wd = new Date(y, m - 1, i + 1).getDay(); if (e) n++; return '<td class="' + (d === td ? 'today' : '') + '"><button class="cell' + (e ? (e.urgent ? ' urgent' : ' has') : (d > td ? ' future' : (wd === 0 || wd === 6 ? ' wk' : ''))) + '" data-day="' + d + '" data-key="' + s.key + '" aria-label="' + esc(s.name + ' ' + d) + (e ? ' 제출' : ' 미제출') + '"' + (d > td ? ' disabled' : '') + '></button></td>'; }).join('') + '<td class="r num">' + n + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+  $('#dailyMatrix').innerHTML = h;
+  // 일자별 피드 (검색어가 있으면 월 전체에서 검색)
+  let entries;
+  if (q) { entries = dailyList(state.dailyMonth).filter(e => JSON.stringify([e.work, e.complaints, e.issues, e.plans, e.author, e.site]).toLowerCase().includes(q)); $('#dailyFeedTitle').textContent = '검색 결과 ' + entries.length + '건 · ' + monthLabel(state.dailyMonth); }
+  else { entries = dailyList(state.dailyDate.slice(0, 7)).filter(e => e.date === state.dailyDate); $('#dailyFeedTitle').textContent = dateLabel(state.dailyDate) + ' 일일보고 · ' + entries.length + '/' + all.length + ' 개소'; }
+  const missing = q ? [] : all.filter(s => !entries.some(e => e.siteKey === s.key));
+  $('#dailyFeed').innerHTML = (entries.length ? '<div class="dcards">' + entries.map(e => '<div class="dcard' + (e.urgent ? ' urgent' : '') + '"><div class="h"><b>' + esc(e.site) + '</b><span class="small muted">' + (q ? dateLabel(e.date) + ' · ' : '') + esc(e.author || '') + (e.staff ? ' · 근무 ' + e.staff + '명' : '') + (e.urgent ? ' <span class="chip crit">긴급</span>' : '') + '</span></div>' +
+    dsec('업무', e.work) + dsec('민원', e.complaints) + dsec('특이사항', e.issues) + dsec('익일 예정', e.plans) +
+    (state.canWrite ? '<div class="row"><button class="btn sm" data-edit="' + e.siteKey + '|' + e.date + '">수정</button><span class="note">' + (e.updatedAt ? '저장 ' + e.updatedAt.slice(0, 16).replace('T', ' ') : '') + '</span></div>' : '') + '</div>').join('') + '</div>' : '<div class="empty small">' + (q ? '검색 결과가 없습니다.' : '이 날짜에 올라온 일일보고가 없습니다.') + '</div>') +
+    (missing.length && state.dailyDate <= td ? '<div class="note" style="margin-top:10px">미제출: ' + missing.map(s => esc(s.name)).join(', ') + '</div>' : '');
+  // 양식
+  const sel = $('#dSite'), curv = sel.value;
+  sel.innerHTML = all.map(s => '<option value="' + s.key + '">' + esc(s.name) + '</option>').join('') + '<option value="__new">+ 새 사업소 입력</option>';
+  if (curv && Array.from(sel.options).some(o => o.value === curv)) sel.value = curv; else if (all.length) sel.value = state.site || all[0].key; else sel.value = '__new';
+  $('#dSiteNewWrap').hidden = sel.value !== '__new';
+  if (!$('#dDate').value) $('#dDate').value = state.dailyDate;
+  $('#dailyFormCard').hidden = !state.canWrite;
+  if (!dailyBound) bindDaily();
+}
+function dsec(lb, arr) { arr = (arr || []).filter(Boolean); return arr.length ? '<div class="sec"><div class="lb">' + lb + '</div><ul>' + arr.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : ''; }
+function bindDaily() {
+  dailyBound = true;
+  $('#dailyMonth').addEventListener('change', e => { if (e.target.value) { state.dailyMonth = e.target.value; if (state.dailyDate.slice(0, 7) !== state.dailyMonth) state.dailyDate = state.dailyMonth + '-01'; render(); } });
+  $('#dailyDate').addEventListener('change', e => { if (e.target.value) { state.dailyDate = e.target.value; state.dailyMonth = e.target.value.slice(0, 7); state.dailyQ = ''; render(); } });
+  $('#dayPrev').addEventListener('click', () => { state.dailyDate = addDays(state.dailyDate, -1); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
+  $('#dayNext').addEventListener('click', () => { state.dailyDate = addDays(state.dailyDate, 1); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
+  $('#dayToday').addEventListener('click', () => { state.dailyDate = todayStr(); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
+  let qt; $('#dailyQ').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { state.dailyQ = e.target.value; renderDaily(); }, 250); });
+  $('#dailyMatrix').addEventListener('click', e => { const b = e.target.closest('button.cell'); if (!b || b.disabled) return; state.dailyDate = b.dataset.day; state.dailyQ = ''; const en = dailyEntry(b.dataset.key, b.dataset.day); if (en) loadDailyForm(b.dataset.key, b.dataset.day); else { resetDailyForm(); $('#dSite').value = b.dataset.key; $('#dDate').value = b.dataset.day; } render(); $('#dailyFeed').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('#dailyFeed').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (!b) return; const [k, d] = b.dataset.edit.split('|'); loadDailyForm(k, d); $('#dailyFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('#dSite').addEventListener('change', e => { $('#dSiteNewWrap').hidden = e.target.value !== '__new'; });
+  $('#dReset').addEventListener('click', () => resetDailyForm());
+  $('#dDelete').addEventListener('click', async () => { const ed = state.editing; if (!ed) return; const b = $('#dDelete'); if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제하려면 한 번 더'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '이 보고 삭제'; }, 4000); return; } try { await store.deleteDaily(ed.key, ed.date); toast('삭제했습니다'); resetDailyForm(); } catch (err) { toast('삭제 실패: ' + err.message); } });
+  const draftKeys = ['dAuthor', 'dStaff', 'dWork', 'dComplaints', 'dIssues', 'dPlans'];
+  draftKeys.forEach(id => $('#' + id).addEventListener('input', () => { if (!state.editing) lsSet('mwr.draft', Object.fromEntries(draftKeys.map(k => [k, $('#' + k).value]))); }));
+  const draft = lsGet('mwr.draft', null); if (draft) draftKeys.forEach(k => { if (draft[k]) $('#' + k).value = draft[k]; });
+  $('#dailyForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const sel = $('#dSite'); let key = sel.value, name;
+    if (key === '__new') { name = ReportParser.normalizeSite($('#dSiteNew').value); if (!name) { $('#dMsg').textContent = '사업소명을 입력하세요.'; return; } key = ReportParser.siteKey(name); } else name = siteName(key);
+    const date = $('#dDate').value; if (!date) { $('#dMsg').textContent = '보고 일자를 선택하세요.'; return; }
+    const L = id => $('#' + id).value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    const entry = { date, author: $('#dAuthor').value.trim(), staff: $('#dStaff').value ? +$('#dStaff').value : null, work: L('dWork'), complaints: L('dComplaints'), issues: L('dIssues'), plans: L('dPlans'), urgent: $('#dUrgent').checked, updatedAt: new Date().toISOString() };
+    if (!entry.work.length && !entry.complaints.length && !entry.issues.length) { $('#dMsg').textContent = '업무·민원·특이사항 중 하나는 입력하세요.'; return; }
+    const btn = $('#dSave'); btn.disabled = true; $('#dMsg').textContent = '저장 중…';
+    try {
+      await store.saveDaily(key, name, date, entry);
+      toast(name + ' ' + dateLabel(date) + ' 일일보고 저장'); $('#dMsg').textContent = '';
+      try { localStorage.removeItem('mwr.draft'); } catch (err) {}
+      state.dailyDate = date; state.dailyMonth = date.slice(0, 7); state.site = key;
+      const keep = { author: entry.author, site: key }; resetDailyForm(); $('#dAuthor').value = keep.author; if (Array.from(sel.options).some(o => o.value === keep.site)) sel.value = keep.site;
+      render();
+    } catch (err) { $('#dMsg').textContent = '저장 실패: ' + (err.message || err.code || err); }
+    btn.disabled = false;
+  });
+}
+function resetDailyForm() { state.editing = null; ['dSiteNew', 'dStaff', 'dWork', 'dComplaints', 'dIssues', 'dPlans'].forEach(id => $('#' + id).value = ''); $('#dUrgent').checked = false; $('#dDate').value = state.dailyDate; $('#dDelete').hidden = true; $('#dailyFormTitle').textContent = '일일업무 보고 작성'; $('#dMsg').textContent = ''; $('#dSiteNewWrap').hidden = $('#dSite').value !== '__new'; }
+function loadDailyForm(key, date) {
+  const e = dailyEntry(key, date); if (!e) return;
+  state.editing = { key, date };
+  const sel = $('#dSite'); if (Array.from(sel.options).some(o => o.value === key)) sel.value = key; $('#dSiteNewWrap').hidden = true;
+  $('#dDate').value = date; $('#dAuthor').value = e.author || ''; $('#dStaff').value = e.staff != null ? e.staff : ''; $('#dWork').value = (e.work || []).join('\n'); $('#dComplaints').value = (e.complaints || []).join('\n'); $('#dIssues').value = (e.issues || []).join('\n'); $('#dPlans').value = (e.plans || []).join('\n'); $('#dUrgent').checked = !!e.urgent;
+  $('#dDelete').hidden = false; $('#dailyFormTitle').textContent = siteName(key) + ' · ' + dateLabel(date) + ' 수정'; $('#dMsg').textContent = '';
+}
+
+/* ---------- 업로드 ---------- */
+let uploadBound = false;
+function renderUpload() {
+  if (!uploadBound) bindUpload();
+  const wrap = $('#pendWrap');
+  if (!state.canWrite) { wrap.innerHTML = '<div class="inline-msg">이 계정은 읽기 전용이라 업로드할 수 없습니다. 공유 설정에서 참여자(Contributor) 이상으로 권한을 받으면 저장할 수 있습니다.</div>'; }
+  else wrap.innerHTML = state.pending.length ? state.pending.map((p, i) => pendCard(p, i)).join('') + '<div class="row"><button class="btn primary" id="saveAll">' + state.pending.length + '건 모두 저장</button><button class="btn" id="clearAll">목록 비우기</button><span class="note">같은 사업소·같은 월의 보고서가 이미 있으면 새 파일로 교체됩니다.</span></div>' : '';
+  const list = state.reports.slice().sort((a, b) => b.period.localeCompare(a.period) || (a.site || '').localeCompare(b.site || '', 'ko'));
+  $('#storedCount').textContent = list.length + '건 · 사업소 ' + new Set(list.map(r => r.siteKey)).size + '개소';
+  $('#storedList').innerHTML = list.length ? '<table><thead><tr><th>보고 월</th><th>사업소</th><th>작성자</th><th class="r">체납총액</th><th class="r">미납세대</th><th>파일</th><th>업로드</th><th></th></tr></thead><tbody>' + list.map(r => '<tr><td class="num">' + monthLabel(r.period) + '</td><td class="site">' + esc(r.site) + '</td><td>' + esc(r.author) + '</td><td class="r">' + won(arrearsTotal(r)) + '</td><td class="r">' + (r.unpaidSummary ? comma(r.unpaidSummary.units) : '–') + '</td><td class="small wrap sm">' + esc(r.fileName) + '</td><td class="small num">' + (r.uploadedAt || '').slice(0, 10) + '</td><td class="r"><button class="btn link" data-go="site" data-key="' + r.siteKey + '" data-month="' + r.period + '">보기</button>' + (state.canWrite ? ' <button class="btn link" data-del="' + r.id + '" style="color:var(--crit)">삭제</button>' : '') + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">저장된 월간보고가 없습니다.</div>';
+}
+function pendCard(p, i) {
+  const dup = p.id && state.reports.find(r => r.id === p.id);
+  const lt = longTerm(p).length;
+  return '<div class="pcard"><div class="pr"><b>' + esc(p.fileName) + '</b>' + (dup ? '<span class="chip warn">기존 ' + monthLabel(dup.period) + ' 보고서 교체</span>' : '<span class="chip info">신규</span>') + '<button class="btn sm" data-rm="' + i + '" style="margin-left:auto">제거</button></div>' +
+    '<div class="pr"><label class="small fg2">사업소 <input type="text" data-f="site" data-i="' + i + '" value="' + esc(p.site) + '"></label><label class="small fg2">보고 월 <input type="month" data-f="period" data-i="' + i + '" value="' + esc(p.period) + '"></label><label class="small fg2">작성자 <input type="text" data-f="author" data-i="' + i + '" value="' + esc(p.author) + '" style="width:120px"></label></div>' +
+    '<div class="sum"><span>총세대 <b>' + comma(p.arrears.units) + '</b></span><span>체납세대 <b>' + comma(arrearsUnits(p)) + '</b></span><span>체납총액 <b>' + won(arrearsTotal(p)) + '</b></span><span>미납내역 <b>' + p.unpaid.length + '건</b></span><span>2개월↑ <b>' + lt + '세대</b></span><span>주요업무 <b>' + p.tasks.reduce((a, t) => a + t.items.length, 0) + '건</b></span><span>법정검사 <b>' + p.inspections.length + '</b></span><span>선임 <b>' + p.managers.filter(m => m.name && !isNA(m.name)).length + '/' + p.managers.length + '</b></span><span>자격증 <b>' + p.certs.length + '</b></span></div>' +
+    (p.warnings.length ? '<div class="warns">⚠ ' + p.warnings.map(esc).join(' · ') + '</div>' : '') +
+    '<details><summary>읽어 들인 내용 전체 보기</summary><pre>' + esc(JSON.stringify(Object.assign({}, p, { unpaid: p.unpaid.length + '건 (생략)' }), null, 1)) + '</pre></details></div>';
+}
+function bindUpload() {
+  uploadBound = true;
+  const drop = $('#drop'), fi = $('#fileIn');
+  $('#pickBtn').addEventListener('click', () => fi.click());
+  fi.addEventListener('change', () => { addFiles(fi.files); fi.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+  $('#pendWrap').addEventListener('click', async e => {
+    const rm = e.target.closest('[data-rm]'); if (rm) { state.pending.splice(+rm.dataset.rm, 1); renderUpload(); return; }
+    if (e.target.id === 'clearAll') { state.pending = []; renderUpload(); return; }
+    if (e.target.id === 'saveAll') {
+      const bad = state.pending.filter(p => !p.site || !p.period); if (bad.length) { toast('사업소명과 보고 월이 비어 있는 파일이 있습니다.'); return; }
+      e.target.disabled = true; let ok = 0;
+      for (const p of state.pending.slice()) { try { await store.saveReport(p); ok++; state.pending = state.pending.filter(x => x !== p); } catch (err) { toast('저장 실패 (' + p.fileName + '): ' + (err.message || err.code)); } }
+      toast(ok + '건 저장했습니다'); if (ok) state.month = state.reports.length ? state.month : state.month; renderUpload(); renderMonthSel();
+    }
+  });
+  $('#pendWrap').addEventListener('change', e => {
+    const f = e.target.dataset.f; if (!f) return; const p = state.pending[+e.target.dataset.i]; if (!p) return;
+    if (f === 'site') { p.site = ReportParser.normalizeSite(e.target.value); p.siteKey = p.site ? ReportParser.siteKey(p.site) : ''; }
+    else if (f === 'period') p.period = e.target.value; else p.author = e.target.value.trim();
+    p.id = p.siteKey && p.period ? p.siteKey + '_' + p.period : ''; renderUpload();
+  });
+  $('#storedList').addEventListener('click', async e => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '삭제'; }, 4000); return; }
+    try { await store.deleteReport(b.dataset.del); toast('삭제했습니다'); } catch (err) { toast('삭제 실패: ' + err.message); }
+  });
+}
+async function addFiles(files) {
+  const arr = Array.from(files || []).filter(f => /\.xls[xm]?$/i.test(f.name));
+  if (!arr.length) { toast('엑셀 파일(.xlsx)만 올릴 수 있습니다.'); return; }
+  if (!window.XLSX || !window.ReportParser) { toast('엑셀 읽기 모듈을 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.'); return; }
+  for (const f of arr) {
+    try { const rec = await ReportParser.parseFile(f); state.pending = state.pending.filter(p => p.fileName !== rec.fileName); state.pending.push(rec); }
+    catch (err) { toast(f.name + ' 읽기 실패: ' + (err.message || err)); }
+  }
+  renderUpload();
+}
+
+/* ---------- 내보내기 ---------- */
+function renderExport() {
+  const el = $('#view-export'), month = state.month;
+  el.innerHTML = '<div class="grid3">' +
+    '<div class="card"><div class="hd"><h2>' + monthLabel(month) + ' 종합 엑셀</h2></div><div class="bd"><p class="small fg2">요약 · 법정검사 · 선임관리자 · 자격증 · 주요업무 · 미납세대 시트로 구성된 경영보고용 통합 파일입니다. (' + reportsFor(month).length + '개소)</p><button class="btn primary" data-x="month">엑셀 내려받기</button></div></div>' +
+    '<div class="card"><div class="hd"><h2>전체 누적 엑셀</h2></div><div class="bd"><p class="small fg2">저장된 모든 월(' + months().filter(m => reportsFor(m).length).length + '개월, ' + state.reports.length + '건)의 월간보고를 한 파일로 내려받습니다. 월별 추이 분석용입니다.</p><button class="btn primary" data-x="all">엑셀 내려받기</button></div></div>' +
+    '<div class="card"><div class="hd"><h2>' + monthLabel(state.dailyMonth) + ' 일일보고 엑셀</h2></div><div class="bd"><p class="small fg2">일일보고 ' + dailyList(state.dailyMonth).length + '건을 날짜·사업소 순으로 정리합니다. 상단 일일보고 탭의 월 선택을 따릅니다.</p><button class="btn primary" data-x="daily">엑셀 내려받기</button></div></div>' +
+    '<div class="card"><div class="hd"><h2>' + monthLabel(month) + ' 경영 요약 보고서</h2></div><div class="bd"><p class="small fg2">체납 현황, 긴급·주의 사항과 조치 상태, 사업소별 표, 일일보고 긴급 건을 한 문서(HTML)로 정리합니다. 브라우저에서 열어 PDF로 저장하거나 메일에 첨부할 수 있습니다.</p><button class="btn primary" data-x="report">보고서 내려받기</button></div></div>' +
+    '<div class="card"><div class="hd"><h2>요약 문안 복사</h2></div><div class="bd"><p class="small fg2">카카오톡·문자로 보낼 수 있는 짧은 요약(체납, 미처리 긴급·주의 사항, 오늘 일일보고 미제출)을 만듭니다.</p><button class="btn primary" data-x="copy">문안 복사</button></div></div>' +
+    '</div><div class="note" id="xMsg"></div><textarea id="xText" class="xbox" readonly hidden aria-label="요약 문안"></textarea>';
+}
+function buildWb(reps, title) {
+  const wb = XLSX.utils.book_new();
+  const S = (name, aoa) => { const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = aoa[0].map((_, c) => ({ wch: Math.min(60, Math.max(8, ...aoa.map(r => String(r[c] == null ? '' : r[c]).length * 1.6))) })); XLSX.utils.book_append_sheet(wb, ws, name); };
+  S('요약', [['사업소', '보고월', '작성자', '총세대', '체납세대', '체납률(%)', '전월체납잔액', '당월발생', '체납총액', '전월대비', '2개월이상 세대', '2개월이상 금액', '법정검사 주의', '선임자 공란', '체납 대처방안', '민원', '특이사항', '지시사항']].concat(reps.map(r => { const t = arrearsTotal(r), p = prevTotalOf(r).v; return [r.site, r.period, r.author, r.arrears.units, arrearsUnits(r), (arrearsUnits(r) != null && r.arrears.units) ? +(100 * arrearsUnits(r) / r.arrears.units).toFixed(1) : null, r.arrears.prevBalance, r.arrears.monthChange, t, (t != null && p != null) ? t - p : null, longTerm(r).length, longTerm(r).reduce((a, u) => a + u.total, 0), inspAlerts(r).map(i => i.item + ' ' + i.st.label).join(', '), managerAlerts(r).map(m => m.item).join(', '), r.arrears.action, r.complaints, (r.notes || []).join(' / '), (r.instructions || []).join(' / ')]; })));
+  S('법정검사', [['사업소', '보고월', '항목', '기안·검사일', '완료여부', '상태']].concat(reps.flatMap(r => r.inspections.map(i => [r.site, r.period, i.item, i.due, i.done, inspStatus(i).label]))));
+  S('선임관리자', [['사업소', '보고월', '항목', '선임자', '선임일', '미선임 대처방안']].concat(reps.flatMap(r => r.managers.map(m => [r.site, r.period, m.item, m.name, m.date, r.managerGap]))));
+  S('자격증', [['사업소', '보고월', '성명', '자격증', '취득', '발급기관', '기타']].concat(reps.flatMap(r => r.certs.map(c => [r.site, r.period, c.name, c.certs, c.date, c.issuer, c.etc]))));
+  S('주요업무', [['사업소', '보고월', '구분', '내용']].concat(reps.flatMap(r => r.tasks.flatMap(t => t.items.map(i => [r.site, r.period, t.category, i])))));
+  S('미납세대', [['사업소', '보고월', '동', '호', '부과년월', '구분', '부과액', '연체료', '미납합계', '비고']].concat(reps.flatMap(r => (r.unpaid || []).map(u => [r.site, r.period, u.dong, u.unit, u.month, u.type, u.charge, u.late, u.total, u.note]))));
+  const ackMap = new Map(state.acks.map(a => [a.id, a]));
+  const ms = Array.from(new Set(reps.map(r => r.period))).sort();
+  S('경영주의사항', [['보고월', '사업소', '수준', '항목', '내용', '조치상태', '조치 메모', '확인일']].concat(ms.flatMap(m => issuesFor(m).map(i => { const a = ackMap.get(i.id); return [m, i.site, chipFor(i.lv), i.title, i.detail || '', a ? '확인 완료' : '미처리', a ? a.memo : '', a ? (a.at || '').slice(0, 10) : '']; }))));
+  return wb;
+}
+function openIssues(month) { const ackIds = new Set(state.acks.map(a => a.id)); return issuesFor(month).filter(i => !ackIds.has(i.id)); }
+function summaryText(month) {
+  const reps = reportsFor(month), all = sites(), td = todayStr();
+  const tot = reps.reduce((a, r) => a + (arrearsTotal(r) || 0), 0), pairs = reps.map(r => ({ c: arrearsTotal(r), p: prevTotalOf(r).v })).filter(x => x.c != null && x.p != null);
+  const delta = pairs.length ? pairs.reduce((a, x) => a + x.c - x.p, 0) : null;
+  const au = reps.reduce((a, r) => a + (arrearsUnits(r) || 0), 0), un = reps.reduce((a, r) => a + ((r.arrears && r.arrears.units) || 0), 0);
+  const open = openIssues(month), imp = open.filter(i => i.lv === 'crit' || i.lv === 'serious');
+  const miss = all.filter(s => !dailyEntry(s.key, td));
+  const L = ['[사업소 보고 현황 요약] ' + monthLabel(month) + ' (' + reps.length + '개소 제출)',
+    '- 체납 총액 ' + won(tot) + (delta == null ? '' : ' (전월 대비 ' + (delta >= 0 ? '+' : '-') + won(Math.abs(delta)) + ')'),
+    '- 체납 세대 ' + comma(au) + ' / ' + comma(un) + '세대 (체납률 ' + pct(au, un) + ')',
+    '- 미처리 사항: 긴급 ' + open.filter(i => i.lv === 'crit').length + '건, 주의 ' + open.filter(i => i.lv === 'serious').length + '건, 확인 ' + open.filter(i => i.lv === 'warn').length + '건'];
+  if (imp.length) { L.push('', '[긴급·주의 사항]'); imp.slice(0, 15).forEach(i => L.push('· [' + chipFor(i.lv) + '] ' + i.site + ' ' + i.title + (i.detail ? ' — ' + i.detail : ''))); }
+  L.push('', '[일일보고] ' + dateLabel(td) + ' ' + (all.length - miss.length) + '/' + all.length + '개소 제출' + (miss.length && !isWeekend(td) ? ' · 미제출: ' + miss.map(s => s.name).join(', ') : ''));
+  return L.join('\n');
+}
+function buildReportHtml(month) {
+  const reps = reportsFor(month), all = sites(), td = todayStr(), ackMap = new Map(state.acks.map(a => [a.id, a]));
+  const issues = issuesFor(month).filter(i => i.lv !== 'info');
+  const tot = reps.reduce((a, r) => a + (arrearsTotal(r) || 0), 0), au = reps.reduce((a, r) => a + (arrearsUnits(r) || 0), 0), un = reps.reduce((a, r) => a + ((r.arrears && r.arrears.units) || 0), 0);
+  const css = 'body{font:14px/1.55 "Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#16212c;max-width:960px;margin:24px auto;padding:0 16px}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:26px 0 8px;border-bottom:2px solid #1b5a8a;padding-bottom:4px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #d5dbe3;padding:5px 8px;text-align:left;vertical-align:top}th{background:#e9edf2}td.r{text-align:right}.k{display:flex;gap:12px;flex-wrap:wrap}.k div{border:1px solid #d5dbe3;padding:8px 14px;min-width:150px}.k b{display:block;font-size:20px}.c{color:#d03b3b;font-weight:700}.s{color:#9a3f1b;font-weight:700}.w{color:#7a5300}.d{color:#7f8a96;text-decoration:line-through}';
+  let h = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>사업소 보고 현황 ' + esc(monthLabel(month)) + '</title><style>' + css + '</style></head><body>';
+  h += '<h1>사업소 보고 현황 · ' + esc(monthLabel(month)) + '</h1><div style="color:#7f8a96">작성일 ' + esc(dateLabel(td)) + ' · 월간보고 제출 ' + reps.length + '개소</div>';
+  h += '<h2>요약</h2><div class="k"><div>체납 총액<b>' + esc(won(tot)) + '</b></div><div>체납 세대<b>' + comma(au) + ' / ' + comma(un) + '</b>체납률 ' + pct(au, un) + '</div><div>미처리 긴급·주의<b>' + issues.filter(i => !ackMap.has(i.id) && (i.lv === 'crit' || i.lv === 'serious')).length + '건</b></div></div>';
+  h += '<h2>경영 주의사항</h2><table><thead><tr><th>수준</th><th>사업소</th><th>항목</th><th>내용</th><th>조치</th></tr></thead><tbody>' + (issues.length ? issues.map(i => { const a = ackMap.get(i.id); return '<tr><td class="' + (i.lv === 'crit' ? 'c' : i.lv === 'serious' ? 's' : 'w') + '">' + chipFor(i.lv) + '</td><td>' + esc(i.site) + '</td><td' + (a ? ' class="d"' : '') + '>' + esc(i.title) + '</td><td>' + esc(i.detail || '') + '</td><td>' + (a ? '확인 완료 ' + esc((a.at || '').slice(0, 10)) + (a.memo ? '<br>' + esc(a.memo) : '') : '미처리') + '</td></tr>'; }).join('') : '<tr><td colspan="5">해당 사항 없음</td></tr>') + '</tbody></table>';
+  h += '<h2>사업소별 현황</h2><table><thead><tr><th>사업소</th><th>총세대</th><th>체납세대</th><th>체납률</th><th>체납총액</th><th>전월 대비</th><th>2개월↑</th></tr></thead><tbody>' + reps.map(r => { const t = arrearsTotal(r), p = prevTotalOf(r).v; return '<tr><td>' + esc(r.site) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + comma(t) + '</td><td class="r">' + ((t != null && p != null) ? (t - p > 0 ? '+' : '') + comma(t - p) : '–') + '</td><td class="r">' + longTerm(r).length + '</td></tr>'; }).join('') + '</tbody></table>';
+  const dl = dailyList(month), urg = dl.filter(e => e.urgent);
+  h += '<h2>일일보고</h2><p>' + esc(monthLabel(month)) + ' 제출 ' + dl.length + '건 · 긴급 ' + urg.length + '건' + (urg.length ? '</p><ul>' + urg.map(e => '<li>' + esc(e.site + ' ' + dateLabel(e.date) + ' — ' + ((e.issues || []).join(' / ') || '긴급 표시')) + '</li>').join('') + '</ul>' : '</p>');
+  return h + '</body></html>';
+}
+async function saveFile(name, blob, msg) {
+  let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) {}
+  if (dl) { await dl.save({ filename: name, data: blob }); msg.textContent = name + ' 저장을 요청했습니다.'; }
+  else {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    msg.textContent = name + ' 내려받기를 시작했습니다. 저장되지 않으면 브라우저의 다운로드 차단 설정을 확인하세요.';
+  }
+}
+async function copySummary() {
+  const msg = $('#xMsg'), box = $('#xText'), text = summaryText(state.month);
+  box.value = text; box.hidden = false; box.focus(); box.select();
+  try { await navigator.clipboard.writeText(text); msg.textContent = '요약 문안을 복사했습니다. 아래 내용을 문자·메신저에 붙여 넣으세요.'; }
+  catch (e) { msg.textContent = '자동 복사가 막혀 있습니다. 아래 문안이 선택되어 있으니 Ctrl+C로 복사하세요.'; }
+}
+async function doExport(kind) {
+  const msg = $('#xMsg');
+  try {
+    if (kind === 'copy') { await copySummary(); return; }
+    if (kind === 'report') { await saveFile('경영요약_' + state.month + '.html', new Blob([buildReportHtml(state.month)], { type: 'text/html' }), msg); return; }
+    let wb, name;
+    if (kind === 'daily') {
+      const list = dailyList(state.dailyMonth);
+      wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([['일자', '사업소', '작성자', '근무인원', '업무내용', '민원', '특이사항', '긴급', '익일 예정']].concat(list.map(e => [e.date, e.site, e.author, e.staff, (e.work || []).join('\n'), (e.complaints || []).join('\n'), (e.issues || []).join('\n'), e.urgent ? 'Y' : '', (e.plans || []).join('\n')])));
+      ws['!cols'] = [10, 22, 10, 8, 50, 30, 30, 6, 30].map(w => ({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, ws, '일일보고');
+      const [yy, mm] = state.dailyMonth.split('-').map(Number), last = new Date(yy, mm, 0).getDate(), tdd = todayStr();
+      const bizDays = Array.from({ length: last }, (_, i) => state.dailyMonth + '-' + pad2(i + 1)).filter(d => d <= tdd && !isWeekend(d)).length;
+      const ws2 = XLSX.utils.aoa_to_sheet([['사업소', '제출일수', '평일 기준일수', '제출률(%)', '긴급 건수']].concat(sites().map(s => { const dd = (dailyDocsFor(state.dailyMonth).find(d => d.siteKey === s.key) || {}).days || {}, n = Object.keys(dd).length; return [s.name, n, bizDays, bizDays ? +Math.min(100, 100 * n / bizDays).toFixed(1) : null, Object.keys(dd).filter(k => dd[k].urgent).length]; })));
+      ws2['!cols'] = [26, 10, 14, 10, 10].map(w => ({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, ws2, '제출 현황'); name = '일일보고_' + state.dailyMonth + '.xlsx';
+    } else if (kind === 'month') { wb = buildWb(reportsFor(state.month)); name = '월간보고_종합_' + state.month + '.xlsx'; }
+    else { wb = buildWb(state.reports.slice().sort((a, b) => a.period.localeCompare(b.period) || a.site.localeCompare(b.site, 'ko'))); name = '월간보고_누적_' + todayStr() + '.xlsx'; }
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    await saveFile(name, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), msg);
+  } catch (e) { msg.textContent = e.code === 'declined' ? '내려받기를 취소했습니다.' : '내보내기 실패: ' + (e.message || e.code || e); }
+}
+
+/* ===================== 전역 이벤트 ===================== */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-go]'); if (!t) return;
+  if (t.dataset.month) state.month = t.dataset.month;
+  go(t.dataset.go, t.dataset.key, { date: t.dataset.date });
+  if (t.dataset.go === 'daily' && t.dataset.key) { const d = t.dataset.date || state.dailyDate; if (dailyEntry(t.dataset.key, d)) loadDailyForm(t.dataset.key, d); }
+});
+document.addEventListener('click', e => { const x = e.target.closest('[data-x]'); if (x) doExport(x.dataset.x); });
+document.addEventListener('click', e => {
+  const f = e.target.closest('[data-ilv]'); if (f) { state.issueLv = f.dataset.ilv; render(); return; }
+  const t = e.target.closest('[data-trend]'); if (t) { state.trend = t.dataset.trend; render(); return; }
+  const a = e.target.closest('[data-ack]'); if (a) toggleAck(a.dataset.ack);
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'showDone') { state.showDone = e.target.checked; render(); return; }
+  const m = e.target.closest('[data-memo]'); if (!m) return;
+  const cur = state.acks.find(a => a.id === m.dataset.memo); if (!cur) return;
+  store.setAck(Object.assign({}, cur, { memo: m.value.trim() })).then(() => toast('메모를 저장했습니다')).catch(err => toast('저장 실패: ' + (err.message || err.code || err)));
+});
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) setTab(b.dataset.tab); });
+$('#monthSel').addEventListener('change', e => { state.month = e.target.value; render(); });
+
+function start(saved) {
+  if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total' });
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'upload', 'export'].includes(hash)) state.tab = hash;
+  renderMonthSel(); setTab(state.tab); store.init();
+}
+if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
