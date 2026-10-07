@@ -887,11 +887,6 @@ function renderHome() {
     '</div></div>';
   const hHero = h; h = '';
   h += '<div class="grid2">' + todayCard() + trendCard() + '</div>';
-  h += '<div class="grid2">';
-  h += issueCard(issues, month);
-  h += '<div class="stack"><div class="card"><div class="hd"><h2>미처리 사항 구성</h2><span class="note">' + open.length + '건</span></div><div class="bd">' + donutCard(open) +
-    '<div class="mini"><div class="mt ' + (open.filter(i => i.lv === 'crit').length ? 'crit' : 'good') + '"><b>' + open.filter(i => i.lv === 'crit').length + '</b><span>미처리 긴급</span></div><div class="mt ' + (inspN ? 'serious' : 'good') + '"><b>' + inspN + '</b><span>법정검사 주의</span></div><div class="mt ' + (mgrN ? 'crit' : 'good') + '"><b>' + mgrN + '</b><span>선임자 공란</span></div><div class="mt ' + (ltN >= 3 ? 'warn' : 'good') + '"><b>' + ltN + '</b><span>2개월↑ 세대</span></div></div></div></div></div>';
-  h += '</div>';
   const hRest = h; h = sumTable(month);
   h = hHero + h + hRest;
   el.innerHTML = h;
