@@ -610,6 +610,14 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .memo .mh svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .memo .mh .chip { margin-left: auto; }
 .memo textarea { min-height: 96px; background: var(--surface); }
+.hero .hl { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; min-width: 0; }
+.hero .hflow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid var(--hero-line); }
+.hero .hflow .fl { display: block; font-size: 11px; color: var(--hero-mut); letter-spacing: .04em; }
+.hero .hflow b { display: block; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.2; }
+.hero .hflow b.up { color: var(--hc); } .hero .hflow b.down { color: var(--hg); }
+.hero .hflow small { display: block; font-size: 10.5px; color: var(--hero-mut); }
+.hero .hflow i { font-style: normal; color: var(--gold-hi); opacity: .8; }
+@media (max-width: 480px) { .hero .hflow { grid-template-columns: 1fr; } .hero .hflow i { display: none; } }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -1048,9 +1056,9 @@ function renderHome() {
   const serOk = hms.map(m => { const rs = reportsFor(m), n = sum(rs, r => r.inspections.length + r.managers.length), bad = sum(rs, r => inspAlerts(r).length + managerAlerts(r).length); return n ? 100 * (n - bad) / n : null; });
   const serSub = hms.map(m => all.length ? 100 * reportsFor(m).length / all.length : null);
   const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
-  let h = '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
+  let h = '<div class="hero"><div class="hl"><div class="htop"><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
-    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div>' + siteShareBar(reps, true) + '</div>' +
+    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div></div>' + heroFlow(reps, tot) + '<div class="hbot">' + siteShareBar(reps, true) + '</div></div>' +
     '<div class="rings">' +
       ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
       ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대', { vals: serLt, fmt: pp, goodWhen: 'down' }) +
@@ -1301,12 +1309,11 @@ function renderSite() {
   const sLt = sms.map(p => { const u2 = unitSummary(reportBy(key, p)); return u2.length ? 100 * u2.filter(u => u.n >= 2).length / u2.length : null; });
   const sOk = sms.map(p => { const x = reportBy(key, p), n = x.inspections.length + x.managers.length; return n ? 100 * (n - inspAlerts(x).length - managerAlerts(x).length) / n : null; });
   const sD = sdm.map(m => { const bz = bizDaysIn(m), dc = state.dailies.find(d => d.id === key + '_' + m), n = dc && dc.days ? Object.keys(dc.days).length : 0; return bz ? 100 * n / bz : null; });
-  h += '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(r.period) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
+  h += '<div class="hero"><div class="hl"><div class="htop"><div class="eyebrow">체납 총액 · ' + monthLabel(r.period) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (d == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (d > 0 ? 'up' : 'down') + '">' + (d >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(d)) + '원 ' + shortMonth(pt0.period) + ' 대비' + (ptot ? ' (' + (d >= 0 ? '+' : '-') + Math.abs(100 * d / ptot).toFixed(1) + '%)' : '') + '</span>') +
-    '<div class="hchips"><span>당월 발생 <b>' + (r.arrears.monthChange == null ? '–' : (r.arrears.monthChange > 0 ? '+' : '') + krw(r.arrears.monthChange)) + '</b></span>' +
-    (r.arrears.prevBalance != null ? '<span>전월 잔액 <b>' + krw(r.arrears.prevBalance) + '</b></span>' : '') +
-    '<span>최대 미납 <b>' + (top ? esc(top.unit) : '–') + '</b>' + (top ? ' ' + krw(top.total) + '원 · ' + top.n + '개월' : '') + '</span></div>' +
-    ageBar(us, tot) + '</div>' +
+    '<div class="hchips"><span>최대 미납 <b>' + (top ? esc(top.unit) : '–') + '</b>' + (top ? ' ' + krw(top.total) + '원 · ' + top.n + '개월' : '') + '</span><span>미납 세대 <b>' + us.length + '</b> · 2개월↑ <b>' + lt.length + '</b></span></div></div>' +
+    heroFlow([r], tot, true) +
+    '<div class="hbot">' + ageBar(us, tot) + '</div></div>' +
     '<div class="rings">' +
     ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대', { vals: sRate, fmt: pp, goodWhen: 'down' }) +
     ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) +
@@ -1341,6 +1348,16 @@ function renderSite() {
   $('#ltOnly').addEventListener('change', drawU); $('#showAllU').addEventListener('change', drawU); drawU();
   const del = $('#delRep');
   if (del) del.addEventListener('click', () => { if (del.dataset.arm) { store.deleteReport(r.id).then(() => toast('삭제했습니다')).catch(e => toast('삭제 실패: ' + e.message)); } else { del.dataset.arm = '1'; del.textContent = '정말 삭제하려면 한 번 더 누르세요'; setTimeout(() => { del.dataset.arm = ''; del.textContent = '이 보고서 삭제'; }, 4000); } });
+}
+/* 전월 잔액 → 당월 발생 → 현재 체납 (보고서에 적힌 값 합산) */
+function heroFlow(reps, tot, single) {
+  const pb = reps.map(r => r.arrears && r.arrears.prevBalance).filter(v => v != null), mc = reps.map(r => r.arrears && r.arrears.monthChange).filter(v => v != null);
+  const pbs = pb.reduce((a, b) => a + b, 0), mcs = mc.reduce((a, b) => a + b, 0);
+  const cell = (lb, v, sub, cls) => '<div><span class="fl">' + lb + '</span><b class="' + (cls || '') + '">' + v + '</b><small>' + sub + '</small></div>';
+  const sub = (n, one) => single ? one : (n ? n + '개소 합산' : '보고서에 기재 없음');
+  return '<div class="hflow">' + cell('전월 체납 잔액', pb.length ? krw(pbs) + '원' : '–', sub(pb.length, pb.length ? '보고서 기재값' : '기재 없음')) + '<i>→</i>' +
+    cell('당월 발생', mc.length ? (mcs > 0 ? '+' : '') + krw(mcs) + '원' : '–', sub(mc.length, mc.length ? '이번 달 신규 발생' : '기재 없음'), mcs > 0 ? 'up' : mcs < 0 ? 'down' : '') + '<i>→</i>' +
+    cell('현재 체납 총액', krw(tot) + '원', single ? '이번 달 보고 기준' : reps.length + '개소 제출') + '</div>';
 }
 /* 사업소별 체납 총액 비중 (상위 6개소 + 기타) */
 function siteShareBar(reps, compact) {
