@@ -1296,7 +1296,6 @@ function renderSite() {
     '<div class="row"><span class="note">보유 보고서</span><span class="missing">' + monthChips + '</span>' + (r && state.canWrite ? '<button class="btn sm danger" id="delRep">이 보고서 삭제</button>' : '') + '</div></div></div>';
   if (!r) {
     h += '<div class="card"><div class="empty"><h2>' + esc(siteName(key)) + ' · ' + monthLabel(state.month) + ' 보고서 없음</h2><p>' + (list.length ? '위의 보유 보고서에서 다른 월을 고르거나 이 달 파일을 업로드하세요.' : '이 사업소의 월간보고가 아직 없습니다.') + '</p><button class="btn primary" data-go="upload">업로드</button></div></div>';
-    h += renderSiteDaily(key);
     el.innerHTML = h; bindSiteSel(); return;
   }
   const tot = arrearsTotal(r), pt0 = prevTotalOf(r), ptot = pt0.v, d = (tot != null && ptot != null) ? tot - ptot : null;
@@ -1338,7 +1337,6 @@ function renderSite() {
     (r.etc && r.etc.length ? '<dt>기타</dt><dd>' + listOr(r.etc) + '</dd>' : '') + '</dl></div></div>' +
     '<div class="card"><div class="hd"><h2>근무직원 자격증</h2><span class="note">' + new Set(r.certs.map(c => c.name)).size + '명 · ' + r.certs.length + '건</span></div><div class="bd">' + (r.certs.length ? '<div class="certs">' + r.certs.map(c => '<div class="certl"><b>' + esc(c.name) + '</b>' + String(c.certs || '').split(/,\s*/).filter(Boolean).map(x => '<span class="chip">' + esc(x) + '</span>').join('') + (c.etc ? '<span class="muted small">' + esc(c.etc) + '</span>' : '') + '</div>').join('') + '</div>' : '<span class="muted small">기록 없음</span>') + '</div></div></div>';
   h += '</div>';
-  h += renderSiteDaily(key);
   el.innerHTML = h;
   bindSiteSel();
   const drawU = () => {
@@ -1381,18 +1379,6 @@ function ageBar(us, tot) {
 function statusTiles(items) { return '<div class="sts">' + items.map(x => '<div class="st ' + x.lv + '"><div class="stn">' + esc(x.name) + '</div><div class="std">' + esc(x.sub || '') + '</div>' + (x.label ? '<span class="chip ' + x.lv + '">' + esc(x.label) + '</span>' : '') + '</div>').join('') + '</div>'; }
 function listOr(arr) { arr = (arr || []).filter(Boolean); return arr.length ? '<ul class="plain">' + arr.map(x => '<li>' + esc(x.replace(/^[○*•\-]\s*/, '')) + '</li>').join('') + '</ul>' : '<span class="muted">–</span>'; }
 function bindSiteSel() { const s = $('#siteSel'); if (s) s.addEventListener('change', () => { state.site = s.value; render(); }); }
-function renderSiteDaily(key) {
-  const month = state.month, [y, m] = month.split('-').map(Number), days = new Date(y, m, 0).getDate(), td = todayStr();
-  const doc = state.dailies.find(x => x.id === key + '_' + month), dd = doc && doc.days ? doc.days : {};
-  const entries = dailyList(month).filter(e => e.siteKey === key), urgent = entries.filter(e => e.urgent), biz = bizDaysIn(month), n = Object.keys(dd).length;
-  let strip = '<div class="dstrip">';
-  for (let i = 1; i <= days; i++) { const k = pad2(i), dt = month + '-' + k, e = dd[k], wk = isWeekend(dt), fut = dt > td; strip += '<button class="dc' + (e ? (e.urgent ? ' urgent' : ' has') : (fut ? ' future' : wk ? ' wk' : ' miss')) + '" data-go="daily" data-key="' + key + '" data-date="' + dt + '" title="' + esc(dateLabel(dt) + (e ? ' 제출' : fut ? '' : ' 미제출')) + '"' + (fut ? ' disabled' : '') + '>' + i + '</button>'; }
-  strip += '</div>';
-  return '<div class="card"><div class="hd"><h2>이 달의 일일보고 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="note">' + n + ' / ' + biz + '일 (평일 기준)' + (urgent.length ? ' · <span class="chip crit">긴급 ' + urgent.length + '</span>' : '') + ' <button class="btn link" data-go="daily" data-key="' + key + '">일일보고 탭</button></span></div><div class="bd">' + strip +
-    '<div class="legend" style="margin-top:8px"><span><i class="has"></i>제출</span><span><i class="urgent"></i>긴급</span><span><i></i>미제출</span><span><i class="wkl"></i>휴일</span></div>' +
-    (entries.length ? '<div class="tw" style="margin-top:12px"><table class="sumtbl cmp"><thead><tr><th>일자</th><th>업무</th><th>민원</th><th>특이사항</th></tr></thead><tbody>' + entries.slice().reverse().slice(0, 5).map(e => '<tr class="click" data-go="daily" data-key="' + key + '" data-date="' + e.date + '"><td class="num" style="white-space:nowrap">' + esc(dateLabel(e.date).slice(5)) + (e.urgent ? ' <span class="chip crit">긴급</span>' : '') + '</td><td class="small wrap"><div class="clamp2">' + esc((e.work || []).join(' / ') || '–') + '</div></td><td class="small wrap sm"><div class="clamp2">' + esc((e.complaints || []).join(' / ') || '–') + '</div></td><td class="small wrap sm"><div class="clamp2">' + esc((e.issues || []).join(' / ') || '–') + '</div></td></tr>').join('') + '</tbody></table>' + (entries.length > 5 ? '<div class="note" style="padding:6px 0 0">최근 5일만 표시 · 전체는 일일보고 탭에서</div>' : '') + '</div>' : '') + '</div></div>';
-}
-
 /* ---------- 항목 비교 ---------- */
 const ITEMS = [
   { id: 'total', name: '체납 총액', num: true, fmt: won, get: r => arrearsTotal(r) },
