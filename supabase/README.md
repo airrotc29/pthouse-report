@@ -1,4 +1,4 @@
-# Supabase 연결 설계 (설계안 · 미연결)
+# Supabase 연결 (코드 준비 완료 · 설정값만 입력하면 동작)
 
 소장 15명이 **각자 로그인해 월간보고 업로드와 일일보고 작성**을 하고, 본사는 전체를 보는 구조입니다.
 아티팩트(claude.ai)는 외부 서버 호출이 막혀 있어, 연결 후에는 **GitHub Pages 주소**가 본 화면이 됩니다.
@@ -43,12 +43,25 @@
 
 앱의 `store` 는 메서드 이름이 같은 `adapter.js` 로 바꿔 끼웁니다(`makeSupabaseStore`). 일일보고 문서 묶음은 어댑터가 행 ↔ 문서로 변환하므로 화면 코드는 그대로입니다.
 
-## 연결할 때 할 일 (체크리스트)
-1. Supabase 프로젝트 생성 → SQL Editor 에서 `schema.sql` 실행
-2. Authentication → Providers → Email: 가입 확인 메일 끔(Confirm email off), 가입 자체는 막음(Disable signup) — 계정은 본사가 만듦
-3. 본사 계정 1개 생성 → `profiles` 에 `role='hq'` 로 등록
-4. `app.html` 에 supabase-js 로드 + `SUPABASE_URL`, `SUPABASE_ANON_KEY` 설정, `store = makeSupabaseStore(...)`
-5. 로그인 화면 · 비밀번호 변경 화면 · 소장 모드 탭 제한 추가
-6. 아티팩트 데이터 이전: `reports` 7건, `sites` 15건 (스크립트로 일괄 insert)
-7. 사업소 목록에서 15개 사업소의 `code` 지정 → 소장 계정 15개 생성(초기 1234)
-8. 저장소 공개 여부: anon key 는 공개 전제이고 RLS 가 보호하므로 Pages 공개 운영 가능. 단 저장소를 비공개로 두려면 GitHub 유료 플랜 필요
+## 연결 순서 (본사 담당자)
+1. https://supabase.com 에서 프로젝트 생성 (무료, 리전 Northeast Asia 권장)
+2. **SQL Editor → New query** 에 `schema.sql` 전체를 붙여 넣고 Run
+3. 같은 방법으로 `migrate.sql` Run (사업소 15 · 월간보고 7 · 일일보고 1 · 확인 기록 1 이 들어감)
+4. **Authentication → Providers → Email**: `Confirm email` 끔. **Authentication → Settings**: `Allow new users to sign up` 끔 (계정은 본사만 만듦)
+5. **Authentication → Users → Add user → Create new user**
+   - 본사: Email `hq@pthouse.local`, Password `1234`, `Auto Confirm User` 체크
+   - 소장: Email `<아이디>@pthouse.local` (예 `garim@pthouse.local`), Password `1234`, Auto Confirm 체크
+   - 아이디는 `migrate.sql` 에 넣어 둔 값(garim, namsan, dasan, unjeong, firstcity, pyeongtaek, heuros, site08~site15)이며, 업로드 탭 → 사업소 목록에서 바꿀 수 있음. 계정을 만들면 트리거가 사업소와 자동으로 연결함
+6. **Project Settings → API** 의 `Project URL` 과 `anon public` 키를 `config.js` 에 입력 → 커밋·푸시 (또는 Claude 에게 전달)
+7. https://airrotc29.github.io/pthouse-report/ 접속 → `hq` / `1234` 로그인 → 비밀번호 변경 → 전체 화면 확인
+8. 소장에게 아이디와 초기 비밀번호 `1234` 전달. 첫 로그인 때 변경 화면이 뜸
+
+## 동작 방식
+- `index.html`(Pages)이 `supabase-js` 와 `config.js` 를 읽고, URL·키가 있으면 로그인 화면을 먼저 띄움. 비어 있으면 브라우저 저장 모드.
+- 소장 모드: 탭 = 일일보고 · 업로드 · 사업소별. 사업소 선택은 자기 사업소로 고정, 다른 사업소 보고서 파일은 저장 거부. 작성자는 프로필 이름으로 미리 채움
+- 본사 모드: 전체 현황판 + 업로드 탭 사업소 목록에서 **로그인 아이디(code)** 지정·변경
+- 비밀번호 변경: 헤더의 "비밀번호" 버튼. 규칙 8자 이상 · 영문+숫자, 초기값 1234 로는 설정 불가
+- 데이터 변경은 실시간 구독으로 다른 사용자 화면에 반영됨
+
+## 아티팩트(claude.ai)와의 관계
+아티팩트는 외부 서버 호출이 막혀 있어 Supabase 에 연결되지 않습니다. 연결 후에는 Pages 주소가 본 화면이고, 아티팩트에는 연결 전 데이터가 남습니다.

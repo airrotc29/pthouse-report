@@ -123,3 +123,28 @@ create trigger reports_sync_units after insert or update on public.reports for e
 -- ───────────────────────── 5. (선택) 원본 엑셀 보관 버킷 ─────────────────────────
 -- Storage > New bucket: reports (private). 정책:
 --   select/insert/update: bucket_id = 'reports' and (public.is_hq() or (storage.foldername(name))[1] = public.auth_site())
+
+-- ───────────────────────── 6. 계정 생성 시 profiles 자동 연결 ─────────────────────────
+-- Authentication → Users → Add user 로 <코드>@pthouse.local 계정을 만들면 sites.code 와 맞춰 소장 프로필이 생긴다.
+-- hq@pthouse.local 은 본사(hq). 코드가 sites 에 없으면 생성이 거부된다.
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare c text; k text;
+begin
+  c := lower(split_part(new.email, '@', 1));
+  if c = 'hq' or c like 'hq%' then
+    insert into public.profiles (id, role, must_change_pw) values (new.id, 'hq', true) on conflict (id) do nothing;
+  else
+    select key into k from public.sites where code = c;
+    if k is null then raise exception '사업소 코드 "%" 가 sites 에 없습니다. 업로드 탭 → 사업소 목록에서 아이디를 먼저 지정하세요.', c; end if;
+    insert into public.profiles (id, role, site_key, must_change_pw) values (new.id, 'manager', k, true) on conflict (id) do nothing;
+  end if;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+
+-- ───────────────────────── 7. 실시간 반영 ─────────────────────────
+do $$ begin
+  alter publication supabase_realtime add table public.sites, public.reports, public.dailies, public.acks;
+exception when duplicate_object then null; end $$;

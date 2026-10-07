@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>사업소 보고 현황판</title>
 <style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 </head>
 <body>
 <title>사업소 보고 현황판</title>
@@ -685,6 +687,23 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .nmr { display: flex; align-items: center; gap: 8px; }
 .nmr .sring { width: 32px; height: 32px; margin: 0; } .nmr .sring b { font-size: 10.5px; }
 .cellv .ci { font-style: normal; font-weight: 800; margin-right: 4px; }
+/* auth gate + me box */
+#authGate { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: radial-gradient(90% 120% at 100% -10%, var(--hero-b) 0%, transparent 62%), linear-gradient(160deg, var(--hero-a), var(--hero-a)); }
+.gate { width: min(100%, 400px); background: var(--surface); border-radius: 16px; padding: 24px 24px 20px; box-shadow: 0 20px 60px -20px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: 14px; }
+.gbrand { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.gbrand i { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); box-shadow: inset 0 0 0 1.5px var(--gold-hi); flex: none; }
+.gbrand b { display: block; font-size: 17px; letter-spacing: -.01em; }
+.gbrand span { font-size: 12.5px; color: var(--muted); }
+.gate form { display: flex; flex-direction: column; gap: 12px; }
+.gate label { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--fg-2); font-weight: 500; }
+.gate label small { font-weight: 400; color: var(--muted); margin-left: 4px; }
+.gate input { width: 100%; min-height: 40px; font-size: 15px; }
+.gate .btn.primary { min-height: 42px; font-size: 14.5px; justify-content: center; }
+.gate p { margin: 0; font-size: 13px; color: var(--fg-2); }
+.mebox { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--fg-2); }
+.mebox b { color: var(--fg); }
+.mebox .btn.sm { padding: 3px 9px; }
+body.manager .hq-only { display: none !important; }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -713,6 +732,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
       <label class="small fg2" for="monthSel">보고 월</label>
       <select id="monthSel" aria-label="보고 월"></select>
       <span class="badge" id="storeBadge"><span class="dot"></span><span id="storeBadgeText">연결 중</span></span>
+      <span id="meBox" class="mebox" hidden></span>
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
@@ -761,6 +781,24 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
     </div>
   </section>
 </main>
+<div id="authGate" hidden>
+  <div class="gate">
+    <div class="gbrand"><i></i><div><b>사업소 보고 현황판</b><span>관리사무소 로그인</span></div></div>
+    <form id="loginForm" autocomplete="on">
+      <label>아이디 (사업소 코드)<input id="lgId" autocomplete="username" autocapitalize="off" spellcheck="false" required placeholder="예: garim"></label>
+      <label>비밀번호<input id="lgPw" type="password" autocomplete="current-password" required></label>
+      <button type="submit" class="btn primary" id="lgBtn">로그인</button>
+      <div class="note" id="lgMsg">초기 비밀번호는 본사에서 안내받은 값입니다. 첫 로그인 때 새 비밀번호로 바꿉니다.</div>
+    </form>
+    <form id="pwForm" hidden autocomplete="on">
+      <p id="pwLead">초기 비밀번호를 사용 중입니다. 새 비밀번호로 바꿔야 계속할 수 있습니다.</p>
+      <label>새 비밀번호 <small>8자 이상 · 영문과 숫자 포함</small><input id="pw1" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label>새 비밀번호 확인<input id="pw2" type="password" autocomplete="new-password" required></label>
+      <div class="row"><button type="submit" class="btn primary" id="pwBtn">변경하고 시작</button><button type="button" class="btn" id="pwCancel" hidden>취소</button><button type="button" class="btn link" id="pwLogout">로그아웃</button></div>
+      <div class="note" id="pwMsg"></div>
+    </form>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -802,13 +840,13 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], siteList: [], draft: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp }));
 
 /* ===================== 저장소 (db 또는 이 브라우저) ===================== */
-const store = {
+let store = {
   db: null, unsub: [],
   async init() {
     let db = null;
@@ -917,6 +955,7 @@ function renderBadge() {
   const b = $('#storeBadge'), t = $('#storeBadgeText');
   if (state.mode === 'db') { b.classList.add('on'); t.textContent = state.canWrite ? '공유 저장소 연결됨' : '공유 저장소 (읽기 전용)'; }
   else if (state.mode === 'local') { b.classList.remove('on'); t.textContent = '이 브라우저에만 저장'; }
+  else if (state.mode === 'supabase') { b.classList.add('on'); t.textContent = 'Supabase 연결됨'; }
   else { t.textContent = '연결 중'; }
 }
 
@@ -1354,11 +1393,12 @@ function kpi(lb, v, d, cls, dcls) { return '<div class="kpi ' + (cls || '') + '"
 
 /* ---------- 사업소별 ---------- */
 function renderSite() {
-  const el = $('#view-site'), all = sites();
+  const el = $('#view-site'), all = mgrSites();
+  if (isMgr()) state.site = mySite();
   if (!all.length) { el.innerHTML = '<div class="card"><div class="empty"><h2>사업소 자료가 없습니다</h2><p>월간보고를 업로드하거나 일일보고를 작성하면 사업소가 생깁니다.</p><button class="btn primary" data-go="upload">업로드</button></div></div>'; return; }
   const key = state.site, list = siteReports(key), r = reportBy(key, state.month);
   const monthChips = list.length ? list.map(x => '<button class="fbtn" data-go="site" data-key="' + key + '" data-month="' + x.period + '" aria-pressed="' + (x.period === state.month) + '">' + shortMonth(x.period) + '</button>').join('') : '<span class="muted small">없음</span>';
-  let h = '<div class="card"><div class="hd"><div class="row"><select id="siteSel" aria-label="사업소">' + all.map(s => '<option value="' + s.key + '"' + (s.key === key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>' +
+  let h = '<div class="card"><div class="hd"><div class="row"><select id="siteSel" aria-label="사업소"' + (isMgr() ? ' disabled' : '') + '>' + all.map(s => '<option value="' + s.key + '"' + (s.key === key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select>' +
     (r ? '<span class="small fg2">' + monthLabel(r.period) + ' · 작성자 ' + esc(r.author || '–') + ' · 작성기간 ' + esc(r.periodText || '–') + (r.unpaidAsOf ? ' · 미납 기준일 ' + esc(r.unpaidAsOf) : '') + '</span>' : '<span class="small fg2">' + monthLabel(state.month) + ' 보고서 없음</span>') + '</div>' +
     '<div class="row"><span class="note">보유 보고서</span><span class="missing">' + monthChips + '</span>' + (r && state.canWrite ? '<button class="btn sm danger" id="delRep">이 보고서 삭제</button>' : '') + '</div></div></div>';
   if (!r) {
@@ -1716,7 +1756,8 @@ function renderDailyForm(force) {
   const wrap = $('#dailyFormWrap'); if (!wrap) return;
   if (!force && wrap.innerHTML && wrap.contains(document.activeElement)) return;  /* 입력 중에는 데이터 갱신으로 다시 그리지 않는다 */
   if (!state.draft) { const saved = lsGet('mwr.draft2', null); state.draft = saved && saved.date && saved.checks ? saved : newDraft(); }
-  const d = state.draft, all = sites(), ed = state.editing;
+  const d = state.draft, all = mgrSites(), ed = state.editing;
+  if (isMgr()) { d.key = mySite(); if (!d.author && state.me.name) d.author = state.me.name; }
   if (d.key && d.key !== '__new' && !all.some(s => s.key === d.key)) d.key = '';
   if ((!d.key || (d.key === '__new' && !d.newName)) && all.length) d.key = (state.site && all.some(x => x.key === state.site)) ? state.site : all[0].key;
   if (!d.key) d.key = '__new';
@@ -1737,7 +1778,7 @@ function renderDailyForm(force) {
   h += '<div class="fsum-wrap"><span class="eyebrow">작성 요약</span><div class="fsum" id="fsum">' + formSummary(d) + '</div></div>';
   h += fsec(1, '기본', '사업소 · 일자 · 작성자 · 근무 인원', (d.key && d.key !== '__new' ? '<button type="button" class="btn sm" id="dPrev">전일 보고 불러오기</button>' : ''),
     '<div class="form">' +
-    '<div class="f"><label for="dSite">사업소</label><select data-f="key" id="dSite">' + all.map(s => '<option value="' + s.key + '"' + (s.key === d.key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '<option value="__new"' + (d.key === '__new' ? ' selected' : '') + '>+ 새 사업소 입력</option></select></div>' +
+    '<div class="f"><label for="dSite">사업소</label><select data-f="key" id="dSite"' + (isMgr() ? ' disabled' : '') + '>' + all.map(s => '<option value="' + s.key + '"' + (s.key === d.key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + (isMgr() ? '' : '<option value="__new"' + (d.key === '__new' ? ' selected' : '') + '>+ 새 사업소 입력</option>') + '</select></div>' +
     (d.key === '__new' ? '<div class="f"><label>새 사업소명</label>' + inp('newName', d.newName, 'placeholder="예: 남산센트럴시티투웨니퍼스트"') + '</div>' : '') +
     '<div class="f"><label>보고 일자</label><input type="date" data-f="date" id="dDate" value="' + esc(d.date) + '" required></div>' +
     '<div class="f"><label>작성자</label>' + inp('author', d.author, 'placeholder="성명" id="dAuthor"') + '</div>' +
@@ -1831,19 +1872,20 @@ function renderUpload() {
   renderSiteMgr();
 }
 function renderSiteMgr() {
-  const all = sites(), masterIds = new Set((state.siteList || []).map(x => x.id)), cur = todayStr().slice(0, 7);
+  const all = mgrSites(), masterIds = new Set((state.siteList || []).map(x => x.id)), cur = todayStr().slice(0, 7);
   let ms = Array.from(new Set(state.reports.map(r => r.period))); if (!ms.includes(cur)) ms.push(cur); ms.sort(); ms = ms.slice(-8);
   $('#siteCount').textContent = all.length + '개소 · ' + state.reports.length + '건';
   const rows = all.map(s => {
     const nR = siteReports(s.key).length, nD = state.dailies.filter(d => d.siteKey === s.key).length, locked = nR > 0;
     const cells = ms.map(m => { const r = reportBy(s.key, m); if (!r) return '<td class="m"><div class="ucell miss" title="' + esc(s.name + ' ' + monthLabel(m) + ' 미제출') + '">미제출</div></td>';
       return '<td class="m"><div class="ucell has" data-go="site" data-key="' + s.key + '" data-month="' + m + '" title="' + esc(monthLabel(m) + ' · ' + (r.fileName || '') + ' · 업로드 ' + (r.uploadedAt || '').slice(0, 10) + (r.author ? ' · ' + r.author : '')) + '"><span class="amt">' + krw(arrearsTotal(r)) + '</span><span class="sub">' + esc((r.uploadedAt || '').slice(5, 10).replace('-', '/')) + '</span>' + (state.canWrite ? '<button class="x" data-del="' + r.id + '" aria-label="' + esc(s.name + ' ' + monthLabel(m) + ' 보고서 삭제') + '">✕</button>' : '') + '</div></td>'; }).join('');
-    return '<tr><td>' + (state.canWrite && !locked ? '<input type="text" class="sname" data-sk="' + s.key + '" value="' + esc(s.name) + '" aria-label="사업소명">' : '<b>' + esc(s.name) + '</b>') +
+    const codeCell = (state.mode === 'supabase' && !isMgr()) ? '<div class="small" style="margin-top:4px">아이디 <input type="text" class="scode" data-sk="' + s.key + '" value="' + esc((state.siteList.find(x => x.id === s.key) || {}).code || '') + '" placeholder="로그인 아이디" style="width:120px;min-height:26px;padding:2px 6px;font-size:12px"></div>' : '';
+    return '<tr><td>' + (state.canWrite && !locked && !isMgr() ? '<input type="text" class="sname" data-sk="' + s.key + '" value="' + esc(s.name) + '" aria-label="사업소명">' : '<b>' + esc(s.name) + '</b>') + codeCell +
       '<div class="small muted">' + (nR ? '월간 ' + nR + '건' : '월간보고 없음') + (nD ? ' · 일일 ' + nD + '개월' : '') + (masterIds.has(s.key) ? '' : ' · 자동 생성') + '</div></td>' + cells +
       '<td class="r">' + (state.canWrite && !locked && !nD ? '<button class="btn link" data-sdel="' + s.key + '" style="color:var(--crit)">삭제</button>' : '') + '</td></tr>';
   }).join('');
   $('#siteMgr').innerHTML = '<table class="utbl"><thead><tr><th>사업소</th>' + ms.map(m => '<th class="m">' + esc(m.slice(0, 4) === cur.slice(0, 4) ? shortMonth(m) : m.slice(2).replace('-', '.')) + '<div class="small muted" style="font-weight:400">' + reportsFor(m).length + '/' + all.length + '</div></th>').join('') + '<th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (ms.length + 2) + '" class="muted">등록된 사업소가 없습니다.</td></tr>') + '</tbody></table>' +
-    (state.canWrite ? '<div class="row" style="padding:10px 12px;border-top:1px solid var(--line-soft)"><input type="text" id="siteNew" placeholder="새 사업소명" aria-label="새 사업소명" style="min-width:240px"><button class="btn primary sm" id="siteAdd">사업소 추가</button><span class="note" id="siteMsg"></span></div>' : '');
+    (state.canWrite && !isMgr() ? '<div class="row" style="padding:10px 12px;border-top:1px solid var(--line-soft)"><input type="text" id="siteNew" placeholder="새 사업소명" aria-label="새 사업소명" style="min-width:240px"><button class="btn primary sm" id="siteAdd">사업소 추가</button><span class="note" id="siteMsg"></span></div>' : '');
 }
 async function addSite(name) {
   name = ReportParser.normalizeSite(name); if (!name) return;
@@ -1855,7 +1897,7 @@ function pendCard(p, i) {
   const dup = p.id && state.reports.find(r => r.id === p.id);
   const lt = longTerm(p).length;
   return '<div class="pcard"><div class="pr"><b>' + esc(p.fileName) + '</b>' + (dup ? '<span class="chip warn">기존 ' + monthLabel(dup.period) + ' 보고서 교체</span>' : '<span class="chip info">신규</span>') + '<button class="btn sm" data-rm="' + i + '" style="margin-left:auto">제거</button></div>' +
-    '<div class="pr"><label class="small fg2">사업소 <input type="text" data-f="site" data-i="' + i + '" value="' + esc(p.site) + '"></label><label class="small fg2">보고 월 <input type="month" data-f="period" data-i="' + i + '" value="' + esc(p.period) + '"></label><label class="small fg2">작성자 <input type="text" data-f="author" data-i="' + i + '" value="' + esc(p.author) + '" style="width:120px"></label></div>' +
+    '<div class="pr"><label class="small fg2">사업소 <input type="text" data-f="site" data-i="' + i + '" value="' + esc(p.site) + '"' + (isMgr() ? ' disabled' : '') + '></label>' + (isMgr() && p.siteKey && p.siteKey !== mySite() ? '<span class="chip crit">내 사업소 보고서가 아닙니다 (저장 불가)</span>' : '') + '<label class="small fg2">보고 월 <input type="month" data-f="period" data-i="' + i + '" value="' + esc(p.period) + '"></label><label class="small fg2">작성자 <input type="text" data-f="author" data-i="' + i + '" value="' + esc(p.author) + '" style="width:120px"></label></div>' +
     '<div class="sum"><span>총세대 <b>' + comma(p.arrears.units) + '</b></span><span>체납세대 <b>' + comma(arrearsUnits(p)) + '</b></span><span>체납총액 <b>' + won(arrearsTotal(p)) + '</b></span><span>미납내역 <b>' + p.unpaid.length + '건</b></span><span>2개월↑ <b>' + lt + '세대</b></span><span>주요업무 <b>' + p.tasks.reduce((a, t) => a + t.items.length, 0) + '건</b></span><span>법정검사 <b>' + p.inspections.length + '</b></span><span>선임 <b>' + p.managers.filter(m => m.name && !isNA(m.name)).length + '/' + p.managers.length + '</b></span><span>자격증 <b>' + p.certs.length + '</b></span></div>' +
     (p.warnings.length ? '<div class="warns">⚠ ' + p.warnings.map(esc).join(' · ') + '</div>' : '') +
     '<details><summary>읽어 들인 내용 전체 보기</summary><pre>' + esc(JSON.stringify(Object.assign({}, p, { unpaid: p.unpaid.length + '건 (생략)' }), null, 1)) + '</pre></details></div>';
@@ -1873,6 +1915,7 @@ function bindUpload() {
     if (e.target.id === 'clearAll') { state.pending = []; renderUpload(); return; }
     if (e.target.id === 'saveAll') {
       const bad = state.pending.filter(p => !p.site || !p.period); if (bad.length) { toast('사업소명과 보고 월이 비어 있는 파일이 있습니다.'); return; }
+      if (isMgr() && state.pending.some(p => p.siteKey !== mySite())) { toast('내 사업소(' + siteName(mySite()) + ') 보고서만 올릴 수 있습니다. 파일의 건물명을 확인하세요.'); return; }
       e.target.disabled = true; let ok = 0;
       for (const p of state.pending.slice()) { try { await store.saveReport(p); ok++; state.pending = state.pending.filter(x => x !== p); } catch (err) { toast('저장 실패 (' + p.fileName + '): ' + (err.message || err.code)); } }
       toast(ok + '건 저장했습니다'); if (ok) state.month = state.reports.length ? state.month : state.month; renderUpload(); renderMonthSel();
@@ -1895,6 +1938,8 @@ function bindUpload() {
   });
   $('#siteMgr').addEventListener('keydown', e => { if (e.target.id === 'siteNew' && e.key === 'Enter') { e.preventDefault(); $('#siteAdd').click(); } });
   $('#siteMgr').addEventListener('change', async e => {
+    const cd = e.target.closest('input.scode');
+    if (cd) { const code = cd.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, ''); cd.value = code; if (!code) { toast('아이디는 영문 소문자·숫자로 입력하세요'); return; } if (state.siteList.some(x => x.code === code && x.id !== cd.dataset.sk)) { toast('이미 쓰는 아이디입니다'); return; } const cur = state.siteList.find(x => x.id === cd.dataset.sk); try { await store.setSite({ id: cd.dataset.sk, name: cur ? cur.name : siteName(cd.dataset.sk), code }); toast('아이디를 저장했습니다'); } catch (err) { toast('저장 실패: ' + (err.message || err)); } return; }
     const inp = e.target.closest('input.sname'); if (!inp) return;
     const name = ReportParser.normalizeSite(inp.value), old = inp.dataset.sk;
     if (!name) { toast('사업소명을 비울 수 없습니다'); renderSiteMgr(); return; }
@@ -1911,6 +1956,115 @@ async function addFiles(files) {
     catch (err) { toast(f.name + ' 읽기 실패: ' + (err.message || err)); }
   }
   renderUpload();
+}
+
+/* ===================== Supabase 저장소 + 로그인 (GitHub Pages 에서 config.js 가 있을 때) ===================== */
+let sb = null;
+const isMgr = () => !!(state.me && state.me.role === 'manager');
+const mySite = () => (state.me && state.me.site_key) || '';
+function mgrSites() { return isMgr() ? sites().filter(s => s.key === mySite()) : sites(); }
+function makeSupabaseStore(client) {
+  const rowToReport = r => Object.assign({}, r.data, { id: r.id, siteKey: r.site_key, period: r.period, author: r.author, fileName: r.file_name, uploadedAt: r.uploaded_at });
+  const rowsToDailies = rows => {
+    const m = new Map();
+    rows.forEach(r => { const period = r.date.slice(0, 7), dd = r.date.slice(8, 10), id = r.site_key + '_' + period;
+      if (!m.has(id)) m.set(id, { id, siteKey: r.site_key, site: (state.siteList.find(x => x.id === r.site_key) || {}).name || r.site_key, period, days: {} });
+      m.get(id).days[dd] = r.entry; });
+    return Array.from(m.values());
+  };
+  let loading = null, timer = null;
+  async function loadAll() {
+    const [sRes, rRes, dRes, aRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*')]);
+    const err = sRes.error || rRes.error || dRes.error || aRes.error; if (err) throw err;
+    state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code }));
+    state.reports = (rRes.data || []).map(rowToReport);
+    state.dailies = rowsToDailies(dRes.data || []);
+    state.acks = (aRes.data || []).map(x => ({ id: x.id, month: x.month, memo: x.memo, at: x.acked_at }));
+    state.canWrite = true; state.loaded = true; onData();
+  }
+  const reload = () => { clearTimeout(timer); timer = setTimeout(() => { loading = loadAll().catch(e => console.error(e)); }, 400); };
+  const q = async p => { const { error } = await p; if (error) throw new Error(error.message || error.code); };
+  return {
+    kind: 'supabase', db: null,
+    async init() {
+      state.mode = 'supabase'; renderBadge();
+      await loadAll();
+      client.channel('pth-all').on('postgres_changes', { event: '*', schema: 'public' }, reload).subscribe();
+    },
+    async saveReport(rec) { const { warnings, ...data } = rec; if (isMgr() && rec.siteKey !== mySite()) throw new Error('내 사업소의 보고서만 올릴 수 있습니다'); await q(client.from('reports').upsert({ id: rec.id, site_key: rec.siteKey, period: rec.period, author: rec.author, file_name: rec.fileName, data, uploaded_at: new Date().toISOString() })); },
+    async deleteReport(id) { await q(client.from('reports').delete().eq('id', id)); },
+    async saveDaily(siteKey, site, date, entry) { await q(client.from('dailies').upsert({ site_key: siteKey, date, entry })); },
+    async deleteDaily(siteKey, date) { await q(client.from('dailies').delete().match({ site_key: siteKey, date })); },
+    async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id })); },
+    async deleteSite(id) { await q(client.from('sites').update({ active: false }).eq('key', id)); },
+    async renameSite(oldKey, newName) { await q(client.from('sites').update({ name: newName }).eq('key', oldKey)); },
+    async setAck(doc) { await q(client.from('acks').upsert({ id: doc.id, month: doc.month, memo: doc.memo || '' })); },
+    async clearAck(id) { await q(client.from('acks').delete().eq('id', id)); },
+  };
+}
+function showGate(kind, msg) {
+  const g = $('#authGate'); g.hidden = false;
+  $('#loginForm').hidden = kind !== 'login'; $('#pwForm').hidden = kind !== 'pw';
+  if (kind === 'login') { $('#lgMsg').textContent = msg || '초기 비밀번호는 본사에서 안내받은 값입니다. 첫 로그인 때 새 비밀번호로 바꿉니다.'; $('#lgBtn').disabled = false; setTimeout(() => $('#lgId').focus(), 50); }
+  else { const forced = !!(state.me && state.me.must_change_pw); $('#pwLead').textContent = forced ? '초기 비밀번호를 사용 중입니다. 새 비밀번호로 바꿔야 계속할 수 있습니다.' : '새 비밀번호를 입력하세요.'; $('#pwCancel').hidden = forced; $('#pwBtn').textContent = forced ? '변경하고 시작' : '변경'; $('#pwMsg').textContent = msg || ''; $('#pw1').value = ''; $('#pw2').value = ''; setTimeout(() => $('#pw1').focus(), 50); }
+}
+function hideGate() { $('#authGate').hidden = true; }
+function applyRole() {
+  const me = state.me, box = $('#meBox');
+  document.body.classList.toggle('manager', isMgr());
+  if (me) { box.hidden = false; box.innerHTML = '<b>' + esc(me.name || (isMgr() ? '소장' : '본사')) + '</b><span class="muted">' + (isMgr() ? esc(siteName(me.site_key)) + ' · 소장' : '본사') + '</span><button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
+  else box.hidden = true;
+  const allowed = isMgr() ? ['daily', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'upload'];
+  $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
+  if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
+  setTab(state.tab);
+}
+async function afterLogin() {
+  const u = await sb.auth.getUser(); if (!u.data.user) { showGate('login'); return; }
+  const { data: p, error } = await sb.from('profiles').select('*').eq('id', u.data.user.id).single();
+  if (error || !p) { await sb.auth.signOut(); showGate('login', '이 계정에 연결된 사업소·역할 정보가 없습니다. 본사에 문의하세요.'); return; }
+  state.me = p;
+  if (p.must_change_pw) { showGate('pw'); return; }
+  hideGate(); applyRole();
+  try { await store.init(); } catch (e) { toast('데이터를 불러오지 못했습니다: ' + (e.message || e)); }
+  applyRole();
+}
+function bindAuth() {
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault(); const id = $('#lgId').value.trim().toLowerCase(), pw = $('#lgPw').value; if (!id || !pw) return;
+    $('#lgBtn').disabled = true; $('#lgMsg').textContent = '로그인 중…';
+    const { error } = await sb.auth.signInWithPassword({ email: id.includes('@') ? id : id + '@pthouse.local', password: pw });
+    if (error) { $('#lgBtn').disabled = false; $('#lgMsg').textContent = /invalid/i.test(error.message) ? '아이디 또는 비밀번호가 맞지 않습니다.' : '로그인 실패: ' + error.message; return; }
+    $('#lgPw').value = ''; await afterLogin();
+  });
+  $('#pwForm').addEventListener('submit', async e => {
+    e.preventDefault(); const a = $('#pw1').value, b = $('#pw2').value, msg = $('#pwMsg');
+    if (a.length < 8 || !/[A-Za-z]/.test(a) || !/\d/.test(a)) { msg.textContent = '8자 이상, 영문과 숫자를 모두 포함해야 합니다.'; return; }
+    if (a !== b) { msg.textContent = '두 비밀번호가 서로 다릅니다.'; return; }
+    if (a === '1234' || /^1234/.test(a)) { msg.textContent = '초기 비밀번호와 다른 값을 쓰세요.'; return; }
+    $('#pwBtn').disabled = true; msg.textContent = '변경 중…';
+    const { error } = await sb.auth.updateUser({ password: a });
+    $('#pwBtn').disabled = false;
+    if (error) { msg.textContent = '변경 실패: ' + error.message; return; }
+    try { await sb.rpc('mark_pw_changed'); } catch (err) {}
+    if (state.me) state.me.must_change_pw = false;
+    toast('비밀번호를 바꿨습니다'); hideGate();
+    if (!state.loaded) { applyRole(); try { await store.init(); } catch (err) { toast('데이터를 불러오지 못했습니다: ' + (err.message || err)); } applyRole(); }
+  });
+  $('#pwCancel').addEventListener('click', () => hideGate());
+  $('#pwLogout').addEventListener('click', async () => { await sb.auth.signOut(); state.me = null; location.reload(); });
+  document.addEventListener('click', async e => {
+    if (e.target.id === 'pwOpen') showGate('pw');
+    if (e.target.id === 'logoutBtn') { await sb.auth.signOut(); state.me = null; location.reload(); }
+  });
+}
+async function bootSupabase(cfg) {
+  sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  store = makeSupabaseStore(sb);
+  renderMonthSel(); setTab(state.tab); bindAuth();
+  const { data } = await sb.auth.getSession();
+  if (data && data.session) await afterLogin(); else showGate('login');
+  sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { state.me = null; showGate('login'); } });
 }
 
 /* ===================== 전역 이벤트 ===================== */
@@ -1938,6 +2092,8 @@ $('#monthSel').addEventListener('change', e => { state.month = e.target.value; r
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
   const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'upload'].includes(hash)) state.tab = hash;
+  const cfg = window.PTH_CONFIG || {};
+  if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
   renderMonthSel(); setTab(state.tab); store.init();
 }
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});

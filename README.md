@@ -13,7 +13,9 @@ claude.ai 아티팩트로 게시되며, 이 저장소는 그 소스를 보관합
 |------|------|
 | `app.html` | 화면·집계·내보내기 전체 (아티팩트에 게시하는 본문, 원본) |
 | `index.html` | `app.html`을 `<!doctype html>`·메타로 감싼 GitHub Pages용 문서 (`tools_wrap.py`로 생성, 직접 수정하지 않음) |
-| `tools_wrap.py` | `python3 tools_wrap.py app.html index.html` |
+| `tools_wrap.py` | `python3 tools_wrap.py app.html index.html` (supabase-js · config.js 로드 포함) |
+| `config.js` | Supabase Project URL · anon key (GitHub Pages 전용 설정) |
+| `supabase/` | `schema.sql`(테이블·권한·트리거) · `migrate.sql`(데이터 이전) · `README.md`(연결 순서) |
 | `parser.js` | 월간보고 엑셀(.xlsx) → 구조화 레코드 파서 (SheetJS 필요) |
 
 ## 주요 기능
