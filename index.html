@@ -367,6 +367,39 @@ th { letter-spacing: .04em; }
 .hero .hchips b { color: var(--hero-fg); font-variant-numeric: tabular-nums; margin: 0 2px; }
 .hero > .rings:has(.ring:nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 760px) { .hero > .rings:has(.ring:nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sumtbl td.site .sn { font-weight: 600; font-size: 14px; }
+.sring { position: relative; width: 40px; height: 40px; margin: 0 auto; }
+.sring svg { width: 100%; height: 100%; display: block; }
+.sring b { position: absolute; inset: 0; display: grid; place-content: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+.cs { display: flex; flex-direction: column; gap: 5px; min-width: 112px; }
+.cv { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.cv b { font-weight: 600; }
+.pbar { height: 7px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.pbar i { display: block; height: 100%; border-radius: 99px; }
+.dchip { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.dchip.up { background: var(--crit-soft); color: var(--crit); } .dchip.dn { background: var(--good-soft); color: var(--good); }
+.lpill { display: inline-grid; place-content: center; min-width: 30px; height: 26px; border-radius: 99px; font-weight: 600; font-size: 12.5px; font-variant-numeric: tabular-nums; background: var(--surface-2); color: var(--fg-2); }
+.lpill.g { background: var(--good-soft); color: var(--good); } .lpill.w { background: var(--warn-soft); color: #7a5300; } .lpill.s { background: var(--serious-soft); color: #9a3f1b; } .lpill.c { background: var(--crit); color: #fff; }
+:root[data-theme="dark"] .lpill.w, :root[data-theme="dark"] .lpill.s { color: #ffd48a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lpill.w, :root:not([data-theme="light"]) .lpill.s { color: #ffd48a; } }
+.spa { display: block; width: 104px; height: 32px; overflow: visible; }
+.sumtbl tbody tr { height: 48px; }
+.sumtbl th, .sumtbl td { padding-block: 6px; }
+.sumtbl td.site .sn { font-size: 13.5px; }
+.sring { width: 34px; height: 34px; } .sring b { font-size: 11px; }
+.cs { gap: 3px; min-width: 100px; } .pbar { height: 5px; }
+.spa { width: 88px; height: 26px; }
+.mini { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.mt { border-radius: 10px; padding: 8px 6px; text-align: center; background: var(--surface-2); }
+.mt b { display: block; font-size: 20px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mt span { font-size: 11px; color: var(--fg-2); }
+.mt.crit { background: var(--crit-soft); } .mt.crit b { color: var(--crit); } .mt.serious { background: var(--serious-soft); } .mt.serious b { color: #9a3f1b; } .mt.warn { background: var(--warn-soft); } .mt.warn b { color: #7a5300; } .mt.good { background: var(--good-soft); } .mt.good b { color: var(--good); }
+:root[data-theme="dark"] .mt.serious b, :root[data-theme="dark"] .mt.warn b { color: #ffd48a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mt.serious b, :root:not([data-theme="light"]) .mt.warn b { color: #ffd48a; } }
+.hero { padding: 20px 24px; } .hero .big { font-size: 46px; margin: 4px 0 6px; } .hero .spark svg { height: 56px; }
+.ring { padding: 10px 6px 8px; } .ring .rg { width: 72px; height: 72px; }
+section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { padding: 12px 16px; }
+.issue { padding: 7px 12px 7px 0; }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -813,35 +846,18 @@ function renderHome() {
       ring(itemsN ? okItems / itemsN : 1, (inspN + mgrN) === 0 ? 'g' : (reps.some(r => managerAlerts(r).some(m => m.lv === 'crit') || inspAlerts(r).some(i => i.st.lv === 'crit')) ? 'c' : 'w'), itemsN ? Math.round(100 * okItems / itemsN) + '%' : '–', '검사·선임 정상', (inspN + mgrN) ? '주의 ' + (inspN + mgrN) + '건 / ' + itemsN + '항목' : itemsN + '항목 모두 정상') +
       ring(dExp ? Math.min(1, dMonthN / dExp) : 0, !dExp ? 'w' : (dMonthN / dExp >= 0.9 ? 'g' : dMonthN / dExp >= 0.6 ? 'w' : 'c'), dExp ? Math.round(100 * dMonthN / dExp) + '%' : '–', shortMonth(month) + ' 일일보고', dMonthN + ' / ' + dExp + '건 (평일 기준)') +
     '</div></div>';
-  h += '<div class="tiles">' +
-    tile('crit', open.filter(i => i.lv === 'crit').length, '건', '미처리 긴급', '조치 필요', 'M12 3 2.5 20h19L12 3z M12 10v4.5 M12 17.5v.01') +
-    tile(inspN ? 'serious' : 'good', inspN, '건', '법정검사 주의', inspN ? '기한 경과·임박·미완료' : '이상 없음', 'M9 3h6l1 2h3v16H5V5h3l1-2z M9 13l2 2 4-4') +
-    tile(mgrN ? 'crit' : 'good', mgrN, '건', '선임자 공란', mgrN ? '전기·소방 등 확인' : '공란 없음', 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-3A3.5 3.5 0 0 0 6 18.5V20 M11 11.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19 8v5 M21.5 10.5h-5') +
-    tile(ltN >= 3 ? 'warn' : 'good', ltN, '세대', '2개월 이상 미납', ltN ? '장기 미납 관리 대상' : '장기 미납 없음', 'M12 7v5l3 2 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18') +
-    '</div>';
   const hHero = h; h = '';
   h += '<div class="grid2">' + todayCard() + trendCard() + '</div>';
-  h += '<div class="card"><div class="hd"><h2>사업소 리스크 히트맵</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>양호</span><span><i style="background:var(--warn-soft)"></i>확인</span><span><i style="background:var(--serious-soft)"></i>주의</span><span><i style="background:var(--crit)"></i>긴급</span></span></div><div class="bd tight tw">' + heatmap(reps) + '</div></div>';
   h += '<div class="grid2">';
   h += issueCard(issues, month);
-  h += '<div class="stack"><div class="card"><div class="hd"><h2>미처리 사항 구성</h2><span class="note">' + open.length + '건</span></div><div class="bd">' + donutCard(open) + '</div></div>' +
-    '<div class="card"><div class="hd"><h2>사업소별 체납 총액</h2><span class="note">막대를 누르면 사업소 상세로 이동</span></div><div class="bd"><div class="chart" id="homeBar"></div></div></div></div>';
+  h += '<div class="stack"><div class="card"><div class="hd"><h2>미처리 사항 구성</h2><span class="note">' + open.length + '건</span></div><div class="bd">' + donutCard(open) +
+    '<div class="mini"><div class="mt ' + (open.filter(i => i.lv === 'crit').length ? 'crit' : 'good') + '"><b>' + open.filter(i => i.lv === 'crit').length + '</b><span>미처리 긴급</span></div><div class="mt ' + (inspN ? 'serious' : 'good') + '"><b>' + inspN + '</b><span>법정검사 주의</span></div><div class="mt ' + (mgrN ? 'crit' : 'good') + '"><b>' + mgrN + '</b><span>선임자 공란</span></div><div class="mt ' + (ltN >= 3 ? 'warn' : 'good') + '"><b>' + ltN + '</b><span>2개월↑ 세대</span></div></div></div></div></div>';
   h += '</div>';
-  const hRest = h; h = '';
-  h += '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="note">행을 누르면 상세 보기</span></div><div class="bd tight tw"><table class="sumtbl"><thead><tr><th>사업소</th><th class="r">총세대</th><th class="r">체납세대</th><th class="r">체납률</th><th class="r">체납총액</th><th class="r">전월 대비</th><th>추이</th><th class="r">2개월↑</th><th>법정검사</th><th>선임</th><th>민원·특이</th></tr></thead><tbody>';
-  const rows = all.filter(s => state.reports.some(r => r.siteKey === s.key));
-  rows.forEach(s => {
-    const r = reportBy(s.key, month);
-    if (!r) { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td colspan="10"><span class="chip warn">미제출</span> <span class="muted small">최근 보고: ' + (siteReports(s.key).slice(-1)[0] || {}).period + '</span></td></tr>'; return; }
-    const tot = arrearsTotal(r), prev = prevTotalOf(r).v, d = (tot != null && prev != null) ? tot - prev : null;
-    const ia = inspAlerts(r), ma = managerAlerts(r);
-    h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + won(tot) + '</td><td class="r' + (d > 0 ? '" style="color:var(--crit)' : (d < 0 ? '" style="color:var(--good)' : '')) + '">' + (d == null ? '–' : (d > 0 ? '+' : '') + comma(d)) + '</td><td>' + sparkline(siteSeries(s.key)) + '</td><td class="r">' + longTerm(r).length + '</td><td>' + (ia.length ? ia.map(i => '<span class="chip ' + i.st.lv + '">' + esc(i.item + ' ' + i.st.label) + '</span>').join(' ') : '<span class="chip good">정상</span>') + '</td><td>' + (ma.length ? ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td><td class="small wrap"><div class="clamp2">' + esc([isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–') + '</div></td></tr>';
-  });
-  h += '</tbody></table></div></div>';
+  const hRest = h; h = sumTable(month);
   h = hHero + h + hRest;
   el.innerHTML = h;
   drawTrend();
-  hbarChart($('#homeBar'), reps.filter(r => arrearsTotal(r) != null).map(r => ({ label: r.site, value: arrearsTotal(r), key: r.siteKey })).sort((a, b) => b.value - a.value), { fmt: won, title: '사업소별 체납 총액', onClick: r => go('site', r.key) });
+  if ($('#homeBar')) hbarChart($('#homeBar'), reps.filter(r => arrearsTotal(r) != null).map(r => ({ label: r.site, value: arrearsTotal(r), key: r.siteKey })).sort((a, b) => b.value - a.value), { fmt: won, title: '사업소별 체납 총액', onClick: r => go('site', r.key) });
 }
 /* ---- 경영 주의사항 (필터 · 확인 처리) ---- */
 function issueCard(issues, month) {
@@ -880,7 +896,6 @@ function todayCard() {
   const urg = allDaily().filter(e => e.urgent && diffDays(td, e.date) >= 0 && diffDays(td, e.date) <= 7).reverse();
   let h = '<div class="card"><div class="hd"><h2>오늘의 일일보고 <span class="muted small">' + dateLabel(td) + '</span></h2><span class="chip ' + (wkd ? 'na' : miss.length ? 'warn' : 'good') + '">' + (all.length - miss.length) + ' / ' + all.length + ' 제출</span></div><div class="bd todaybox">';
   h += '<div><div class="lbl">' + (wkd ? '휴일 · 미제출 ' + miss.length + '개소 (참고)' : '미제출 사업소') + '</div>' + (miss.length ? '<div class="missing">' + miss.map(s => '<button class="btn" data-go="daily" data-key="' + s.key + '" data-date="' + td + '">' + esc(s.name) + '</button>').join('') + '</div>' : '<span class="small fg2">모든 사업소가 오늘 보고를 올렸습니다.</span>') + '</div>';
-  h += '<div class="small fg2">어제(' + dateLabel(yd) + ') 제출 ' + ydDone + ' / ' + all.length + ' 개소</div>';
   h += '<div><div class="lbl">최근 7일 긴급 보고 ' + urg.length + '건</div>' + (urg.length ? '<ul class="plain">' + urg.slice(0, 5).map(e => '<li><b>' + esc(e.site) + '</b> ' + esc(dateLabel(e.date)) + ' · ' + esc((e.issues || []).join(' / ') || '긴급 표시') + ' <button class="btn link" data-go="daily" data-key="' + e.siteKey + '" data-date="' + e.date + '">보기</button></li>').join('') + '</ul>' : '<span class="small fg2">없음</span>') + '</div>';
   return h + '</div></div>';
 }
@@ -972,6 +987,58 @@ function heatmap(reps) {
     h += '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + c.map(x => '<td><div class="cellv ' + x[0] + '">' + esc(x[1]) + '</div></td>').join('') + '</tr>';
   });
   return h + '</tbody></table>';
+}
+
+/* ---- 사업소별 요약 (그래픽 표) ---- */
+function siteCalc(r) {
+  const rt = (arrearsUnits(r) != null && r.arrears.units) ? 100 * arrearsUnits(r) / r.arrears.units : null;
+  const t = arrearsTotal(r), p = prevTotalOf(r).v, d = (t != null && p != null) ? t - p : null, dp = (d != null && p) ? 100 * d / p : null;
+  const lt = longTerm(r).length, ia = inspAlerts(r), ma = managerAlerts(r);
+  let sc = 100;
+  sc -= rt == null ? 0 : Math.min(35, rt * 1.2);
+  sc -= dp == null ? 0 : Math.min(15, Math.max(0, dp) / 2);
+  sc -= Math.min(15, lt * 2);
+  sc -= Math.min(20, ia.reduce((a, i) => a + (i.st.lv === 'crit' ? 15 : i.st.lv === 'serious' ? 10 : 5), 0));
+  sc -= Math.min(25, ma.reduce((a, m) => a + (m.lv === 'crit' ? 15 : 8), 0));
+  return { r, rt, t, p, d, dp, lt, ia, ma, score: Math.max(0, Math.round(sc)) };
+}
+function scoreRing(sc) {
+  const R = 15, C = 2 * Math.PI * R, tone = sc >= 80 ? 'var(--good)' : sc >= 60 ? 'var(--gold)' : sc >= 40 ? 'var(--serious)' : 'var(--crit)';
+  return '<div class="sring" title="종합 점수 100점 만점 · 체납률·증가율·장기미납·법정검사·선임 공란을 감점"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="4.5"/><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + tone + '" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="' + (C * sc / 100).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 20 20)"/></svg><b>' + sc + '</b></div>';
+}
+function pbar(frac, color) { return '<div class="pbar"><i style="width:' + Math.max(2, Math.min(100, 100 * frac)).toFixed(0) + '%;background:' + color + '"></i></div>'; }
+function sparkArea(vals) {
+  vals = vals.filter(v => v != null);
+  if (vals.length < 2) return '<span class="muted small">–</span>';
+  const W = 104, H = 32, mn = Math.min(...vals), mx = Math.max(...vals), span = (mx - mn) || 1;
+  const X = i => 3 + (W - 8) * i / (vals.length - 1), Y = v => 4 + (H - 10) * (1 - (v - mn) / span);
+  const d = vals.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' '), up = vals[vals.length - 1] > vals[0], dn = vals[vals.length - 1] < vals[0];
+  const col = up ? 'var(--crit)' : dn ? 'var(--good)' : 'var(--muted)', id = 'sa' + Math.abs(Math.round(vals[0] + vals[vals.length - 1] + vals.length * 7)) % 100000;
+  return '<svg class="spa" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + col + '" stop-opacity=".28"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs><path d="' + d + ' L' + X(vals.length - 1).toFixed(1) + ' ' + H + ' L' + X(0).toFixed(1) + ' ' + H + ' z" fill="url(#' + id + ')"/><path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + X(vals.length - 1).toFixed(1) + '" cy="' + Y(vals[vals.length - 1]).toFixed(1) + '" r="3" fill="' + col + '" stroke="var(--surface)" stroke-width="1.5"/></svg>';
+}
+function sumTable(month) {
+  const known = sites().filter(s => state.reports.some(r => r.siteKey === s.key));
+  const have = known.map(s => reportBy(s.key, month)).filter(Boolean).map(siteCalc).sort((a, b) => a.score - b.score);
+  const miss = known.filter(s => !reportBy(s.key, month));
+  const maxT = Math.max(1, ...have.map(x => x.t || 0));
+  const cnt = lv => have.filter(x => (x.score >= 80 ? 'g' : x.score >= 60 ? 'w' : x.score >= 40 ? 's' : 'c') === lv).length;
+  let h = '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="legend"><span><i style="background:var(--good)"></i>양호 ' + cnt('g') + '</span><span><i style="background:var(--gold)"></i>관찰 ' + cnt('w') + '</span><span><i style="background:var(--serious)"></i>주의 ' + cnt('s') + '</span><span><i style="background:var(--crit)"></i>위험 ' + cnt('c') + '</span><span class="muted">위험도 높은 순 · 행을 누르면 상세</span></span></div><div class="bd tight tw"><table class="sumtbl"><thead><tr><th class="c">종합</th><th>사업소</th><th>체납률</th><th>체납총액</th><th>전월 대비</th><th>추이</th><th class="c">2개월↑</th><th>법정검사</th><th>선임</th></tr></thead><tbody>';
+  have.forEach(x => {
+    const r = x.r, rc = x.rt == null ? 'var(--muted)' : x.rt < 10 ? 'var(--good)' : x.rt < 20 ? 'var(--gold)' : x.rt < 25 ? 'var(--serious)' : 'var(--crit)';
+    const note = [isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–';
+    h += '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="c">' + scoreRing(x.score) + '</td>' +
+      '<td class="site"><div class="sn">' + esc(r.site) + '</div></td>' +
+      '<td><div class="cs"><div class="cv"><b>' + (x.rt == null ? '–' : x.rt.toFixed(1) + '%') + '</b><span class="muted small">' + comma(arrearsUnits(r)) + '/' + comma(r.arrears.units) + '</span></div>' + (x.rt == null ? '' : pbar(x.rt / 40, rc)) + '</div></td>' +
+      '<td><div class="cs"><div class="cv"><b>' + (x.t == null ? '–' : comma(x.t) + '원') + '</b></div>' + (x.t == null ? '' : pbar(x.t / maxT, 'linear-gradient(90deg, var(--s1), var(--s1))')) + '</div></td>' +
+      '<td>' + (x.d == null ? '<span class="muted">–</span>' : '<span class="dchip ' + (x.d > 0 ? 'up' : x.d < 0 ? 'dn' : '') + '">' + (x.d > 0 ? '▲' : x.d < 0 ? '▼' : '–') + ' ' + (x.dp == null ? '' : Math.abs(x.dp).toFixed(1) + '%') + '</span><div class="muted small num">' + (x.d > 0 ? '+' : '') + krw(x.d) + '</div>') + '</td>' +
+      '<td>' + sparkArea(siteSeries(r.siteKey)) + '</td>' +
+      '<td class="c"><span class="lpill ' + (x.lt === 0 ? 'g' : x.lt < 3 ? 'w' : x.lt <= 5 ? 's' : 'c') + '">' + x.lt + '</span></td>' +
+      '<td>' + (x.ia.length ? x.ia.map(i => '<span class="chip ' + i.st.lv + '">' + esc(i.item + ' ' + i.st.label) + '</span>').join(' ') : '<span class="chip good">정상</span>') + '</td>' +
+      '<td>' + (x.ma.length ? x.ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td>' +
+      '</tr>';
+  });
+  miss.forEach(s => { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="c">' + scoreRing(0) + '</td><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td colspan="7"><span class="chip warn">미제출</span> <span class="muted small">최근 보고: ' + ((siteReports(s.key).slice(-1)[0] || {}).period || '–') + '</span></td></tr>'; });
+  return h + '</tbody></table></div></div>';
 }
 
 function kpi(lb, v, d, cls, dcls) { return '<div class="kpi ' + (cls || '') + '"><div class="lb">' + lb + '</div><div class="v">' + v + '</div><div class="d ' + (dcls || '') + '">' + esc(d) + '</div></div>'; }
