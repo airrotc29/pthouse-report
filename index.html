@@ -559,7 +559,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
   <section class="view" id="view-compare" hidden></section>
   <section class="view" id="view-daily" hidden>
     <div class="card">
-      <div class="hd"><h2>일일보고 제출 현황</h2>
+      <div class="hd"><h2>일일보고 요약</h2>
         <div class="row">
           <input type="month" id="dailyMonth" aria-label="일일보고 월">
           <input type="search" id="dailyQ" placeholder="키워드 검색 (업무·민원·특이사항)" aria-label="일일보고 검색" style="min-width:230px">
@@ -1411,12 +1411,6 @@ function renderDaily() {
     const biz = bizDaysIn(state.dailyMonth), expN = rowsS.length * biz, mlist = dailyList(state.dailyMonth), subN = mlist.length, urgN = mlist.filter(e => e.urgent).length, cmpN = mlist.reduce((a, e) => a + (e.complaints || []).filter(Boolean).length, 0), tdN = rowsS.filter(s => dailyEntry(s.key, td)).length, rate = expN ? subN / expN : 0;
     const badN = mlist.reduce((a, e) => a + (e.checks ? CHECK_ITEMS.filter(c => e.checks[c[0]] === 'bad' || e.checks[c[0]] === 'fix').length : 0), 0), openC = mlist.reduce((a, e) => a + (e.complaintsDetail || []).filter(c => c.status === 'open').length, 0);
     h = minis([[expN ? Math.round(100 * rate) + '%' : '–', shortMonth(state.dailyMonth) + ' 제출률 (평일)', expN ? (rate >= 0.9 ? 'good' : rate >= 0.6 ? 'warn' : 'crit') : ''], [subN + '/' + expN, '제출 / 기준 건수', ''], [tdN + '/' + rowsS.length, '오늘 제출', isWeekend(td) ? '' : (tdN === rowsS.length ? 'good' : 'warn')], [urgN, '긴급 보고', urgN ? 'crit' : 'good'], [badN, '시설 이상·조치중', badN ? 'serious' : 'good'], [cmpN, '민원 건', cmpN ? 'warn' : 'good'], [openC, '미처리 민원', openC ? 'crit' : 'good']]).replace('mini mini5', 'mini auto');
-    h += '<div class="legend" style="margin:12px 0 8px"><span><i class="has"></i>제출</span><span><i class="urgent"></i>긴급</span><span><i></i>미제출</span><span><i class="wkl"></i>휴일</span><span class="muted">셀을 누르면 해당 일자 보고로 이동</span></div><div class="matrix"><table><thead><tr><th class="site">사업소</th>' + Array.from({ length: days }, (_, i) => { const d = state.dailyMonth + '-' + pad2(i + 1); const wd = new Date(y, m - 1, i + 1).getDay(); return '<th class="' + (d === td ? 'today' : '') + '" style="' + (wd === 0 ? 'color:var(--crit)' : wd === 6 ? 'color:var(--s1)' : '') + '">' + '일월화수목금토'[wd] + '</th>'; }).join('') + '<th>제출률</th><th class="c">긴급</th></tr></thead><tbody>';
-    rowsS.forEach(s => {
-      const doc = docs.find(d => d.siteKey === s.key), dd = doc ? doc.days || {} : {}; let n = 0;
-      h += '<tr><td class="site">' + esc(s.name) + '</td>' + Array.from({ length: days }, (_, i) => { const k = pad2(i + 1), d = state.dailyMonth + '-' + k, e = dd[k], wd = new Date(y, m - 1, i + 1).getDay(); if (e) n++; return '<td class="' + (d === td ? 'today' : '') + '"><button class="cell' + (e ? (e.urgent ? ' urgent' : ' has') : (d > td ? ' future' : (wd === 0 || wd === 6 ? ' wk' : ''))) + '" data-day="' + d + '" data-key="' + s.key + '" aria-label="' + esc(s.name + ' ' + d) + (e ? ' 제출' : ' 미제출') + '"' + (d > td ? ' disabled' : '') + '>' + (i + 1) + '</button></td>'; }).join('') + (() => { const f = biz ? n / biz : 0, un = Object.keys(dd).filter(k => dd[k] && dd[k].urgent).length; return '<td><div class="cs" style="min-width:96px"><div class="cv"><b>' + n + '<span class="muted small">/' + biz + '</span></b><span class="muted small">' + (biz ? Math.round(100 * f) + '%' : '') + '</span></div>' + pbar(f, f >= 0.9 ? 'var(--good)' : f >= 0.6 ? 'var(--warn)' : 'var(--crit)') + '</div></td><td class="c">' + (un ? '<span class="lpill c">' + un + '</span>' : '<span class="muted">–</span>') + '</td>'; })() + '</tr>';
-    });
-    h += '</tbody></table></div>';
   }
   $('#dailyMatrix').innerHTML = h;
   // 일자별 피드 (검색어가 있으면 월 전체에서 검색)
