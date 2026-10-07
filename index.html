@@ -10,7 +10,9 @@
   --good-soft: #e1f3e1; --warn-soft: #fff1d2; --serious-soft: #fde6dc; --crit-soft: #f8dcdc;
   --s1: #2a78d6; --s2: #eb6834; --grid: #e1e0d9; --axis: #c3c2b7;
   --font: "IBM Plex Sans KR", "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
-  --radius: 6px; --shadow: 0 1px 2px rgba(22,33,44,.06);
+  --radius: 8px; --shadow: 0 1px 2px rgba(22,33,44,.05), 0 6px 18px -8px rgba(22,33,44,.12);
+  --hero-a: #0e2a45; --hero-b: #1d5d8f; --hero-fg: #ffffff; --hero-mut: #b9cde0; --hero-line: rgba(255,255,255,.16);
+  --hg: #6fd3a8; --hw: #ffd36b; --hc: #ff8f73;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -19,7 +21,8 @@
     --accent: #6ea8dd; --accent-ink: #0d1a26; --accent-soft: #1d2f3f;
     --good-soft: #163b16; --warn-soft: #4a3a10; --serious-soft: #4a2a1c; --crit-soft: #4a1d1d;
     --s1: #3987e5; --s2: #d95926; --grid: #2c2c2a; --axis: #383835;
-    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 20px -10px rgba(0,0,0,.5);
+    --hero-a: #0b1e31; --hero-b: #17476d;
     color-scheme: dark;
   }
 }
@@ -29,7 +32,8 @@
   --accent: #6ea8dd; --accent-ink: #0d1a26; --accent-soft: #1d2f3f;
   --good-soft: #163b16; --warn-soft: #4a3a10; --serious-soft: #4a2a1c; --crit-soft: #4a1d1d;
   --s1: #3987e5; --s2: #d95926; --grid: #2c2c2a; --axis: #383835;
-  --shadow: 0 1px 2px rgba(0,0,0,.4);
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 20px -10px rgba(0,0,0,.5);
+  --hero-a: #0b1e31; --hero-b: #17476d;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -247,6 +251,83 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
   .dl dt { margin-top: 6px; }
   .pcard .pr input[type="text"] { min-width: 0; width: 100%; }
 }
+/* visual layer: hero, rings, tiles, heatmap, donut */
+.top { box-shadow: 0 1px 0 var(--line), 0 8px 20px -14px rgba(22,33,44,.35); }
+.brand h1 { display: flex; align-items: center; gap: 9px; }
+.brand h1::before { content: ""; width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); flex: none; }
+.card { border-radius: 12px; }
+.card .hd h2 { font-size: 15.5px; letter-spacing: -.01em; }
+.hero { position: relative; overflow: hidden; border-radius: 16px; padding: 22px 24px; color: var(--hero-fg); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px 28px; background: radial-gradient(120% 140% at 100% 0%, var(--hero-b) 0%, transparent 60%), linear-gradient(160deg, var(--hero-a), var(--hero-a)); box-shadow: var(--shadow); }
+.hero::after { content: ""; position: absolute; right: -60px; bottom: -80px; width: 260px; height: 260px; border-radius: 50%; border: 1px solid var(--hero-line); box-shadow: 0 0 0 36px rgba(255,255,255,.025), 0 0 0 72px rgba(255,255,255,.02); pointer-events: none; }
+.hero > * { position: relative; z-index: 1; min-width: 0; }
+.hero .eyebrow { color: var(--hero-mut); }
+.hero .big { font-size: 46px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+.hero .big small { font-size: 18px; font-weight: 500; color: var(--hero-mut); margin-left: 4px; letter-spacing: 0; }
+.hero .delta { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: rgba(255,255,255,.12); }
+.hero .delta.up { color: var(--hc); } .hero .delta.down { color: var(--hg); }
+.hero .spark { margin-top: 14px; }
+.hero .spark svg { display: block; width: 100%; height: 74px; overflow: visible; }
+.hero .cap { font-size: 12px; color: var(--hero-mut); margin-top: 4px; }
+.rings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-content: center; }
+.ring { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 12px 6px 10px; border-radius: 12px; background: rgba(255,255,255,.07); border: 1px solid var(--hero-line); }
+.ring .rg { position: relative; width: 84px; height: 84px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .rt { fill: none; stroke: rgba(255,255,255,.16); stroke-width: 8; }
+.ring .rv { fill: none; stroke-width: 8; stroke-linecap: round; }
+.ring .rv.g { stroke: var(--hg); } .ring .rv.w { stroke: var(--hw); } .ring .rv.c { stroke: var(--hc); }
+.ring .rc { position: absolute; inset: 0; display: grid; place-content: center; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ring .rl { font-size: 12px; color: var(--hero-mut); line-height: 1.3; }
+.ring .rs { font-size: 11.5px; color: var(--hero-fg); font-variant-numeric: tabular-nums; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.tile { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line-soft); box-shadow: var(--shadow); min-width: 0; }
+.tile .ic { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-content: center; background: var(--good-soft); color: var(--good); }
+.tile.crit .ic { background: var(--crit-soft); color: var(--crit); }
+.tile.serious .ic { background: var(--serious-soft); color: var(--serious); }
+.tile.warn .ic { background: var(--warn-soft); color: #b07a00; }
+.tile .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tile .tx { min-width: 0; }
+.tile .lb { font-size: 12.5px; color: var(--fg-2); }
+.tile .v { font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .v small { font-size: 12.5px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.tile .d { font-size: 12px; color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.donutwrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.donut { position: relative; width: 132px; height: 132px; flex: none; }
+.donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.donut .c0 { fill: none; stroke: var(--surface-2); stroke-width: 16; }
+.donut .sg { fill: none; stroke-width: 16; }
+.donut .ct { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font-size: 26px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.donut .ct small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.dleg { display: grid; gap: 7px; flex: 1 1 140px; min-width: 0; }
+.dleg div { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.dleg i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.dleg b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.hm { width: 100%; border-collapse: separate; border-spacing: 4px; }
+.hm th { position: static; background: none; text-align: center; font-size: 11.5px; padding: 2px 4px; border: 0; white-space: nowrap; }
+.hm td { border: 0; padding: 0; }
+.hm td.nm { font-weight: 600; font-size: 13px; padding-right: 8px; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.hm .cellv { display: grid; place-content: center; height: 34px; min-width: 64px; border-radius: 7px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--surface-2); color: var(--fg-2); }
+.hm .cellv.good { background: var(--good-soft); color: var(--good); }
+.hm .cellv.warn { background: var(--warn-soft); color: #7a5300; }
+.hm .cellv.serious { background: var(--serious-soft); color: #9a3f1b; }
+.hm .cellv.crit { background: var(--crit); color: #fff; }
+:root[data-theme="dark"] .hm .cellv.warn, :root[data-theme="dark"] .hm .cellv.serious { color: #ffd48a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hm .cellv.warn, :root:not([data-theme="light"]) .hm .cellv.serious { color: #ffd48a; } }
+.hm tr.click:hover .nm { color: var(--accent); }
+.spk { display: block; width: 74px; height: 24px; overflow: visible; }
+.spk path { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.spk .u { stroke: var(--crit); } .spk .d { stroke: var(--good); } .spk .n { stroke: var(--muted); }
+.spk circle { stroke: var(--surface); stroke-width: 1.5; }
+.spk .u + circle { fill: var(--crit); } .spk .d + circle { fill: var(--good); } .spk .n + circle { fill: var(--muted); }
+.chart .trk { fill: var(--surface-2); opacity: .65; }
+.chart .bar { fill: url(#barg); } .chart .bar.hl { fill: url(#barh); }
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; padding: 18px 16px; }
+  .hero .big { font-size: 38px; }
+  .ring .rg { width: 70px; height: 70px; } .ring .rc { font-size: 15px; }
+}
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .tile { padding: 10px 11px; gap: 9px; } .tile .ic { width: 34px; height: 34px; border-radius: 10px; } .tile .ic svg { width: 18px; height: 18px; } .tile .v { font-size: 21px; } .tile .d { font-size: 11.5px; } }
+@media (max-width: 420px) { .rings { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .ring { padding: 10px 2px 8px; } .ring .rg { width: 60px; height: 60px; } .ring .rc { font-size: 13px; } }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -596,11 +677,12 @@ function hbarChart(el, rows, opt) {
   const fmt = opt.fmt || comma, W = 640, rowH = 30, padL = Math.min(220, 20 + 11 * Math.max(4, ...rows.map(r => r.label.length))), padR = 90, H = rows.length * rowH + 12;
   const max = Math.max(1, ...rows.map(r => r.value || 0));
   const x = v => padL + (W - padL - padR) * (v / max);
-  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opt.title || '') + '">';
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opt.title || '') + '"><defs><linearGradient id="barg" x1="0" x2="1"><stop offset="0" style="stop-color:var(--s1);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--s1)"/></linearGradient><linearGradient id="barh" x1="0" x2="1"><stop offset="0" style="stop-color:var(--s2);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--s2)"/></linearGradient></defs>';
   [0.25, 0.5, 0.75, 1].forEach(f => { svg += '<line class="gl" x1="' + x(max * f) + '" y1="4" x2="' + x(max * f) + '" y2="' + (H - 8) + '"/>'; });
   svg += '<line class="ax" x1="' + padL + '" y1="4" x2="' + padL + '" y2="' + (H - 8) + '"/>';
   rows.forEach((r, i) => {
     const y = 8 + i * rowH, w = Math.max(0, x(r.value || 0) - padL), hl = r.key === opt.highlight ? ' hl' : '';
+    svg += '<rect class="trk" x="' + padL + '" y="' + y + '" width="' + (W - padL - padR) + '" height="20" rx="5"/>';
     svg += '<text x="' + (padL - 8) + '" y="' + (y + 14) + '" text-anchor="end">' + esc(r.label) + '</text>';
     svg += '<path class="bar' + hl + '" data-i="' + i + '" d="M' + padL + ' ' + y + ' h' + Math.max(0, w - 4) + ' a4 4 0 0 1 4 4 v12 a4 4 0 0 1 -4 4 H' + padL + ' z"><title>' + esc(r.label + ': ' + fmt(r.value)) + '</title></path>';
     svg += '<text class="vl num" x="' + (padL + w + 6) + '" y="' + (y + 14) + '">' + esc(fmt(r.value)) + '</text>';
@@ -675,28 +757,40 @@ function renderHome() {
   const knownN = all.filter(s => state.reports.some(r => r.siteKey === s.key)).length;
   const td = todayStr(), dToday = all.filter(s => dailyEntry(s.key, td)).length;
   const issues = issuesFor(month);
-  let h = '<div class="kpis">';
-  h += kpi('월간보고 제출', reps.length + '<small>/ ' + knownN + ' 개소</small>', knownN > reps.length ? (knownN - reps.length) + '개소 미제출' : '전 사업소 제출', knownN > reps.length ? 'warnb' : '');
-  h += kpi('체납 총액', krw(tot) + '<small>원</small>', delta == null ? '보고서에 전월 잔액이 없어 비교 불가' : (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비 (' + pairs.length + '/' + reps.length + '개소)', '', delta == null ? '' : (delta > 0 ? 'up' : 'down'));
-  h += kpi('체납 세대', comma(au) + '<small>/ ' + comma(un) + ' 세대</small>', '체납률 ' + pct(au, un) + ' · 2개월 이상 ' + ltN + '세대');
-  h += kpi('법정검사 주의', inspN + '<small>건</small>', inspN ? '기한 경과·임박·미완료' : '이상 없음', inspN ? 'alert' : '');
-  h += kpi('선임자 공란', mgrN + '<small>건</small>', mgrN ? '전기·소방 등 선임 확인 필요' : '공란 없음', mgrN ? 'alert' : '');
   const dMiss = all.length - dToday, wkd = isWeekend(td);
-  h += kpi('오늘 일일보고', dToday + '<small>/ ' + all.length + ' 개소</small>', dateLabel(td) + (wkd ? ' · 휴일' : (dMiss ? ' · 미제출 ' + dMiss + '개소' : ' · 전원 제출')), (!wkd && dMiss && all.length) ? 'warnb' : '');
-  h += '</div>';
+  const open = issues.filter(i => !state.acks.some(a => a.id === i.id));
+  const rateV = un ? 100 * au / un : null;
+  const ttp = (function () { const o = []; const ms = months().filter(m => reportsFor(m).length).slice(-12); ms.forEach(m => o.push({ m, y: TRENDS.total.val(reportsFor(m)) })); const f = ms.length ? reportsFor(ms[0]) : []; if (ms.length && !reportsFor(prevMonthOf(ms[0])).length && f.length && f.every(r => r.arrears && r.arrears.prevBalance != null)) o.unshift({ m: prevMonthOf(ms[0]), y: f.reduce((a, r) => a + r.arrears.prevBalance, 0) }); return o.filter(p => p.y != null); })();
+  const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
+  let h = '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
+    (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
+    '<div class="spark">' + heroSpark(ttp) + '</div><div class="cap">' + (ttp.length > 1 ? ttp.map(p => shortMonth(p.m)).join(' → ') + ' · 전 사업소 합산' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
+    '<div class="rings">' +
+      ring(knownN ? reps.length / knownN : 0, reps.length >= knownN ? 'g' : 'w', reps.length + '/' + knownN, '월간보고', knownN > reps.length ? (knownN - reps.length) + '개소 미제출' : '전원 제출') +
+      ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대') +
+      ring(all.length ? dToday / all.length : 0, wkd || !dMiss ? 'g' : (dToday ? 'w' : 'c'), dToday + '/' + all.length, '오늘 일일보고', wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) +
+    '</div></div>';
+  h += '<div class="tiles">' +
+    tile('crit', open.filter(i => i.lv === 'crit').length, '건', '미처리 긴급', '조치 필요', 'M12 3 2.5 20h19L12 3z M12 10v4.5 M12 17.5v.01') +
+    tile(inspN ? 'serious' : 'good', inspN, '건', '법정검사 주의', inspN ? '기한 경과·임박·미완료' : '이상 없음', 'M9 3h6l1 2h3v16H5V5h3l1-2z M9 13l2 2 4-4') +
+    tile(mgrN ? 'crit' : 'good', mgrN, '건', '선임자 공란', mgrN ? '전기·소방 등 확인' : '공란 없음', 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-3A3.5 3.5 0 0 0 6 18.5V20 M11 11.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19 8v5 M21.5 10.5h-5') +
+    tile(ltN >= 3 ? 'warn' : 'good', ltN, '세대', '2개월 이상 미납', ltN ? '장기 미납 관리 대상' : '장기 미납 없음', 'M12 7v5l3 2 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18') +
+    '</div>';
   h += '<div class="grid2">' + todayCard() + trendCard() + '</div>';
+  h += '<div class="card"><div class="hd"><h2>사업소 리스크 히트맵</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>양호</span><span><i style="background:var(--warn-soft)"></i>확인</span><span><i style="background:var(--serious-soft)"></i>주의</span><span><i style="background:var(--crit)"></i>긴급</span></span></div><div class="bd tight tw">' + heatmap(reps) + '</div></div>';
   h += '<div class="grid2">';
   h += issueCard(issues, month);
-  h += '<div class="card"><div class="hd"><h2>사업소별 체납 총액</h2><span class="note">막대를 누르면 사업소 상세로 이동</span></div><div class="bd"><div class="chart" id="homeBar"></div></div></div>';
+  h += '<div class="stack"><div class="card"><div class="hd"><h2>미처리 사항 구성</h2><span class="note">' + open.length + '건</span></div><div class="bd">' + donutCard(open) + '</div></div>' +
+    '<div class="card"><div class="hd"><h2>사업소별 체납 총액</h2><span class="note">막대를 누르면 사업소 상세로 이동</span></div><div class="bd"><div class="chart" id="homeBar"></div></div></div></div>';
   h += '</div>';
-  h += '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="note">행을 누르면 상세 보기</span></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th>작성자</th><th class="r">총세대</th><th class="r">체납세대</th><th class="r">체납률</th><th class="r">체납총액</th><th class="r">전월 대비</th><th class="r">2개월↑</th><th>법정검사</th><th>선임</th><th>민원·특이</th></tr></thead><tbody>';
+  h += '<div class="card"><div class="hd"><h2>사업소별 요약 <span class="muted small">' + monthLabel(month) + '</span></h2><span class="note">행을 누르면 상세 보기</span></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th>작성자</th><th class="r">총세대</th><th class="r">체납세대</th><th class="r">체납률</th><th class="r">체납총액</th><th class="r">전월 대비</th><th>추이</th><th class="r">2개월↑</th><th>법정검사</th><th>선임</th><th>민원·특이</th></tr></thead><tbody>';
   const rows = all.filter(s => state.reports.some(r => r.siteKey === s.key));
   rows.forEach(s => {
     const r = reportBy(s.key, month);
-    if (!r) { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td colspan="10"><span class="chip warn">미제출</span> <span class="muted small">최근 보고: ' + (siteReports(s.key).slice(-1)[0] || {}).period + '</span></td></tr>'; return; }
+    if (!r) { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td colspan="11"><span class="chip warn">미제출</span> <span class="muted small">최근 보고: ' + (siteReports(s.key).slice(-1)[0] || {}).period + '</span></td></tr>'; return; }
     const tot = arrearsTotal(r), prev = prevTotalOf(r).v, d = (tot != null && prev != null) ? tot - prev : null;
     const ia = inspAlerts(r), ma = managerAlerts(r);
-    h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td>' + esc(r.author) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + won(tot) + '</td><td class="r' + (d > 0 ? '" style="color:var(--crit)' : (d < 0 ? '" style="color:var(--good)' : '')) + '">' + (d == null ? '–' : (d > 0 ? '+' : '') + comma(d)) + '</td><td class="r">' + longTerm(r).length + '</td><td>' + (ia.length ? ia.map(i => '<span class="chip ' + i.st.lv + '">' + esc(i.item + ' ' + i.st.label) + '</span>').join(' ') : '<span class="chip good">정상</span>') + '</td><td>' + (ma.length ? ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td><td class="small wrap">' + esc([isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–') + '</td></tr>';
+    h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="site">' + esc(s.name) + '</td><td>' + esc(r.author) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + won(tot) + '</td><td class="r' + (d > 0 ? '" style="color:var(--crit)' : (d < 0 ? '" style="color:var(--good)' : '')) + '">' + (d == null ? '–' : (d > 0 ? '+' : '') + comma(d)) + '</td><td>' + sparkline(siteSeries(s.key)) + '</td><td class="r">' + longTerm(r).length + '</td><td>' + (ia.length ? ia.map(i => '<span class="chip ' + i.st.lv + '">' + esc(i.item + ' ' + i.st.label) + '</span>').join(' ') : '<span class="chip good">정상</span>') + '</td><td>' + (ma.length ? ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td><td class="small wrap">' + esc([isNothing(r.complaints) ? '' : '민원: ' + r.complaints, (r.notes || []).filter(n => !isNothing(n)).join(' / ')].filter(Boolean).join(' · ') || '–') + '</td></tr>';
   });
   h += '</tbody></table></div></div>';
   el.innerHTML = h;
@@ -773,6 +867,65 @@ function drawTrend() {
   const el = $('#trendChart'); if (!el) return;
   const T = TRENDS[state.trend] || TRENDS.total;
   lineChart(el, trendPoints(), { fmt: T.fmt, axis: T.axis, title: '월별 ' + T.name + ' 추이' });
+}
+
+/* ---- graphics ---- */
+function ring(frac, tone, big, label, sub) {
+  const R = 34, C = 2 * Math.PI * R, f = Math.max(0, Math.min(1, frac || 0));
+  return '<div class="ring"><div class="rg"><svg viewBox="0 0 88 88" aria-hidden="true"><circle class="rt" cx="44" cy="44" r="' + R + '"/><circle class="rv ' + tone + '" cx="44" cy="44" r="' + R + '" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><div class="rc">' + esc(big) + '</div></div><div class="rl">' + esc(label) + '</div><div class="rs">' + esc(sub) + '</div></div>';
+}
+function tile(tone, v, unit, lb, d, path) {
+  return '<div class="tile ' + tone + '"><div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg></div><div class="tx"><div class="lb">' + esc(lb) + '</div><div class="v">' + comma(v) + '<small>' + unit + '</small></div><div class="d">' + esc(d) + '</div></div></div>';
+}
+function heroSpark(pts) {
+  if (pts.length < 2) return '<svg viewBox="0 0 400 74" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="400" y1="62" y2="62" stroke="rgba(255,255,255,.25)" stroke-dasharray="4 5"/></svg>';
+  const W = 400, H = 74, pt = 10, pb = 8, vals = pts.map(p => p.y), mn = Math.min(...vals), mx = Math.max(...vals), span = (mx - mn) || Math.max(1, mx * 0.1);
+  const X = i => 4 + (W - 12) * i / (pts.length - 1), Y = v => pt + (H - pt - pb) * (1 - (v - mn + span * 0.15) / (span * 1.3));
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' ');
+  const lx = X(pts.length - 1), ly = Y(pts[pts.length - 1].y);
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="월별 체납 총액 추이"><defs><linearGradient id="hsg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><path d="' + d + ' L' + lx.toFixed(1) + ' ' + H + ' L' + X(0).toFixed(1) + ' ' + H + ' z" fill="url(#hsg)"/><path d="' + d + '" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' + pts.map((p, i) => '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="' + (i === pts.length - 1 ? 5 : 3) + '" fill="' + (i === pts.length - 1 ? '#ffd36b' : '#fff') + '"/>').join('') + '</svg>';
+}
+function sparkline(vals) {
+  vals = vals.filter(v => v != null);
+  if (vals.length < 2) return '<span class="muted small">–</span>';
+  const W = 74, H = 24, mn = Math.min(...vals), mx = Math.max(...vals), span = (mx - mn) || 1;
+  const X = i => 3 + (W - 6) * i / (vals.length - 1), Y = v => 3 + (H - 6) * (1 - (v - mn) / span);
+  const d = vals.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' '), up = vals[vals.length - 1] > vals[0], dn = vals[vals.length - 1] < vals[0];
+  return '<svg class="spk" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><path class="' + (up ? 'u' : dn ? 'd' : 'n') + '" d="' + d + '"/><circle cx="' + X(vals.length - 1).toFixed(1) + '" cy="' + Y(vals[vals.length - 1]).toFixed(1) + '" r="3"/></svg>';
+}
+function siteSeries(key) {
+  const list = siteReports(key).filter(x => arrearsTotal(x) != null), v = list.map(arrearsTotal), f = list[0];
+  if (f && f.arrears && f.arrears.prevBalance != null && !siteReports(key).some(x => x.period === prevMonthOf(f.period))) v.unshift(f.arrears.prevBalance);
+  return v;
+}
+function donutCard(open) {
+  const lvs = [['crit', '긴급', 'var(--crit)'], ['serious', '주의', 'var(--serious)'], ['warn', '확인', 'var(--warn)'], ['info', '참고', 'var(--s1)']];
+  const total = open.length, R = 52, C = 2 * Math.PI * R;
+  let off = 0, segs = '';
+  lvs.forEach(l => { const n = open.filter(i => i.lv === l[0]).length; if (!n) return; const len = C * n / total; segs += '<circle class="sg" cx="66" cy="66" r="' + R + '" stroke-dasharray="' + (len - 2).toFixed(1) + ' ' + (C - len + 2).toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" style="stroke:' + l[2] + '"/>'; off += len; });
+  return '<div class="donutwrap"><div class="donut"><svg viewBox="0 0 132 132" role="img" aria-label="미처리 사항 구성"><circle class="c0" cx="66" cy="66" r="' + R + '"/>' + segs + '</svg><div class="ct"><div>' + total + '<small>미처리</small></div></div></div><div class="dleg">' +
+    lvs.map(l => '<div><i style="background:' + l[2] + '"></i>' + l[1] + '<b>' + open.filter(i => i.lv === l[0]).length + '</b></div>').join('') + '</div></div>';
+}
+function heatmap(reps) {
+  if (!reps.length) return '<div class="empty small">이 달 보고서가 없습니다.</div>';
+  const lvOf = { good: 0, warn: 1, serious: 2, crit: 3 };
+  const worst = a => a.reduce((m, x) => lvOf[x] > lvOf[m] ? x : m, 'good');
+  const cols = ['체납률', '체납액 증감', '2개월↑ 미납', '법정검사', '선임'];
+  let h = '<table class="hm"><thead><tr><th></th>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
+  reps.forEach(r => {
+    const rt = (arrearsUnits(r) != null && r.arrears.units) ? 100 * arrearsUnits(r) / r.arrears.units : null;
+    const t = arrearsTotal(r), p = prevTotalOf(r).v, dp = (t != null && p) ? 100 * (t - p) / p : null, lt = longTerm(r).length;
+    const ia = inspAlerts(r), ma = managerAlerts(r);
+    const c = [
+      [rt == null ? 'na' : rt < 10 ? 'good' : rt < 15 ? 'warn' : rt < 25 ? 'serious' : 'crit', rt == null ? '–' : rt.toFixed(1) + '%'],
+      [dp == null ? 'na' : dp <= 0 ? 'good' : dp < 10 ? 'warn' : dp < 30 ? 'serious' : 'crit', dp == null ? '–' : (dp > 0 ? '+' : '') + dp.toFixed(0) + '%'],
+      [lt === 0 ? 'good' : lt < 3 ? 'warn' : lt <= 5 ? 'serious' : 'crit', lt + '세대'],
+      [ia.length ? worst(ia.map(i => i.st.lv === 'crit' ? 'crit' : i.st.lv === 'serious' ? 'serious' : 'warn')) : 'good', ia.length ? ia.length + '건' : '정상'],
+      [ma.length ? worst(ma.map(m => m.lv === 'crit' ? 'crit' : 'warn')) : 'good', ma.length ? ma.length + '건 공란' : '선임'],
+    ];
+    h += '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + c.map(x => '<td><div class="cellv ' + x[0] + '">' + esc(x[1]) + '</div></td>').join('') + '</tr>';
+  });
+  return h + '</tbody></table>';
 }
 
 function kpi(lb, v, d, cls, dcls) { return '<div class="kpi ' + (cls || '') + '"><div class="lb">' + lb + '</div><div class="v">' + v + '</div><div class="d ' + (dcls || '') + '">' + esc(d) + '</div></div>'; }
