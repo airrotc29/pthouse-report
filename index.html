@@ -895,7 +895,7 @@ function renderHome() {
       ring(dExp ? Math.min(1, dMonthN / dExp) : 0, !dExp ? 'w' : (dMonthN / dExp >= 0.9 ? 'g' : dMonthN / dExp >= 0.6 ? 'w' : 'c'), dExp ? Math.round(100 * dMonthN / dExp) + '%' : '–', shortMonth(month) + ' 일일보고', dMonthN + ' / ' + dExp + '건 (평일 기준)') +
     '</div></div>';
   const hHero = h; h = '';
-  h += '<div class="grid2">' + todayCard() + trendCard() + '</div>';
+  h += todayCard();
   const hRest = h; h = sumTable(month);
   h = hHero + h + hRest;
   el.innerHTML = h;
