@@ -622,7 +622,6 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .rank { display: flex; flex-direction: column; }
 .rk { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--line-soft); }
 .rk:last-child { border-bottom: 0; }
-.rk:hover { background: var(--surface-2); }
 .rk .rno { width: 22px; height: 22px; border-radius: 50%; display: grid; place-content: center; background: var(--surface-2); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; color: var(--fg-2); }
 .rk .rno.top { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .rkb { min-width: 0; }
@@ -1435,8 +1434,8 @@ function cmpUnpaid(reps, month) {
   const rows = reps.map(r => { const p = prevReport(r.siteKey, month); return { r, v: item.get(r), p: p ? item.get(p) : null }; }).filter(x => x.v != null).sort((a, b) => b.v - a.v);
   const max = Math.max(1, ...rows.map(x => x.v));
   let h = '<div class="row"><label class="small fg2" for="itemSel">지표</label><select id="itemSel">' + METRICS.map(i => '<option value="' + i.id + '"' + (i.id === item.id ? ' selected' : '') + '>' + i.name + '</option>').join('') + '</select><span class="muted small">' + monthLabel(month) + ' · ' + rows.length + '개소</span></div>';
-  h += '<div class="grid2"><div class="card"><div class="hd"><h2>' + item.name + ' 순위</h2><span class="note">높은 순 · 누르면 사업소 상세</span></div><div class="bd tight"><div class="rank">' +
-    (rows.length ? rows.map((x, i) => { const d = (x.p != null) ? x.v - x.p : null; return '<div class="rk click" data-go="site" data-key="' + x.r.siteKey + '"><span class="rno' + (i < 3 ? ' top' : '') + '">' + (i + 1) + '</span><div class="rkb"><div class="rkh"><b>' + esc(x.r.site) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + item.fmt(Math.abs(d)) + '</span>') + '<span class="rkv">' + item.fmt(x.v) + '</span></div>' + pbar(x.v / max, i < 3 ? 'linear-gradient(90deg, var(--accent), var(--s1))' : 'color-mix(in srgb, var(--s1) 55%, var(--surface))') + '</div></div>'; }).join('') : '<div class="empty small">값이 있는 보고서가 없습니다.</div>') + '</div></div></div>';
+  h += '<div class="grid2"><div class="card"><div class="hd"><h2>' + item.name + ' 순위</h2><span class="note">높은 순</span></div><div class="bd tight"><div class="rank">' +
+    (rows.length ? rows.map((x, i) => { const d = (x.p != null) ? x.v - x.p : null; return '<div class="rk"><span class="rno' + (i < 3 ? ' top' : '') + '">' + (i + 1) + '</span><div class="rkb"><div class="rkh"><b>' + esc(x.r.site) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + item.fmt(Math.abs(d)) + '</span>') + '<span class="rkv">' + item.fmt(x.v) + '</span></div>' + pbar(x.v / max, i < 3 ? 'linear-gradient(90deg, var(--accent), var(--s1))' : 'color-mix(in srgb, var(--s1) 55%, var(--surface))') + '</div></div>'; }).join('') : '<div class="empty small">값이 있는 보고서가 없습니다.</div>') + '</div></div></div>';
   const axis = item.fmt === won ? krw : (item.id === 'rate' ? v => v.toFixed(0) + '%' : v => comma(v));
   const agg = m => { const vs = reportsFor(m).map(r => item.get(r)).filter(v => v != null); return vs.length ? (item.id === 'rate' ? vs.reduce((a, b) => a + b, 0) / vs.length : vs.reduce((a, b) => a + b, 0)) : null; };
   const known = sites().filter(s => state.reports.some(r => r.siteKey === s.key));
