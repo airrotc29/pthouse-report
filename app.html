@@ -1333,11 +1333,7 @@ function cmpMgr(reps) {
   const tot = main.reduce((a, it) => { const st = mgrStat(reps, it); a.ok += st.ok; a.need += st.need; a.gap += st.gap; a.na += st.na; return a; }, { ok: 0, need: 0, gap: 0, na: 0 });
   const gaps = reps.flatMap(r => managerAlerts(r)), critN = gaps.filter(g => g.lv === 'crit').length, pctV = tot.need ? Math.round(100 * tot.ok / tot.need) : 100;
   const people = reps.reduce((a, r) => a + new Set(r.certs.map(c => c.name)).size, 0), certs = certCounts(reps);
-  let h = '<div class="hero"><div><div class="eyebrow">선임관리자 충족률 · ' + monthLabel(state.month) + '</div><div class="big">' + pctV + '<small>%</small></div>' +
-    '<span class="delta ' + (critN ? 'up' : tot.gap ? '' : 'down') + '">' + (tot.gap ? '공란 ' + tot.gap + '건 · 전기·소방 ' + critN + '건' : '선임이 필요한 항목 모두 충족') + '</span>' +
-    '<div class="hchips"><span>선임 완료 <b>' + tot.ok + '</b> / 필요 ' + tot.need + '</span><span>해당 없음 <b>' + tot.na + '</b></span><span>자격 보유 인원 <b>' + people + '</b>명</span><span>자격증 <b>' + certs.length + '</b>종</span></div>' +
-    '<div class="cap" style="margin-top:16px">링: 선임된 사업소 / 선임이 필요한 사업소 (해당 없음 제외) · 전기·소방 공란은 빨강</div></div>' +
-    '<div class="ringsA">' + (main.length ? main.map(it => { const st = mgrStat(reps, it), f = st.need ? st.ok / st.need : 1; return ring(f, f >= 1 ? 'g' : (/전기|소방/.test(it) ? 'c' : 'w'), st.ok + '/' + st.need, it, st.gap ? '공란 ' + st.gap : (st.need ? '충족' : '해당 없음')); }).join('') : '<div class="cap">선임 항목 기록이 없습니다.</div>') + '</div></div>';
+  let h = minis([[critN, '전기·소방 공란', critN ? 'crit' : 'good'], [gaps.length - critN, '기타 공란', gaps.length - critN ? 'warn' : 'good'], [tot.ok + '/' + tot.need, '선임 완료 / 필요', tot.need && tot.ok >= tot.need ? 'good' : 'warn'], [tot.na, '해당 없음', ''], [people, '자격 보유 인원', '']]);
   h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>선임</span><span><i style="background:var(--warn-soft)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">행을 누르면 사업소 상세</span></span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>충족</th><th>미선임 대처</th></tr></thead><tbody>' +
     reps.slice().sort((a, b) => managerAlerts(b).length - managerAlerts(a).length).map(r => {
       const need = r.managers.filter(m => !isAuxItem(m.item) && !(m.name && isNA(m.name))).length, ok = r.managers.filter(m => !isAuxItem(m.item) && m.name && !isNA(m.name)).length, ga = managerAlerts(r);
