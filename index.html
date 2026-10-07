@@ -492,6 +492,28 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .ring .rd { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ring .rd.dim { color: var(--hero-mut); font-weight: 500; opacity: .8; }
 .ring .rtr .ms { width: 56px; height: 18px; overflow: visible; flex: none; transform: none; display: block; }
+/* daily form (structured) */
+.tgrid.one { grid-template-columns: 1fr; }
+.mini.auto { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); margin-top: 0; }
+.fs { border: 1px solid var(--line-soft); border-radius: 10px; padding: 8px 14px 12px; margin: 0 0 12px; min-width: 0; }
+.fs legend { font-weight: 700; font-size: 13.5px; padding: 0 6px; color: var(--accent); }
+.fs legend .note { font-weight: 400; margin-left: 6px; }
+.fs.urgentfs { border-color: var(--crit); background: var(--crit-soft); }
+.cklist { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 0 20px; }
+.ckrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
+.ckrow .cknote { grid-column: 1 / -1; } .ckrow .cknote input { width: 100%; }
+.ckrow .seg button { padding: 3px 9px; font-size: 12px; }
+.ckrow .seg button.ok[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+.ckrow .seg button.bad[aria-pressed="true"] { background: var(--crit); border-color: var(--crit); color: #fff; }
+.ckrow .seg button.fix[aria-pressed="true"] { background: var(--warn); border-color: var(--warn); color: #3a2a00; }
+.ckrow .seg button.na[aria-pressed="true"] { background: var(--muted); border-color: var(--muted); color: #fff; }
+.rrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line-soft); }
+.rrow.r2 { grid-template-columns: minmax(0, 1fr) 130px auto; }
+.rrow input, .rrow select { width: 100%; min-width: 0; }
+.rrow .row { flex-wrap: wrap; gap: 4px 8px; }
+.rrow .rmrow { justify-self: end; padding: 3px 8px; color: var(--muted); width: auto; }
+.fs > [data-add] { margin-top: 8px; }
+@media (max-width: 640px) { .cklist { grid-template-columns: 1fr; } .ckrow { grid-template-columns: 1fr; } .rrow.r2 { grid-template-columns: 1fr 1fr; } }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -528,7 +550,6 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
     <button role="tab" data-tab="compare">항목 비교</button>
     <button role="tab" data-tab="daily">일일보고</button>
     <button role="tab" data-tab="upload">업로드</button>
-    <button role="tab" data-tab="export">내보내기</button>
   </nav>
 </header>
 
@@ -558,27 +579,8 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
       <div class="bd" id="dailyFeed"></div>
     </div>
     <div class="card" id="dailyFormCard">
-      <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="note">사업소 담당자가 매일 작성하거나, 본사에서 전달받은 내용을 대신 입력합니다.</span></div>
-      <div class="bd">
-        <form id="dailyForm" class="form" autocomplete="off">
-          <div class="f"><label for="dSite">사업소</label><select id="dSite"></select></div>
-          <div class="f" id="dSiteNewWrap" hidden><label for="dSiteNew">새 사업소명</label><input type="text" id="dSiteNew" placeholder="예: 남산센트럴시티투웨니퍼스트"></div>
-          <div class="f"><label for="dDate">보고 일자</label><input type="date" id="dDate" required></div>
-          <div class="f"><label for="dAuthor">작성자</label><input type="text" id="dAuthor" placeholder="성명"></div>
-          <div class="f"><label for="dStaff">근무 인원</label><input type="number" id="dStaff" min="0" step="1" placeholder="명"></div>
-          <div class="f wide"><label for="dWork">업무 내용 (한 줄에 한 건)</label><textarea id="dWork" placeholder="9/7 기계식주차장 점검 : 정현오토파킹(이상없음)&#10;승강기 월 정기점검 입회"></textarea></div>
-          <div class="f wide"><label for="dComplaints">민원 처리</label><textarea id="dComplaints" placeholder="1008호 온수 수압 민원 → 감압밸브 조정 완료" style="min-height:56px"></textarea></div>
-          <div class="f wide"><label for="dIssues">특이사항 · 사고 · 긴급</label><textarea id="dIssues" placeholder="없으면 비워 두세요" style="min-height:56px"></textarea></div>
-          <div class="f"><label class="check"><input type="checkbox" id="dUrgent"> 본사 즉시 확인 필요 (긴급)</label></div>
-          <div class="f wide"><label for="dPlans">익일 예정</label><textarea id="dPlans" style="min-height:48px"></textarea></div>
-          <div class="f wide row">
-            <button type="submit" class="btn primary" id="dSave">저장</button>
-            <button type="button" class="btn" id="dReset">새로 작성</button>
-            <button type="button" class="btn danger" id="dDelete" hidden>이 보고 삭제</button>
-            <span class="note" id="dMsg"></span>
-          </div>
-        </form>
-      </div>
+      <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="note">정상인 항목은 그대로 두고 이상·민원·사고만 입력하면 됩니다. 입력 중인 내용은 이 브라우저에 임시 저장됩니다.</span></div>
+      <div class="bd" id="dailyFormWrap"></div>
     </div>
   </section>
   <section class="view" id="view-upload" hidden>
@@ -599,7 +601,6 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
       <div class="bd tight tw" id="siteMgr"></div>
     </div>
   </section>
-  <section class="view" id="view-export" hidden></section>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -642,7 +643,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], siteList: [], issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], siteList: [], draft: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp }));
@@ -929,7 +930,7 @@ function setTab(t) { state.tab = t; $$('#tabs button').forEach(b => b.setAttribu
 function go(tab, key, extra) { if (key) state.site = key; if (extra && extra.date) { state.dailyDate = extra.date; state.dailyMonth = extra.date.slice(0, 7); } setTab(tab); }
 function render() {
   renderBadge();
-  ({ home: renderHome, site: renderSite, compare: renderCompare, daily: renderDaily, upload: renderUpload, export: renderExport })[state.tab]();
+  ({ home: renderHome, site: renderSite, compare: renderCompare, daily: renderDaily, upload: renderUpload })[state.tab]();
 }
 
 /* ---------- 종합 현황 ---------- */
@@ -961,16 +962,16 @@ function renderHome() {
   const serRate = hms.map(m => { const rs = reportsFor(m), a = sum(rs, arrearsUnits), u = sum(rs, r => r.arrears && r.arrears.units); return u ? 100 * a / u : null; });
   const serLt = hms.map(m => { const rs = reportsFor(m), a = sum(rs, arrearsUnits), l = sum(rs, r => longTerm(r).length); return a ? 100 * l / a : null; });
   const serOk = hms.map(m => { const rs = reportsFor(m), n = sum(rs, r => r.inspections.length + r.managers.length), bad = sum(rs, r => inspAlerts(r).length + managerAlerts(r).length); return n ? 100 * (n - bad) / n : null; });
-  const serD = dms.map(m => { const e = all.length * bizDaysIn(m); return e ? 100 * dailyList(m).length / e : null; });
+  const serSub = hms.map(m => all.length ? 100 * reportsFor(m).length / all.length : null);
   const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
   let h = '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
-    '<div class="hchips"><span>월간보고 <b>' + reps.length + '/' + knownN + '</b> ' + (reps.length >= knownN ? '전원 제출' : (knownN - reps.length) + '개소 미제출') + '</span><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div><div class="spark">' + heroSpark(ttp) + '</div><div class="cap">' + (ttp.length > 1 ? ttp.map(p => shortMonth(p.m)).join(' → ') + ' · 전 사업소 합산' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
+    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div><div class="spark">' + heroSpark(ttp) + '</div><div class="cap">' + (ttp.length > 1 ? ttp.map(p => shortMonth(p.m)).join(' → ') + ' · 전 사업소 합산' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
     '<div class="rings">' +
       ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
       ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대', { vals: serLt, fmt: pp, goodWhen: 'down' }) +
       ring(itemsN ? okItems / itemsN : 1, (inspN + mgrN) === 0 ? 'g' : (reps.some(r => managerAlerts(r).some(m => m.lv === 'crit') || inspAlerts(r).some(i => i.st.lv === 'crit')) ? 'c' : 'w'), itemsN ? Math.round(100 * okItems / itemsN) + '%' : '–', '검사·선임 정상', (inspN + mgrN) ? '주의 ' + (inspN + mgrN) + '건 / ' + itemsN + '항목' : itemsN + '항목 모두 정상', { vals: serOk, fmt: pp, goodWhen: 'up' }) +
-      ring(dExp ? Math.min(1, dMonthN / dExp) : 0, !dExp ? 'w' : (dMonthN / dExp >= 0.9 ? 'g' : dMonthN / dExp >= 0.6 ? 'w' : 'c'), dExp ? Math.round(100 * dMonthN / dExp) + '%' : '–', shortMonth(month) + ' 일일보고', dMonthN + ' / ' + dExp + '건 (평일 기준)', { vals: serD, fmt: pp, goodWhen: 'up' }) +
+      ring(knownN ? reps.length / knownN : 0, knownN && reps.length >= knownN ? 'g' : (knownN && reps.length / knownN >= 0.6 ? 'w' : 'c'), knownN ? Math.round(100 * reps.length / knownN) + '%' : '–', shortMonth(month) + ' 월간보고 제출', reps.length + ' / ' + knownN + '개소' + (knownN > reps.length ? ' · 미제출 ' + (knownN - reps.length) : ''), { vals: serSub, fmt: pp, goodWhen: 'up' }) +
     '</div></div>';
   const hHero = h; h = '';
   h += todayCard();
@@ -1018,15 +1019,14 @@ function todayCard() {
   const tone = wkd ? 'na' : f >= 1 ? 'good' : f > 0 ? 'warn' : 'crit';
   const urg = allDaily().filter(e => e.urgent && diffDays(td, e.date) >= 0 && diffDays(td, e.date) <= 7).reverse();
   const wdc = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
-  const bars = '<div class="dbars">' + days.map(d => { const n = cnt(d), wk = isWeekend(d), hgt = all.length ? Math.round(100 * n / all.length) : 0; return '<button class="db' + (d === td ? ' today' : '') + (wk ? ' wk' : '') + '" data-go="daily" data-date="' + d + '" title="' + esc(dateLabel(d) + ' · ' + n + '/' + all.length + ' 제출') + '"><span class="v">' + n + '</span><span class="bar"><i style="height:' + hgt + '%"></i></span><span class="l">' + (d === td ? '오늘' : '일월화수목금토'[wdc(d)]) + '</span></button>'; }).join('') + '</div>';
   const rows = all.slice().sort((a, b) => ((dailyEntry(a.key, td) ? 1 : 0) - (dailyEntry(b.key, td) ? 1 : 0)) || a.name.localeCompare(b.name, 'ko'));
-  const tbl = '<div class="tw"><table class="sumtbl cmp"><thead><tr><th>사업소</th><th>최근 7일</th><th class="c">오늘</th><th class="c">7일 제출</th></tr></thead><tbody>' + rows.map(s => {
+  const tbl = '<div class="tw"><table class="sumtbl cmp"><thead><tr><th>사업소</th><th class="c">오늘</th><th class="c">7일 제출</th></tr></thead><tbody>' + rows.map(s => {
     const es = days.map(d => ({ d, e: dailyEntry(s.key, d) })), n7 = es.filter(x => x.e && !isWeekend(x.d)).length, u7 = es.filter(x => x.e && x.e.urgent).length;
-    return '<tr><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td><div class="dstrip sm">' + es.map(x => '<button class="dc' + (x.e ? (x.e.urgent ? ' urgent' : ' has') : (isWeekend(x.d) ? ' wk' : ' miss')) + '" data-go="daily" data-key="' + s.key + '" data-date="' + x.d + '" title="' + esc(dateLabel(x.d) + (x.e ? (x.e.urgent ? ' 긴급' : ' 제출') : isWeekend(x.d) ? ' 휴일' : ' 미제출')) + '" aria-label="' + esc(s.name + ' ' + x.d) + '"></button>').join('') + '</div></td><td class="c">' + (dailyEntry(s.key, td) ? '<span class="chip good">제출</span>' : (wkd ? '<span class="chip na">휴일</span>' : '<span class="chip warn">미제출</span>')) + '</td><td class="c"><span class="lpill ' + (n7 >= biz7 ? 'g' : n7 >= biz7 * 0.6 ? 'w' : 'c') + '">' + n7 + '/' + biz7 + '</span>' + (u7 ? ' <span class="chip crit">긴급 ' + u7 + '</span>' : '') + '</td></tr>';
+    return '<tr><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td class="c">' + (dailyEntry(s.key, td) ? '<span class="chip good">제출</span>' : (wkd ? '<span class="chip na">휴일</span>' : '<span class="chip warn">미제출</span>')) + '</td><td class="c"><span class="lpill ' + (n7 >= biz7 ? 'g' : n7 >= biz7 * 0.6 ? 'w' : 'c') + '">' + n7 + '/' + biz7 + '</span>' + (u7 ? ' <span class="chip crit">긴급 ' + u7 + '</span>' : '') + '</td></tr>';
   }).join('') + '</tbody></table></div>';
   return '<div class="card"><div class="hd"><h2>오늘의 일일보고 <span class="muted small">' + dateLabel(td) + '</span></h2><span class="chip ' + tone + '">' + tn + ' / ' + all.length + ' 제출</span></div><div class="bd">' +
-    '<div class="tgrid"><div class="tring">' + bigRing(f, tone, tn + '/' + all.length) + '<div class="tx"><div class="lb">오늘 제출</div><div class="v">' + (wkd ? '휴일' : miss.length ? '미제출 ' + miss.length + '개소' : '전원 제출') + '</div><div class="d">' + (miss.length && !wkd ? esc(miss.map(s => s.name).join(', ')) : '최근 7일 긴급 ' + urg.length + '건') + '</div></div></div>' +
-    '<div class="tbars"><div class="eyebrow" style="margin-bottom:6px">최근 7일 · 제출 사업소 수</div>' + bars + '</div></div>' + tbl +
+    '<div class="tgrid one"><div class="tring">' + bigRing(f, tone, tn + '/' + all.length) + '<div class="tx"><div class="lb">오늘 제출</div><div class="v">' + (wkd ? '휴일' : miss.length ? '미제출 ' + miss.length + '개소' : '전원 제출') + '</div><div class="d">' + (miss.length && !wkd ? esc(miss.map(s => s.name).join(', ')) : '최근 7일 긴급 ' + urg.length + '건') + '</div></div></div>' +
+    '</div>' + tbl +
     (urg.length ? '<div class="eyebrow" style="margin:14px 0 6px">최근 7일 긴급 보고 ' + urg.length + '건</div><ul class="plain">' + urg.slice(0, 5).map(e => '<li><b>' + esc(e.site) + '</b> ' + esc(dateLabel(e.date)) + ' · ' + esc((e.issues || []).join(' / ') || '긴급 표시') + ' <button class="btn link" data-go="daily" data-key="' + e.siteKey + '" data-date="' + e.date + '">보기</button></li>').join('') + '</ul>' : '') +
     '</div></div>';
 }
@@ -1410,7 +1410,8 @@ function renderDaily() {
   if (!rowsS.length) h = '<div class="empty small">아직 사업소가 없습니다. 아래 양식에서 사업소명을 입력해 첫 일일보고를 작성하세요.</div>';
   else {
     const biz = bizDaysIn(state.dailyMonth), expN = rowsS.length * biz, mlist = dailyList(state.dailyMonth), subN = mlist.length, urgN = mlist.filter(e => e.urgent).length, cmpN = mlist.reduce((a, e) => a + (e.complaints || []).filter(Boolean).length, 0), tdN = rowsS.filter(s => dailyEntry(s.key, td)).length, rate = expN ? subN / expN : 0;
-    h = minis([[expN ? Math.round(100 * rate) + '%' : '–', shortMonth(state.dailyMonth) + ' 제출률 (평일 기준)', expN ? (rate >= 0.9 ? 'good' : rate >= 0.6 ? 'warn' : 'crit') : ''], [subN + '/' + expN, '제출 / 기준 건수', ''], [tdN + '/' + rowsS.length, '오늘 제출', isWeekend(td) ? '' : (tdN === rowsS.length ? 'good' : 'warn')], [urgN, '긴급 보고', urgN ? 'crit' : 'good'], [cmpN, '민원 건', cmpN ? 'warn' : 'good']]);
+    const badN = mlist.reduce((a, e) => a + (e.checks ? CHECK_ITEMS.filter(c => e.checks[c[0]] === 'bad' || e.checks[c[0]] === 'fix').length : 0), 0), openC = mlist.reduce((a, e) => a + (e.complaintsDetail || []).filter(c => c.status === 'open').length, 0);
+    h = minis([[expN ? Math.round(100 * rate) + '%' : '–', shortMonth(state.dailyMonth) + ' 제출률 (평일)', expN ? (rate >= 0.9 ? 'good' : rate >= 0.6 ? 'warn' : 'crit') : ''], [subN + '/' + expN, '제출 / 기준 건수', ''], [tdN + '/' + rowsS.length, '오늘 제출', isWeekend(td) ? '' : (tdN === rowsS.length ? 'good' : 'warn')], [urgN, '긴급 보고', urgN ? 'crit' : 'good'], [badN, '시설 이상·조치중', badN ? 'serious' : 'good'], [cmpN, '민원 건', cmpN ? 'warn' : 'good'], [openC, '미처리 민원', openC ? 'crit' : 'good']]).replace('mini mini5', 'mini auto');
     h += '<div class="legend" style="margin:12px 0 8px"><span><i class="has"></i>제출</span><span><i class="urgent"></i>긴급</span><span><i></i>미제출</span><span><i class="wkl"></i>휴일</span><span class="muted">셀을 누르면 해당 일자 보고로 이동</span></div><div class="matrix"><table><thead><tr><th class="site">사업소</th>' + Array.from({ length: days }, (_, i) => { const d = state.dailyMonth + '-' + pad2(i + 1); const wd = new Date(y, m - 1, i + 1).getDay(); return '<th class="' + (d === td ? 'today' : '') + '" style="' + (wd === 0 ? 'color:var(--crit)' : wd === 6 ? 'color:var(--s1)' : '') + '">' + '일월화수목금토'[wd] + '</th>'; }).join('') + '<th>제출률</th><th class="c">긴급</th></tr></thead><tbody>';
     rowsS.forEach(s => {
       const doc = docs.find(d => d.siteKey === s.key), dd = doc ? doc.days || {} : {}; let n = 0;
@@ -1424,21 +1425,119 @@ function renderDaily() {
   if (q) { entries = dailyList(state.dailyMonth).filter(e => JSON.stringify([e.work, e.complaints, e.issues, e.plans, e.author, e.site]).toLowerCase().includes(q)); $('#dailyFeedTitle').textContent = '검색 결과 ' + entries.length + '건 · ' + monthLabel(state.dailyMonth); }
   else { entries = dailyList(state.dailyDate.slice(0, 7)).filter(e => e.date === state.dailyDate); $('#dailyFeedTitle').textContent = dateLabel(state.dailyDate) + ' 일일보고 · ' + entries.length + '/' + all.length + ' 개소'; }
   const missing = q ? [] : all.filter(s => !entries.some(e => e.siteKey === s.key));
-  $('#dailyFeed').innerHTML = (entries.length ? '<div class="dcards">' + entries.map(e => '<div class="dcard' + (e.urgent ? ' urgent' : '') + '"><div class="h"><b>' + esc(e.site) + '</b><span class="small muted">' + (q ? dateLabel(e.date) + ' · ' : '') + esc(e.author || '') + (e.staff ? ' · 근무 ' + e.staff + '명' : '') + (e.urgent ? ' <span class="chip crit">긴급</span>' : '') + '</span></div>' +
-    '<div class="dcnt">' + [['업무', e.work, ''], ['민원', e.complaints, ' info'], ['특이', e.issues, e.urgent ? ' crit' : ' warn'], ['예정', e.plans, ' na']].map(x => { const n = (x[1] || []).filter(Boolean).length; return n ? '<span class="chip' + x[2] + '">' + x[0] + ' ' + n + '</span>' : ''; }).join('') + '</div>' +
+  $('#dailyFeed').innerHTML = (entries.length ? '<div class="dcards">' + entries.map(e => '<div class="dcard' + (e.urgent ? ' urgent' : '') + '"><div class="h"><b>' + esc(e.site) + '</b><span class="small muted">' + (q ? dateLabel(e.date) + ' · ' : '') + esc(e.author || '') + (e.role ? ' ' + esc(e.role) : '') + (e.staff ? ' · 근무 ' + e.staff + '명' : '') + (e.urgent ? ' <span class="chip crit">긴급</span>' : '') + '</span></div>' +
+    '<div class="dcnt">' + [['업무', e.work, ''], ['민원', e.complaints, ' info'], ['특이', e.issues, e.urgent ? ' crit' : ' warn'], ['예정', e.plans, ' na']].map(x => { const n = (x[1] || []).filter(Boolean).length; return n ? '<span class="chip' + x[2] + '">' + x[0] + ' ' + n + '</span>' : ''; }).join('') + '</div>' + ckChips(e) +
     dsec('업무', e.work) + dsec('민원', e.complaints) + dsec('특이사항', e.issues) + dsec('익일 예정', e.plans) +
     (state.canWrite ? '<div class="row"><button class="btn sm" data-edit="' + e.siteKey + '|' + e.date + '">수정</button><span class="note">' + (e.updatedAt ? '저장 ' + e.updatedAt.slice(0, 16).replace('T', ' ') : '') + '</span></div>' : '') + '</div>').join('') + '</div>' : '<div class="empty small">' + (q ? '검색 결과가 없습니다.' : '이 날짜에 올라온 일일보고가 없습니다.') + '</div>') +
     (missing.length && state.dailyDate <= td ? '<div class="note" style="margin-top:10px">미제출: ' + missing.map(s => esc(s.name)).join(', ') + '</div>' : '');
   // 양식
-  const sel = $('#dSite'), curv = sel.value;
-  sel.innerHTML = all.map(s => '<option value="' + s.key + '">' + esc(s.name) + '</option>').join('') + '<option value="__new">+ 새 사업소 입력</option>';
-  if (curv && Array.from(sel.options).some(o => o.value === curv)) sel.value = curv; else if (all.length) sel.value = state.site || all[0].key; else sel.value = '__new';
-  $('#dSiteNewWrap').hidden = sel.value !== '__new';
-  if (!$('#dDate').value) $('#dDate').value = state.dailyDate;
   $('#dailyFormCard').hidden = !state.canWrite;
+  if (state.canWrite) renderDailyForm();
   if (!dailyBound) bindDaily();
 }
 function dsec(lb, arr) { arr = (arr || []).filter(Boolean); return arr.length ? '<div class="sec"><div class="lb">' + lb + '</div><ul>' + arr.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : ''; }
+/* ---- 일일보고 서식 (구조화 · v2) ---- */
+const CHECK_ITEMS = [['elec', '전기', '수변전실 · 비상발전기'], ['fire', '소방', '수신기 · 경보 · 오작동'], ['elev', '승강기', '운행 · 고장 · 갇힘'], ['water', '급배수', '펌프 · 저수조 · 누수'], ['hvac', '기계설비', '냉난방 · 환기 · 보일러'], ['park', '주차설비', '기계식 · 차단기'], ['cctv', 'CCTV·출입', '녹화 · 출입통제'], ['light', '공용부', '조명 · 외관 · 청소']];
+const CHECK_STATES = [['ok', '정상'], ['bad', '이상'], ['fix', '조치중'], ['na', '해당없음']];
+const CMP_TYPES = ['소음', '누수', '주차', '관리비', '시설', '위생·청소', '보안', '기타'];
+const INC_TYPES = ['화재', '침수·누수', '정전', '승강기 갇힘·고장', '부상·안전사고', '도난·침입', '분쟁·폭언', '기타'];
+const ROLES = ['관리소장', '과장', '주임', '관리원', '경비', '미화', '기타'];
+const SAFETY = ['화기', '고소', '밀폐', '전기', '외부인 출입'];
+const ROW = { works: () => ({ vendor: '', desc: '', time: '', safety: [] }), complaints: () => ({ unit: '', type: '', desc: '', result: '', status: 'done' }), incidents: () => ({ type: '', time: '', desc: '', action: '', r119: false, r112: false, rins: false }), directives: () => ({ text: '', status: 'todo' }) };
+function newDraft(key, date) {
+  return { key: key || state.site || '', newName: '', date: date || state.dailyDate, author: '', role: '', staff: { mgr: '', worker: '', clean: '', guard: '', absent: '' },
+    checks: Object.fromEntries(CHECK_ITEMS.map(c => [c[0], 'ok'])), checkNotes: {}, works: [], complaints: [], arrears: { collected: '', calls: '', sms: '', visits: '', promises: '' },
+    incidents: [], urgent: false, moves: { in: '', out: '', vacant: '' }, directives: [], plans: '', requests: '', memo: '' };
+}
+function draftFromEntry(e, key, date) {
+  const d = newDraft(key, date);
+  d.author = e.author || ''; d.urgent = !!e.urgent;
+  if (e.v === 2) {
+    Object.assign(d, { role: e.role || '', staff: Object.assign(d.staff, e.staffDetail || {}), checks: Object.assign(d.checks, e.checks || {}), checkNotes: Object.assign({}, e.checkNotes || {}),
+      works: (e.works || []).map(w => Object.assign(ROW.works(), w)), complaints: (e.complaintsDetail || []).map(c => Object.assign(ROW.complaints(), c)), arrears: Object.assign(d.arrears, e.arrearsAct || {}),
+      incidents: (e.incidents || []).map(i => Object.assign(ROW.incidents(), i)), moves: Object.assign(d.moves, e.moves || {}), directives: (e.directives || []).map(x => Object.assign(ROW.directives(), x)),
+      plans: (e.planLines || []).join('\n'), requests: (e.requests || []).join('\n'), memo: (e.memo || []).join('\n') });
+    Object.keys(d.staff).forEach(k => { if (d.staff[k] == null) d.staff[k] = ''; }); Object.keys(d.arrears).forEach(k => { if (d.arrears[k] == null) d.arrears[k] = ''; }); Object.keys(d.moves).forEach(k => { if (d.moves[k] == null) d.moves[k] = ''; });
+  } else {
+    d.staff.worker = e.staff != null ? String(e.staff) : '';
+    d.memo = (e.work || []).join('\n'); d.plans = (e.plans || []).join('\n');
+    d.complaints = (e.complaints || []).map(t => Object.assign(ROW.complaints(), { desc: t }));
+    d.incidents = (e.issues || []).map(t => Object.assign(ROW.incidents(), { desc: t }));
+  }
+  return d;
+}
+function entryFromDraft(d) {
+  const L = t => String(t || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  const num = v => (v === '' || v == null || isNaN(+v)) ? null : +v;
+  const nums = o => Object.fromEntries(Object.keys(o).map(k => [k, k === 'absent' ? String(o[k] || '').trim() : num(o[k])]));
+  const anomalies = CHECK_ITEMS.filter(c => d.checks[c[0]] === 'bad' || d.checks[c[0]] === 'fix').map(c => c[1] + ' ' + (d.checks[c[0]] === 'bad' ? '이상' : '조치중') + (d.checkNotes[c[0]] ? ' – ' + d.checkNotes[c[0]].trim() : ''));
+  const works = d.works.filter(w => w.vendor || w.desc).map(w => Object.assign({}, w, { vendor: w.vendor.trim(), desc: w.desc.trim() }));
+  const complaints = d.complaints.filter(c => c.unit || c.desc).map(c => Object.assign({}, c, { unit: c.unit.trim(), desc: c.desc.trim(), result: c.result.trim() }));
+  const incidents = d.incidents.filter(i => i.desc || i.type).map(i => Object.assign({}, i, { desc: i.desc.trim(), action: i.action.trim() }));
+  const directives = d.directives.filter(x => x.text.trim()).map(x => Object.assign({}, x, { text: x.text.trim() }));
+  const staffDetail = nums(d.staff), staffN = ['mgr', 'worker', 'clean', 'guard'].reduce((a, k) => a + (staffDetail[k] || 0), 0);
+  const repOf = i => [i.r119 && '119', i.r112 && '112', i.rins && '보험'].filter(Boolean);
+  return {
+    v: 2, date: d.date, author: d.author.trim(), role: d.role, staff: staffN || null, staffDetail,
+    checks: d.checks, checkNotes: Object.fromEntries(Object.keys(d.checkNotes).filter(k => d.checkNotes[k] && d.checkNotes[k].trim() && (d.checks[k] === 'bad' || d.checks[k] === 'fix')).map(k => [k, d.checkNotes[k].trim()])),
+    works, complaintsDetail: complaints, arrearsAct: nums(d.arrears), incidents, moves: nums(d.moves), directives,
+    planLines: L(d.plans), requests: L(d.requests), memo: L(d.memo), urgent: !!d.urgent,
+    /* 아래 4개는 기존 화면·집계·내보내기 호환용 요약 줄 */
+    work: anomalies.concat(works.map(w => '[공사·업체] ' + [w.vendor, w.desc, w.time].filter(Boolean).join(' · ') + (w.safety.length ? ' (' + w.safety.join('·') + ')' : '')), L(d.memo)),
+    complaints: complaints.map(c => [c.unit ? c.unit + '호' : '', c.type ? '[' + c.type + ']' : '', c.desc, c.result ? '→ ' + c.result : '', c.status === 'open' ? '(미처리)' : '(처리완료)'].filter(Boolean).join(' ')),
+    issues: incidents.map(i => ['[' + (i.type || '사고') + ']', i.time, i.desc, i.action ? '→ ' + i.action : '', repOf(i).length ? '(신고: ' + repOf(i).join('·') + ')' : ''].filter(Boolean).join(' ')),
+    plans: L(d.plans).concat(L(d.requests).map(x => '[본사 요청] ' + x), directives.filter(x => x.status !== 'done').map(x => '[지시 ' + (x.status === 'doing' ? '진행중' : '미착수') + '] ' + x.text)),
+    updatedAt: new Date().toISOString(),
+  };
+}
+function draftHasContent(e) { return !!(e.work.length || e.complaints.length || e.issues.length || e.plans.length || e.directives.length || Object.values(e.arrearsAct).some(v => v) || Object.values(e.moves).some(v => v)); }
+function prevEntryOf(key, date) {
+  let best = null;
+  state.dailies.filter(d => d.siteKey === key).forEach(d => Object.keys(d.days || {}).forEach(dd => { const dt = d.period + '-' + dd; if (dt < date && (!best || dt > best.date)) best = Object.assign({ date: dt }, d.days[dd]); }));
+  return best;
+}
+function ckChips(e) {
+  if (!e.checks) return '';
+  const bad = CHECK_ITEMS.filter(c => e.checks[c[0]] === 'bad' || e.checks[c[0]] === 'fix'), okN = CHECK_ITEMS.filter(c => e.checks[c[0]] === 'ok').length, naN = CHECK_ITEMS.filter(c => e.checks[c[0]] === 'na').length;
+  return '<div class="dcnt"><span class="chip ' + (bad.length ? '' : 'good') + '">점검 정상 ' + okN + '/' + (CHECK_ITEMS.length - naN) + '</span>' + bad.map(c => '<span class="chip ' + (e.checks[c[0]] === 'bad' ? 'crit' : 'warn') + '" title="' + esc(e.checkNotes && e.checkNotes[c[0]] || '') + '">' + c[1] + ' ' + (e.checks[c[0]] === 'bad' ? '이상' : '조치중') + '</span>').join('') + '</div>';
+}
+function setPath(obj, path, val) { const ks = path.split('.'); let o = obj; for (let i = 0; i < ks.length - 1; i++) { const k = ks[i]; if (o[k] == null) o[k] = /^\d+$/.test(ks[i + 1]) ? [] : {}; o = o[k]; } o[ks[ks.length - 1]] = val; }
+function getPath(obj, path) { return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj); }
+const saveDraft = () => { if (!state.editing) lsSet('mwr.draft2', state.draft); };
+function renderDailyForm(force) {
+  const wrap = $('#dailyFormWrap'); if (!wrap) return;
+  if (!force && wrap.innerHTML && wrap.contains(document.activeElement)) return;  /* 입력 중에는 데이터 갱신으로 다시 그리지 않는다 */
+  if (!state.draft) { const saved = lsGet('mwr.draft2', null); state.draft = saved && saved.date && saved.checks ? saved : newDraft(); }
+  const d = state.draft, all = sites(), ed = state.editing;
+  if (d.key && d.key !== '__new' && !all.some(s => s.key === d.key)) d.key = all.length ? (state.site || all[0].key) : '__new';
+  if ((!d.key || (d.key === '__new' && !d.newName)) && all.length) d.key = (state.site && all.some(x => x.key === state.site)) ? state.site : all[0].key;
+  if (!d.key) d.key = '__new';
+  $('#dailyFormTitle').textContent = ed ? siteName(ed.key) + ' · ' + dateLabel(ed.date) + ' 수정' : '일일업무 보고 작성';
+  const inp = (path, val, attrs) => '<input type="text" data-f="' + path + '" value="' + esc(val == null ? '' : val) + '" ' + (attrs || '') + '>';
+  const numI = (path, val, ph) => '<input type="number" min="0" step="1" inputmode="numeric" data-f="' + path + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + (ph || '') + '" style="width:72px">';
+  const sel = (path, val, opts, ph) => { const o = opts.map(x => Array.isArray(x) ? x : [x, x]); return '<select data-f="' + path + '">' + (ph ? '<option value="">' + ph + '</option>' : '') + o.map(x => '<option value="' + esc(x[0]) + '"' + (x[0] === val ? ' selected' : '') + '>' + esc(x[1]) + '</option>').join('') + '</select>'; };
+  const rm = (k, i) => '<button type="button" class="btn sm rmrow" data-rm="' + k + ':' + i + '" aria-label="행 삭제">✕</button>';
+  const add = (k, lb) => '<button type="button" class="btn sm" data-add="' + k + '">+ ' + lb + '</button>';
+  let h = '<form id="dailyForm" autocomplete="off">';
+  h += '<fieldset class="fs"><legend>1. 기본</legend><div class="form">' +
+    '<div class="f"><label for="dSite">사업소</label><select data-f="key" id="dSite">' + all.map(s => '<option value="' + s.key + '"' + (s.key === d.key ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '<option value="__new"' + (d.key === '__new' ? ' selected' : '') + '>+ 새 사업소 입력</option></select></div>' +
+    (d.key === '__new' ? '<div class="f"><label>새 사업소명</label>' + inp('newName', d.newName, 'placeholder="예: 남산센트럴시티투웨니퍼스트"') + '</div>' : '') +
+    '<div class="f"><label>보고 일자</label><input type="date" data-f="date" id="dDate" value="' + esc(d.date) + '" required></div>' +
+    '<div class="f"><label>작성자</label>' + inp('author', d.author, 'placeholder="성명" id="dAuthor"') + '</div>' +
+    '<div class="f"><label>직책</label>' + sel('role', d.role, ROLES, '선택') + '</div>' +
+    '<div class="f wide"><label>근무 인원</label><div class="row">' + [['mgr', '소장·과장'], ['worker', '관리원'], ['clean', '미화'], ['guard', '경비']].map(x => '<label class="small fg2">' + x[1] + ' ' + numI('staff.' + x[0], d.staff[x[0]], '명') + '</label>').join('') + '<label class="small fg2 grow">결원·대체 ' + inp('staff.absent', d.staff.absent, 'placeholder="예: 경비 1명 연차 · 대체근무" style="min-width:220px"') + '</label></div></div>' +
+    '</div>' + (d.key && d.key !== '__new' ? '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" id="dPrev">전일 보고 불러오기</button><span class="note">인원 · 점검 상태 · 미완료 지시사항을 가져옵니다</span></div>' : '') + '</fieldset>';
+  h += '<fieldset class="fs"><legend>2. 시설 점검 <span class="note">기본값 정상 · 이상/조치중일 때만 비고</span></legend><div class="cklist">' + CHECK_ITEMS.map(c => { const st = d.checks[c[0]] || 'ok'; return '<div class="ckrow" data-ckrow="' + c[0] + '"><div><b>' + c[1] + '</b><div class="small muted">' + c[2] + '</div></div><div class="seg">' + CHECK_STATES.map(x => '<button type="button" data-ck="' + c[0] + '" data-v="' + x[0] + '" class="' + x[0] + '" aria-pressed="' + (st === x[0]) + '">' + x[1] + '</button>').join('') + '</div><div class="cknote"' + (st === 'bad' || st === 'fix' ? '' : ' hidden') + '>' + inp('checkNotes.' + c[0], d.checkNotes[c[0]], 'placeholder="이상 내용 · 조치 계획 · 업체 연락 여부"') + '</div></div>'; }).join('') + '</div></fieldset>';
+  h += '<fieldset class="fs"><legend>3. 공사 · 외부업체 출입</legend>' + d.works.map((w, i) => '<div class="rrow">' + inp('works.' + i + '.vendor', w.vendor, 'placeholder="업체명"') + inp('works.' + i + '.desc', w.desc, 'placeholder="작업 내용"') + inp('works.' + i + '.time', w.time, 'placeholder="시간 (09:00~12:00)"') + '<div class="row" style="gap:6px">' + SAFETY.map(sf => '<label class="check small"><input type="checkbox" data-f="works.' + i + '.safety" value="' + sf + '"' + (w.safety.includes(sf) ? ' checked' : '') + '> ' + sf + '</label>').join('') + '</div>' + rm('works', i) + '</div>').join('') + add('works', '공사·업체 추가') + '</fieldset>';
+  h += '<fieldset class="fs"><legend>4. 민원 <span class="note">' + d.complaints.length + '건</span></legend>' + d.complaints.map((c, i) => '<div class="rrow">' + inp('complaints.' + i + '.unit', c.unit, 'placeholder="호수"') + sel('complaints.' + i + '.type', c.type, CMP_TYPES, '유형') + inp('complaints.' + i + '.desc', c.desc, 'placeholder="민원 내용"') + inp('complaints.' + i + '.result', c.result, 'placeholder="처리 결과"') + sel('complaints.' + i + '.status', c.status, [['done', '처리완료'], ['open', '미처리·진행중']]) + rm('complaints', i) + '</div>').join('') + add('complaints', '민원 추가') + '</fieldset>';
+  h += '<fieldset class="fs"><legend>5. 관리비 · 체납 독촉</legend><div class="row">' + [['collected', '당일 수납액(원)'], ['calls', '독촉 전화'], ['sms', '독촉 문자'], ['visits', '방문'], ['promises', '납부약속 세대']].map(x => '<label class="small fg2">' + x[1] + ' <input type="number" min="0" inputmode="numeric" data-f="arrears.' + x[0] + '" value="' + esc(d.arrears[x[0]]) + '" style="width:' + (x[0] === 'collected' ? '130px' : '70px') + '"></label>').join('') + '</div></fieldset>';
+  h += '<fieldset class="fs' + (d.urgent ? ' urgentfs' : '') + '"><legend>6. 안전 · 사고 · 긴급</legend>' + d.incidents.map((x, i) => '<div class="rrow">' + sel('incidents.' + i + '.type', x.type, INC_TYPES, '유형') + inp('incidents.' + i + '.time', x.time, 'placeholder="발생 시각"') + inp('incidents.' + i + '.desc', x.desc, 'placeholder="내용"') + inp('incidents.' + i + '.action', x.action, 'placeholder="조치"') + '<div class="row" style="gap:6px">' + [['r119', '119'], ['r112', '112'], ['rins', '보험']].map(r => '<label class="check small"><input type="checkbox" data-f="incidents.' + i + '.' + r[0] + '"' + (x[r[0]] ? ' checked' : '') + '> ' + r[1] + '</label>').join('') + '</div>' + rm('incidents', i) + '</div>').join('') + '<div class="row" style="margin-top:8px">' + add('incidents', '사고·특이사항 추가') + '<label class="check"><input type="checkbox" data-f="urgent" id="dUrgent"' + (d.urgent ? ' checked' : '') + '> <b style="color:var(--crit)">본사 즉시 확인 필요 (긴급)</b></label></div></fieldset>';
+  h += '<fieldset class="fs"><legend>7. 입주 변동</legend><div class="row">' + [['in', '전입'], ['out', '전출'], ['vacant', '공실(현재)']].map(x => '<label class="small fg2">' + x[1] + ' ' + numI('moves.' + x[0], d.moves[x[0]], '세대') + '</label>').join('') + '</div></fieldset>';
+  h += '<fieldset class="fs"><legend>8. 본사 지시사항 이행</legend>' + d.directives.map((x, i) => '<div class="rrow r2">' + inp('directives.' + i + '.text', x.text, 'placeholder="지시 내용"') + sel('directives.' + i + '.status', x.status, [['todo', '미착수'], ['doing', '진행중'], ['done', '완료']]) + rm('directives', i) + '</div>').join('') + add('directives', '지시사항 추가') + '</fieldset>';
+  h += '<fieldset class="fs"><legend>9. 익일 예정 · 본사 요청 · 업무 메모</legend><div class="form"><div class="f"><label>익일 예정 (한 줄에 한 건)</label><textarea data-f="plans" style="min-height:60px">' + esc(d.plans) + '</textarea></div><div class="f"><label>본사 요청 (예산 · 인력 · 업체)</label><textarea data-f="requests" style="min-height:60px">' + esc(d.requests) + '</textarea></div><div class="f wide"><label>업무 메모 (그 밖의 수행 업무, 한 줄에 한 건)</label><textarea data-f="memo" style="min-height:60px">' + esc(d.memo) + '</textarea></div></div></fieldset>';
+  h += '<div class="row"><button type="submit" class="btn primary" id="dSave">저장</button><button type="button" class="btn" id="dReset">새로 작성</button>' + (ed ? '<button type="button" class="btn danger" id="dDelete">이 보고 삭제</button>' : '') + '<span class="note" id="dMsg"></span></div></form>';
+  wrap.innerHTML = h;
+}
 function bindDaily() {
   dailyBound = true;
   $('#dailyMonth').addEventListener('change', e => { if (e.target.value) { state.dailyMonth = e.target.value; if (state.dailyDate.slice(0, 7) !== state.dailyMonth) state.dailyDate = state.dailyMonth + '-01'; render(); } });
@@ -1447,42 +1546,53 @@ function bindDaily() {
   $('#dayNext').addEventListener('click', () => { state.dailyDate = addDays(state.dailyDate, 1); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
   $('#dayToday').addEventListener('click', () => { state.dailyDate = todayStr(); state.dailyMonth = state.dailyDate.slice(0, 7); state.dailyQ = ''; render(); });
   let qt; $('#dailyQ').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { state.dailyQ = e.target.value; renderDaily(); }, 250); });
-  $('#dailyMatrix').addEventListener('click', e => { const b = e.target.closest('button.cell'); if (!b || b.disabled) return; state.dailyDate = b.dataset.day; state.dailyQ = ''; const en = dailyEntry(b.dataset.key, b.dataset.day); if (en) loadDailyForm(b.dataset.key, b.dataset.day); else { resetDailyForm(); $('#dSite').value = b.dataset.key; $('#dDate').value = b.dataset.day; } render(); $('#dailyFeed').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  $('#dailyFeed').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (!b) return; const [k, d] = b.dataset.edit.split('|'); loadDailyForm(k, d); $('#dailyFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  $('#dSite').addEventListener('change', e => { $('#dSiteNewWrap').hidden = e.target.value !== '__new'; });
-  $('#dReset').addEventListener('click', () => resetDailyForm());
-  $('#dDelete').addEventListener('click', async () => { const ed = state.editing; if (!ed) return; const b = $('#dDelete'); if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제하려면 한 번 더'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '이 보고 삭제'; }, 4000); return; } try { await store.deleteDaily(ed.key, ed.date); toast('삭제했습니다'); resetDailyForm(); } catch (err) { toast('삭제 실패: ' + err.message); } });
-  const draftKeys = ['dAuthor', 'dStaff', 'dWork', 'dComplaints', 'dIssues', 'dPlans'];
-  draftKeys.forEach(id => $('#' + id).addEventListener('input', () => { if (!state.editing) lsSet('mwr.draft', Object.fromEntries(draftKeys.map(k => [k, $('#' + k).value]))); }));
-  const draft = lsGet('mwr.draft', null); if (draft) draftKeys.forEach(k => { if (draft[k]) $('#' + k).value = draft[k]; });
-  $('#dailyForm').addEventListener('submit', async e => {
+  $('#dailyMatrix').addEventListener('click', e => { const b = e.target.closest('button.cell'); if (!b || b.disabled) return; state.dailyDate = b.dataset.day; state.dailyQ = ''; if (dailyEntry(b.dataset.key, b.dataset.day)) loadDailyForm(b.dataset.key, b.dataset.day); else { state.editing = null; state.draft = newDraft(b.dataset.key, b.dataset.day); } render(); renderDailyForm(true); $('#dailyFeed').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('#dailyFeed').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (!b) return; const [k, dt] = b.dataset.edit.split('|'); loadDailyForm(k, dt); renderDailyForm(true); $('#dailyFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  const wrap = $('#dailyFormWrap');
+  wrap.addEventListener('input', e => { const f = e.target.dataset.f; if (!f || e.target.type === 'checkbox' || e.target.tagName === 'SELECT') return; setPath(state.draft, f, e.target.value); saveDraft(); });
+  wrap.addEventListener('change', e => {
+    const t = e.target, f = t.dataset.f; if (!f) return;
+    if (t.type === 'checkbox') {
+      if (/\.safety$/.test(f)) { const arr = (getPath(state.draft, f) || []).slice(); const i = arr.indexOf(t.value); if (t.checked && i < 0) arr.push(t.value); if (!t.checked && i >= 0) arr.splice(i, 1); setPath(state.draft, f, arr); }
+      else { setPath(state.draft, f, t.checked); if (f === 'urgent') renderDailyForm(true); }
+    } else {
+      setPath(state.draft, f, t.value);
+      if (f === 'key') { if (t.value !== '__new') state.site = t.value; renderDailyForm(true); }
+      if (f === 'date' && t.value) { state.dailyDate = t.value; state.dailyMonth = t.value.slice(0, 7); }
+    }
+    saveDraft();
+  });
+  wrap.addEventListener('click', async e => {
+    const ck = e.target.closest('[data-ck]');
+    if (ck) { const k = ck.dataset.ck, v = ck.dataset.v; state.draft.checks[k] = v; $$('[data-ck="' + k + '"]', wrap).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); const row = ck.closest('.ckrow'), note = $('.cknote', row); note.hidden = !(v === 'bad' || v === 'fix'); if (!note.hidden) $('input', note).focus(); saveDraft(); return; }
+    const ad = e.target.closest('[data-add]');
+    if (ad) { const k = ad.dataset.add; state.draft[k].push(ROW[k]()); renderDailyForm(true); const first = $('[data-f^="' + k + '.' + (state.draft[k].length - 1) + '."]', wrap); if (first) first.focus(); saveDraft(); return; }
+    const rmb = e.target.closest('[data-rm]');
+    if (rmb) { const [k, i] = rmb.dataset.rm.split(':'); state.draft[k].splice(+i, 1); renderDailyForm(true); saveDraft(); return; }
+    if (e.target.id === 'dPrev') { const p = prevEntryOf(state.draft.key, state.draft.date); if (!p) { toast('이 사업소의 이전 일일보고가 없습니다'); return; } const pd = draftFromEntry(p, state.draft.key, state.draft.date); Object.assign(state.draft, { author: state.draft.author || pd.author, role: state.draft.role || pd.role, staff: pd.staff, checks: pd.checks, checkNotes: {}, directives: pd.directives.filter(x => x.status !== 'done') }); renderDailyForm(true); saveDraft(); toast(dateLabel(p.date) + ' 보고에서 인원 · 점검 상태 · 미완료 지시를 가져왔습니다'); return; }
+    if (e.target.id === 'dReset') { resetDailyForm(); return; }
+    if (e.target.id === 'dDelete') { const ed = state.editing; if (!ed) return; const b = e.target; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제하려면 한 번 더'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '이 보고 삭제'; }, 4000); return; } try { await store.deleteDaily(ed.key, ed.date); toast('삭제했습니다'); resetDailyForm(); } catch (err) { toast('삭제 실패: ' + err.message); } }
+  });
+  wrap.addEventListener('submit', async e => {
     e.preventDefault();
-    const sel = $('#dSite'); let key = sel.value, name;
-    if (key === '__new') { name = ReportParser.normalizeSite($('#dSiteNew').value); if (!name) { $('#dMsg').textContent = '사업소명을 입력하세요.'; return; } key = ReportParser.siteKey(name); } else name = siteName(key);
-    const date = $('#dDate').value; if (!date) { $('#dMsg').textContent = '보고 일자를 선택하세요.'; return; }
-    const L = id => $('#' + id).value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-    const entry = { date, author: $('#dAuthor').value.trim(), staff: $('#dStaff').value ? +$('#dStaff').value : null, work: L('dWork'), complaints: L('dComplaints'), issues: L('dIssues'), plans: L('dPlans'), urgent: $('#dUrgent').checked, updatedAt: new Date().toISOString() };
-    if (!entry.work.length && !entry.complaints.length && !entry.issues.length) { $('#dMsg').textContent = '업무·민원·특이사항 중 하나는 입력하세요.'; return; }
-    const btn = $('#dSave'); btn.disabled = true; $('#dMsg').textContent = '저장 중…';
+    const d = state.draft, msg = $('#dMsg'); let key = d.key, name;
+    if (key === '__new') { name = ReportParser.normalizeSite(d.newName); if (!name) { msg.textContent = '사업소명을 입력하세요.'; return; } key = ReportParser.siteKey(name); } else { if (!key) { msg.textContent = '사업소를 선택하세요.'; return; } name = siteName(key); }
+    if (!d.date) { msg.textContent = '보고 일자를 선택하세요.'; return; }
+    const entry = entryFromDraft(d);
+    if (!draftHasContent(entry)) { msg.textContent = '점검 이상 · 민원 · 사고 · 메모 · 예정 중 하나는 입력하세요. 모두 정상이면 업무 메모에 "특이사항 없음"이라고 적어 주세요.'; return; }
+    const btn = $('#dSave'); btn.disabled = true; msg.textContent = '저장 중…';
     try {
-      await store.saveDaily(key, name, date, entry);
-      toast(name + ' ' + dateLabel(date) + ' 일일보고 저장'); $('#dMsg').textContent = '';
-      try { localStorage.removeItem('mwr.draft'); } catch (err) {}
-      state.dailyDate = date; state.dailyMonth = date.slice(0, 7); state.site = key;
-      const keep = { author: entry.author, site: key }; resetDailyForm(); $('#dAuthor').value = keep.author; if (Array.from(sel.options).some(o => o.value === keep.site)) sel.value = keep.site;
-      render();
-    } catch (err) { $('#dMsg').textContent = '저장 실패: ' + (err.message || err.code || err); }
-    btn.disabled = false;
+      if (!sites().some(s => s.key === key)) await store.setSite({ id: key, name });
+      await store.saveDaily(key, name, d.date, entry);
+      toast(name + ' ' + dateLabel(d.date) + ' 일일보고 저장'); try { localStorage.removeItem('mwr.draft2'); } catch (err) {}
+      state.dailyDate = d.date; state.dailyMonth = d.date.slice(0, 7); state.site = key;
+      state.editing = null; state.draft = Object.assign(newDraft(key, d.date), { author: d.author, role: d.role });
+      render(); renderDailyForm(true);
+    } catch (err) { msg.textContent = '저장 실패: ' + (err.message || err.code || err); btn.disabled = false; }
   });
 }
-function resetDailyForm() { state.editing = null; ['dSiteNew', 'dStaff', 'dWork', 'dComplaints', 'dIssues', 'dPlans'].forEach(id => $('#' + id).value = ''); $('#dUrgent').checked = false; $('#dDate').value = state.dailyDate; $('#dDelete').hidden = true; $('#dailyFormTitle').textContent = '일일업무 보고 작성'; $('#dMsg').textContent = ''; $('#dSiteNewWrap').hidden = $('#dSite').value !== '__new'; }
-function loadDailyForm(key, date) {
-  const e = dailyEntry(key, date); if (!e) return;
-  state.editing = { key, date };
-  const sel = $('#dSite'); if (Array.from(sel.options).some(o => o.value === key)) sel.value = key; $('#dSiteNewWrap').hidden = true;
-  $('#dDate').value = date; $('#dAuthor').value = e.author || ''; $('#dStaff').value = e.staff != null ? e.staff : ''; $('#dWork').value = (e.work || []).join('\n'); $('#dComplaints').value = (e.complaints || []).join('\n'); $('#dIssues').value = (e.issues || []).join('\n'); $('#dPlans').value = (e.plans || []).join('\n'); $('#dUrgent').checked = !!e.urgent;
-  $('#dDelete').hidden = false; $('#dailyFormTitle').textContent = siteName(key) + ' · ' + dateLabel(date) + ' 수정'; $('#dMsg').textContent = '';
-}
+function resetDailyForm() { const k = state.draft && state.draft.key !== '__new' ? state.draft.key : ''; state.editing = null; state.draft = newDraft(k, state.dailyDate); try { localStorage.removeItem('mwr.draft2'); } catch (e) {} renderDailyForm(true); }
+function loadDailyForm(key, date) { const e = dailyEntry(key, date); if (!e) return; state.editing = { key, date }; state.draft = draftFromEntry(e, key, date); }
 
 /* ---------- 업로드 ---------- */
 let uploadBound = false;
@@ -1578,107 +1688,13 @@ async function addFiles(files) {
   renderUpload();
 }
 
-/* ---------- 내보내기 ---------- */
-function renderExport() {
-  const el = $('#view-export'), month = state.month;
-  el.innerHTML = '<div class="grid3">' +
-    '<div class="card"><div class="hd"><h2>' + monthLabel(month) + ' 종합 엑셀</h2></div><div class="bd"><p class="small fg2">요약 · 법정검사 · 선임관리자 · 자격증 · 주요업무 · 미납세대 시트로 구성된 경영보고용 통합 파일입니다. (' + reportsFor(month).length + '개소)</p><button class="btn primary" data-x="month">엑셀 내려받기</button></div></div>' +
-    '<div class="card"><div class="hd"><h2>전체 누적 엑셀</h2></div><div class="bd"><p class="small fg2">저장된 모든 월(' + months().filter(m => reportsFor(m).length).length + '개월, ' + state.reports.length + '건)의 월간보고를 한 파일로 내려받습니다. 월별 추이 분석용입니다.</p><button class="btn primary" data-x="all">엑셀 내려받기</button></div></div>' +
-    '<div class="card"><div class="hd"><h2>' + monthLabel(state.dailyMonth) + ' 일일보고 엑셀</h2></div><div class="bd"><p class="small fg2">일일보고 ' + dailyList(state.dailyMonth).length + '건을 날짜·사업소 순으로 정리합니다. 상단 일일보고 탭의 월 선택을 따릅니다.</p><button class="btn primary" data-x="daily">엑셀 내려받기</button></div></div>' +
-    '<div class="card"><div class="hd"><h2>' + monthLabel(month) + ' 경영 요약 보고서</h2></div><div class="bd"><p class="small fg2">체납 현황, 긴급·주의 사항과 조치 상태, 사업소별 표, 일일보고 긴급 건을 한 문서(HTML)로 정리합니다. 브라우저에서 열어 PDF로 저장하거나 메일에 첨부할 수 있습니다.</p><button class="btn primary" data-x="report">보고서 내려받기</button></div></div>' +
-    '<div class="card"><div class="hd"><h2>요약 문안 복사</h2></div><div class="bd"><p class="small fg2">카카오톡·문자로 보낼 수 있는 짧은 요약(체납, 미처리 긴급·주의 사항, 오늘 일일보고 미제출)을 만듭니다.</p><button class="btn primary" data-x="copy">문안 복사</button></div></div>' +
-    '</div><div class="note" id="xMsg"></div><textarea id="xText" class="xbox" readonly hidden aria-label="요약 문안"></textarea>';
-}
-function buildWb(reps, title) {
-  const wb = XLSX.utils.book_new();
-  const S = (name, aoa) => { const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = aoa[0].map((_, c) => ({ wch: Math.min(60, Math.max(8, ...aoa.map(r => String(r[c] == null ? '' : r[c]).length * 1.6))) })); XLSX.utils.book_append_sheet(wb, ws, name); };
-  S('요약', [['사업소', '보고월', '작성자', '총세대', '체납세대', '체납률(%)', '전월체납잔액', '당월발생', '체납총액', '전월대비', '2개월이상 세대', '2개월이상 금액', '법정검사 주의', '선임자 공란', '체납 대처방안', '민원', '특이사항', '지시사항']].concat(reps.map(r => { const t = arrearsTotal(r), p = prevTotalOf(r).v; return [r.site, r.period, r.author, r.arrears.units, arrearsUnits(r), (arrearsUnits(r) != null && r.arrears.units) ? +(100 * arrearsUnits(r) / r.arrears.units).toFixed(1) : null, r.arrears.prevBalance, r.arrears.monthChange, t, (t != null && p != null) ? t - p : null, longTerm(r).length, longTerm(r).reduce((a, u) => a + u.total, 0), inspAlerts(r).map(i => i.item + ' ' + i.st.label).join(', '), managerAlerts(r).map(m => m.item).join(', '), r.arrears.action, r.complaints, (r.notes || []).join(' / '), (r.instructions || []).join(' / ')]; })));
-  S('법정검사', [['사업소', '보고월', '항목', '기안·검사일', '완료여부', '상태']].concat(reps.flatMap(r => r.inspections.map(i => [r.site, r.period, i.item, i.due, i.done, inspStatus(i).label]))));
-  S('선임관리자', [['사업소', '보고월', '항목', '선임자', '선임일', '미선임 대처방안']].concat(reps.flatMap(r => r.managers.map(m => [r.site, r.period, m.item, m.name, m.date, r.managerGap]))));
-  S('자격증', [['사업소', '보고월', '성명', '자격증', '취득', '발급기관', '기타']].concat(reps.flatMap(r => r.certs.map(c => [r.site, r.period, c.name, c.certs, c.date, c.issuer, c.etc]))));
-  S('주요업무', [['사업소', '보고월', '구분', '내용']].concat(reps.flatMap(r => r.tasks.flatMap(t => t.items.map(i => [r.site, r.period, t.category, i])))));
-  S('미납세대', [['사업소', '보고월', '동', '호', '부과년월', '구분', '부과액', '연체료', '미납합계', '비고']].concat(reps.flatMap(r => (r.unpaid || []).map(u => [r.site, r.period, u.dong, u.unit, u.month, u.type, u.charge, u.late, u.total, u.note]))));
-  const ackMap = new Map(state.acks.map(a => [a.id, a]));
-  const ms = Array.from(new Set(reps.map(r => r.period))).sort();
-  S('경영주의사항', [['보고월', '사업소', '수준', '항목', '내용', '조치상태', '조치 메모', '확인일']].concat(ms.flatMap(m => issuesFor(m).map(i => { const a = ackMap.get(i.id); return [m, i.site, chipFor(i.lv), i.title, i.detail || '', a ? '확인 완료' : '미처리', a ? a.memo : '', a ? (a.at || '').slice(0, 10) : '']; }))));
-  return wb;
-}
-function openIssues(month) { const ackIds = new Set(state.acks.map(a => a.id)); return issuesFor(month).filter(i => !ackIds.has(i.id)); }
-function summaryText(month) {
-  const reps = reportsFor(month), all = sites(), td = todayStr();
-  const tot = reps.reduce((a, r) => a + (arrearsTotal(r) || 0), 0), pairs = reps.map(r => ({ c: arrearsTotal(r), p: prevTotalOf(r).v })).filter(x => x.c != null && x.p != null);
-  const delta = pairs.length ? pairs.reduce((a, x) => a + x.c - x.p, 0) : null;
-  const au = reps.reduce((a, r) => a + (arrearsUnits(r) || 0), 0), un = reps.reduce((a, r) => a + ((r.arrears && r.arrears.units) || 0), 0);
-  const open = openIssues(month), imp = open.filter(i => i.lv === 'crit' || i.lv === 'serious');
-  const miss = all.filter(s => !dailyEntry(s.key, td));
-  const L = ['[사업소 보고 현황 요약] ' + monthLabel(month) + ' (' + reps.length + '개소 제출)',
-    '- 체납 총액 ' + won(tot) + (delta == null ? '' : ' (전월 대비 ' + (delta >= 0 ? '+' : '-') + won(Math.abs(delta)) + ')'),
-    '- 체납 세대 ' + comma(au) + ' / ' + comma(un) + '세대 (체납률 ' + pct(au, un) + ')',
-    '- 미처리 사항: 긴급 ' + open.filter(i => i.lv === 'crit').length + '건, 주의 ' + open.filter(i => i.lv === 'serious').length + '건, 확인 ' + open.filter(i => i.lv === 'warn').length + '건'];
-  if (imp.length) { L.push('', '[긴급·주의 사항]'); imp.slice(0, 15).forEach(i => L.push('· [' + chipFor(i.lv) + '] ' + i.site + ' ' + i.title + (i.detail ? ' — ' + i.detail : ''))); }
-  L.push('', '[일일보고] ' + dateLabel(td) + ' ' + (all.length - miss.length) + '/' + all.length + '개소 제출' + (miss.length && !isWeekend(td) ? ' · 미제출: ' + miss.map(s => s.name).join(', ') : ''));
-  return L.join('\n');
-}
-function buildReportHtml(month) {
-  const reps = reportsFor(month), all = sites(), td = todayStr(), ackMap = new Map(state.acks.map(a => [a.id, a]));
-  const issues = issuesFor(month).filter(i => i.lv !== 'info');
-  const tot = reps.reduce((a, r) => a + (arrearsTotal(r) || 0), 0), au = reps.reduce((a, r) => a + (arrearsUnits(r) || 0), 0), un = reps.reduce((a, r) => a + ((r.arrears && r.arrears.units) || 0), 0);
-  const css = 'body{font:14px/1.55 "Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#16212c;max-width:960px;margin:24px auto;padding:0 16px}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:26px 0 8px;border-bottom:2px solid #1b5a8a;padding-bottom:4px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #d5dbe3;padding:5px 8px;text-align:left;vertical-align:top}th{background:#e9edf2}td.r{text-align:right}.k{display:flex;gap:12px;flex-wrap:wrap}.k div{border:1px solid #d5dbe3;padding:8px 14px;min-width:150px}.k b{display:block;font-size:20px}.c{color:#d03b3b;font-weight:700}.s{color:#9a3f1b;font-weight:700}.w{color:#7a5300}.d{color:#7f8a96;text-decoration:line-through}';
-  let h = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>사업소 보고 현황 ' + esc(monthLabel(month)) + '</title><style>' + css + '</style></head><body>';
-  h += '<h1>사업소 보고 현황 · ' + esc(monthLabel(month)) + '</h1><div style="color:#7f8a96">작성일 ' + esc(dateLabel(td)) + ' · 월간보고 제출 ' + reps.length + '개소</div>';
-  h += '<h2>요약</h2><div class="k"><div>체납 총액<b>' + esc(won(tot)) + '</b></div><div>체납 세대<b>' + comma(au) + ' / ' + comma(un) + '</b>체납률 ' + pct(au, un) + '</div><div>미처리 긴급·주의<b>' + issues.filter(i => !ackMap.has(i.id) && (i.lv === 'crit' || i.lv === 'serious')).length + '건</b></div></div>';
-  h += '<h2>경영 주의사항</h2><table><thead><tr><th>수준</th><th>사업소</th><th>항목</th><th>내용</th><th>조치</th></tr></thead><tbody>' + (issues.length ? issues.map(i => { const a = ackMap.get(i.id); return '<tr><td class="' + (i.lv === 'crit' ? 'c' : i.lv === 'serious' ? 's' : 'w') + '">' + chipFor(i.lv) + '</td><td>' + esc(i.site) + '</td><td' + (a ? ' class="d"' : '') + '>' + esc(i.title) + '</td><td>' + esc(i.detail || '') + '</td><td>' + (a ? '확인 완료 ' + esc((a.at || '').slice(0, 10)) + (a.memo ? '<br>' + esc(a.memo) : '') : '미처리') + '</td></tr>'; }).join('') : '<tr><td colspan="5">해당 사항 없음</td></tr>') + '</tbody></table>';
-  h += '<h2>사업소별 현황</h2><table><thead><tr><th>사업소</th><th>총세대</th><th>체납세대</th><th>체납률</th><th>체납총액</th><th>전월 대비</th><th>2개월↑</th></tr></thead><tbody>' + reps.map(r => { const t = arrearsTotal(r), p = prevTotalOf(r).v; return '<tr><td>' + esc(r.site) + '</td><td class="r">' + comma(r.arrears.units) + '</td><td class="r">' + comma(arrearsUnits(r)) + '</td><td class="r">' + pct(arrearsUnits(r), r.arrears.units) + '</td><td class="r">' + comma(t) + '</td><td class="r">' + ((t != null && p != null) ? (t - p > 0 ? '+' : '') + comma(t - p) : '–') + '</td><td class="r">' + longTerm(r).length + '</td></tr>'; }).join('') + '</tbody></table>';
-  const dl = dailyList(month), urg = dl.filter(e => e.urgent);
-  h += '<h2>일일보고</h2><p>' + esc(monthLabel(month)) + ' 제출 ' + dl.length + '건 · 긴급 ' + urg.length + '건' + (urg.length ? '</p><ul>' + urg.map(e => '<li>' + esc(e.site + ' ' + dateLabel(e.date) + ' — ' + ((e.issues || []).join(' / ') || '긴급 표시')) + '</li>').join('') + '</ul>' : '</p>');
-  return h + '</body></html>';
-}
-async function saveFile(name, blob, msg) {
-  let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) {}
-  if (dl) { await dl.save({ filename: name, data: blob }); msg.textContent = name + ' 저장을 요청했습니다.'; }
-  else {
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-    msg.textContent = name + ' 내려받기를 시작했습니다. 저장되지 않으면 브라우저의 다운로드 차단 설정을 확인하세요.';
-  }
-}
-async function copySummary() {
-  const msg = $('#xMsg'), box = $('#xText'), text = summaryText(state.month);
-  box.value = text; box.hidden = false; box.focus(); box.select();
-  try { await navigator.clipboard.writeText(text); msg.textContent = '요약 문안을 복사했습니다. 아래 내용을 문자·메신저에 붙여 넣으세요.'; }
-  catch (e) { msg.textContent = '자동 복사가 막혀 있습니다. 아래 문안이 선택되어 있으니 Ctrl+C로 복사하세요.'; }
-}
-async function doExport(kind) {
-  const msg = $('#xMsg');
-  try {
-    if (kind === 'copy') { await copySummary(); return; }
-    if (kind === 'report') { await saveFile('경영요약_' + state.month + '.html', new Blob([buildReportHtml(state.month)], { type: 'text/html' }), msg); return; }
-    let wb, name;
-    if (kind === 'daily') {
-      const list = dailyList(state.dailyMonth);
-      wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([['일자', '사업소', '작성자', '근무인원', '업무내용', '민원', '특이사항', '긴급', '익일 예정']].concat(list.map(e => [e.date, e.site, e.author, e.staff, (e.work || []).join('\n'), (e.complaints || []).join('\n'), (e.issues || []).join('\n'), e.urgent ? 'Y' : '', (e.plans || []).join('\n')])));
-      ws['!cols'] = [10, 22, 10, 8, 50, 30, 30, 6, 30].map(w => ({ wch: w }));
-      XLSX.utils.book_append_sheet(wb, ws, '일일보고');
-      const [yy, mm] = state.dailyMonth.split('-').map(Number), last = new Date(yy, mm, 0).getDate(), tdd = todayStr();
-      const bizDays = Array.from({ length: last }, (_, i) => state.dailyMonth + '-' + pad2(i + 1)).filter(d => d <= tdd && !isWeekend(d)).length;
-      const ws2 = XLSX.utils.aoa_to_sheet([['사업소', '제출일수', '평일 기준일수', '제출률(%)', '긴급 건수']].concat(sites().map(s => { const dd = (dailyDocsFor(state.dailyMonth).find(d => d.siteKey === s.key) || {}).days || {}, n = Object.keys(dd).length; return [s.name, n, bizDays, bizDays ? +Math.min(100, 100 * n / bizDays).toFixed(1) : null, Object.keys(dd).filter(k => dd[k].urgent).length]; })));
-      ws2['!cols'] = [26, 10, 14, 10, 10].map(w => ({ wch: w }));
-      XLSX.utils.book_append_sheet(wb, ws2, '제출 현황'); name = '일일보고_' + state.dailyMonth + '.xlsx';
-    } else if (kind === 'month') { wb = buildWb(reportsFor(state.month)); name = '월간보고_종합_' + state.month + '.xlsx'; }
-    else { wb = buildWb(state.reports.slice().sort((a, b) => a.period.localeCompare(b.period) || a.site.localeCompare(b.site, 'ko'))); name = '월간보고_누적_' + todayStr() + '.xlsx'; }
-    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    await saveFile(name, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), msg);
-  } catch (e) { msg.textContent = e.code === 'declined' ? '내려받기를 취소했습니다.' : '내보내기 실패: ' + (e.message || e.code || e); }
-}
-
 /* ===================== 전역 이벤트 ===================== */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-go]'); if (!t) return;
   if (t.dataset.month) { state.month = t.dataset.month; renderMonthSel(); }
   go(t.dataset.go, t.dataset.key, { date: t.dataset.date });
-  if (t.dataset.go === 'daily' && t.dataset.key) { const d = t.dataset.date || state.dailyDate; if (dailyEntry(t.dataset.key, d)) loadDailyForm(t.dataset.key, d); }
+  if (t.dataset.go === 'daily' && t.dataset.key) { const d = t.dataset.date || state.dailyDate; if (dailyEntry(t.dataset.key, d)) loadDailyForm(t.dataset.key, d); else { state.editing = null; state.draft = newDraft(t.dataset.key, d); } renderDailyForm(true); }
 });
-document.addEventListener('click', e => { const x = e.target.closest('[data-x]'); if (x) doExport(x.dataset.x); });
 document.addEventListener('click', e => {
   const f = e.target.closest('[data-ilv]'); if (f) { state.issueLv = f.dataset.ilv; render(); return; }
   const t = e.target.closest('[data-trend]'); if (t) { state.trend = t.dataset.trend; render(); return; }
@@ -1696,7 +1712,7 @@ $('#monthSel').addEventListener('change', e => { state.month = e.target.value; r
 
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
-  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'upload', 'export'].includes(hash)) state.tab = hash;
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'upload'].includes(hash)) state.tab = hash;
   renderMonthSel(); setTab(state.tab); store.init();
 }
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
