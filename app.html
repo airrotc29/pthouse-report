@@ -272,7 +272,7 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 .rings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-content: center; }
 .ring { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 12px 6px 10px; border-radius: 12px; background: rgba(255,255,255,.07); border: 1px solid var(--hero-line); }
 .ring .rg { position: relative; width: 84px; height: 84px; }
-.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .rg svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring .rt { fill: none; stroke: rgba(255,255,255,.16); stroke-width: 8; }
 .ring .rv { fill: none; stroke-width: 8; stroke-linecap: round; }
 .ring .rv.g { stroke: var(--hg); } .ring .rv.w { stroke: var(--hw); } .ring .rv.c { stroke: var(--hc); }
@@ -479,6 +479,10 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .drop { padding: 20px 16px; }
 .ringsA { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; align-content: center; }
 @media (max-width: 420px) { .ringsA { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ring .rtr { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 3px; min-height: 18px; }
+.ring .rd { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ring .rd.dim { color: var(--hero-mut); font-weight: 500; opacity: .8; }
+.ring .rtr .ms { width: 56px; height: 18px; overflow: visible; flex: none; transform: none; display: block; }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -943,15 +947,21 @@ function renderHome() {
   const itemsN = reps.reduce((a, r) => a + r.inspections.length + r.managers.length, 0), okItems = Math.max(0, itemsN - inspN - mgrN);
   const bizN = (() => { const [yy, mm] = month.split('-').map(Number), last = new Date(yy, mm, 0).getDate(), t0 = todayStr(); let n = 0; for (let i = 1; i <= last; i++) { const d = month + '-' + pad2(i); if (d <= t0 && !isWeekend(d)) n++; } return n; })();
   const dExp = all.length * bizN, dMonthN = dailyList(month).length;
+  const hms = months().filter(m => m <= month && reportsFor(m).length).slice(-6), dms = months().filter(m => m <= month).slice(-6);
+  const sum = (rs, f) => rs.reduce((a, r) => a + (f(r) || 0), 0);
+  const serRate = hms.map(m => { const rs = reportsFor(m), a = sum(rs, arrearsUnits), u = sum(rs, r => r.arrears && r.arrears.units); return u ? 100 * a / u : null; });
+  const serLt = hms.map(m => { const rs = reportsFor(m), a = sum(rs, arrearsUnits), l = sum(rs, r => longTerm(r).length); return a ? 100 * l / a : null; });
+  const serOk = hms.map(m => { const rs = reportsFor(m), n = sum(rs, r => r.inspections.length + r.managers.length), bad = sum(rs, r => inspAlerts(r).length + managerAlerts(r).length); return n ? 100 * (n - bad) / n : null; });
+  const serD = dms.map(m => { const e = all.length * bizDaysIn(m); return e ? 100 * dailyList(m).length / e : null; });
   const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
   let h = '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
     '<div class="hchips"><span>월간보고 <b>' + reps.length + '/' + knownN + '</b> ' + (reps.length >= knownN ? '전원 제출' : (knownN - reps.length) + '개소 미제출') + '</span><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div><div class="spark">' + heroSpark(ttp) + '</div><div class="cap">' + (ttp.length > 1 ? ttp.map(p => shortMonth(p.m)).join(' → ') + ' · 전 사업소 합산' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
     '<div class="rings">' +
-      ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대') +
-      ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대') +
-      ring(itemsN ? okItems / itemsN : 1, (inspN + mgrN) === 0 ? 'g' : (reps.some(r => managerAlerts(r).some(m => m.lv === 'crit') || inspAlerts(r).some(i => i.st.lv === 'crit')) ? 'c' : 'w'), itemsN ? Math.round(100 * okItems / itemsN) + '%' : '–', '검사·선임 정상', (inspN + mgrN) ? '주의 ' + (inspN + mgrN) + '건 / ' + itemsN + '항목' : itemsN + '항목 모두 정상') +
-      ring(dExp ? Math.min(1, dMonthN / dExp) : 0, !dExp ? 'w' : (dMonthN / dExp >= 0.9 ? 'g' : dMonthN / dExp >= 0.6 ? 'w' : 'c'), dExp ? Math.round(100 * dMonthN / dExp) + '%' : '–', shortMonth(month) + ' 일일보고', dMonthN + ' / ' + dExp + '건 (평일 기준)') +
+      ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
+      ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대', { vals: serLt, fmt: pp, goodWhen: 'down' }) +
+      ring(itemsN ? okItems / itemsN : 1, (inspN + mgrN) === 0 ? 'g' : (reps.some(r => managerAlerts(r).some(m => m.lv === 'crit') || inspAlerts(r).some(i => i.st.lv === 'crit')) ? 'c' : 'w'), itemsN ? Math.round(100 * okItems / itemsN) + '%' : '–', '검사·선임 정상', (inspN + mgrN) ? '주의 ' + (inspN + mgrN) + '건 / ' + itemsN + '항목' : itemsN + '항목 모두 정상', { vals: serOk, fmt: pp, goodWhen: 'up' }) +
+      ring(dExp ? Math.min(1, dMonthN / dExp) : 0, !dExp ? 'w' : (dMonthN / dExp >= 0.9 ? 'g' : dMonthN / dExp >= 0.6 ? 'w' : 'c'), dExp ? Math.round(100 * dMonthN / dExp) + '%' : '–', shortMonth(month) + ' 일일보고', dMonthN + ' / ' + dExp + '건 (평일 기준)', { vals: serD, fmt: pp, goodWhen: 'up' }) +
     '</div></div>';
   const hHero = h; h = '';
   h += todayCard();
@@ -1047,9 +1057,25 @@ function drawTrend() {
 }
 
 /* ---- graphics ---- */
-function ring(frac, tone, big, label, sub) {
+const pp = v => v.toFixed(1) + '%p';
+function miniSpark(vals, color) {
+  const W = 56, H = 18, mn = Math.min(...vals), mx = Math.max(...vals), span = (mx - mn) || 1;
+  const X = i => 2 + (W - 4) * i / (vals.length - 1), Y = v => 3 + (H - 6) * (1 - (v - mn) / span);
+  const d = vals.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+  return '<svg class="ms" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + X(vals.length - 1).toFixed(1) + '" cy="' + Y(vals[vals.length - 1]).toFixed(1) + '" r="2.4" fill="' + color + '"/></svg>';
+}
+/* tr: { vals: 월별 값(오래된 순), fmt, goodWhen: 'up'|'down' } → 전월 대비 증감 + 미니 추이선 */
+function ring(frac, tone, big, label, sub, tr) {
   const R = 34, C = 2 * Math.PI * R, f = Math.max(0, Math.min(1, frac || 0));
-  return '<div class="ring"><div class="rg"><svg viewBox="0 0 88 88" aria-hidden="true"><circle class="rt" cx="44" cy="44" r="' + R + '"/>' + (f > 0 ? '<circle class="rv ' + tone + '" cx="44" cy="44" r="' + R + '" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg><div class="rc">' + esc(big) + '</div></div><div class="rl">' + esc(label) + '</div><div class="rs">' + esc(sub) + '</div></div>';
+  let t = '';
+  if (tr) {
+    const vs = (tr.vals || []).filter(v => v != null && !isNaN(v));
+    if (vs.length >= 2) {
+      const d = vs[vs.length - 1] - vs[vs.length - 2], good = tr.goodWhen === 'up' ? d > 0 : d < 0, bad = tr.goodWhen === 'up' ? d < 0 : d > 0, col = bad ? 'var(--hc)' : good ? 'var(--hg)' : 'var(--hero-mut)';
+      t = '<div class="rtr" title="최근 ' + vs.length + '개월 추이 · 전월 대비"><span class="rd" style="color:' + col + '">' + (d > 0 ? '▲' : d < 0 ? '▼' : '–') + ' ' + (tr.fmt ? tr.fmt(Math.abs(d)) : Math.abs(d).toFixed(1)) + '</span>' + miniSpark(vs, col) + '</div>';
+    } else t = '<div class="rtr"><span class="rd dim">전월 자료 없음</span></div>';
+  }
+  return '<div class="ring"><div class="rg"><svg viewBox="0 0 88 88" aria-hidden="true"><circle class="rt" cx="44" cy="44" r="' + R + '"/>' + (f > 0 ? '<circle class="rv ' + tone + '" cx="44" cy="44" r="' + R + '" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg><div class="rc">' + esc(big) + '</div></div><div class="rl">' + esc(label) + '</div><div class="rs">' + esc(sub) + '</div>' + t + '</div>';
 }
 function tile(tone, v, unit, lb, d, path) {
   return '<div class="tile ' + tone + '"><div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg></div><div class="tx"><div class="lb">' + esc(lb) + '</div><div class="v">' + (typeof v === 'number' ? comma(v) : esc(v)) + '<small>' + unit + '</small></div><div class="d">' + esc(d) + '</div></div></div>';
@@ -1178,6 +1204,11 @@ function renderSite() {
   const ia = inspAlerts(r), ma = managerAlerts(r), rateV = (arrearsUnits(r) != null && r.arrears.units) ? 100 * arrearsUnits(r) / r.arrears.units : null;
   const ser = siteSeries(key).map(y => ({ y })), insN = r.inspections.length + r.managers.length, okN = Math.max(0, insN - ia.length - ma.length);
   const ddoc = state.dailies.find(x => x.id === key + '_' + state.month), dN = ddoc && ddoc.days ? Object.keys(ddoc.days).length : 0, biz = bizDaysIn(state.month);
+  const sms = list.map(x => x.period).filter(p => p <= state.month).slice(-6), sdm = months().filter(m => m <= state.month).slice(-6);
+  const sRate = sms.map(p => { const x = reportBy(key, p), a = arrearsUnits(x), u = x.arrears.units; return (a != null && u) ? 100 * a / u : null; });
+  const sLt = sms.map(p => { const u2 = unitSummary(reportBy(key, p)); return u2.length ? 100 * u2.filter(u => u.n >= 2).length / u2.length : null; });
+  const sOk = sms.map(p => { const x = reportBy(key, p), n = x.inspections.length + x.managers.length; return n ? 100 * (n - inspAlerts(x).length - managerAlerts(x).length) / n : null; });
+  const sD = sdm.map(m => { const bz = bizDaysIn(m), dc = state.dailies.find(d => d.id === key + '_' + m), n = dc && dc.days ? Object.keys(dc.days).length : 0; return bz ? 100 * n / bz : null; });
   h += '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(r.period) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (d == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (d > 0 ? 'up' : 'down') + '">' + (d >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(d)) + '원 ' + shortMonth(pt0.period) + ' 대비' + (ptot ? ' (' + (d >= 0 ? '+' : '-') + Math.abs(100 * d / ptot).toFixed(1) + '%)' : '') + '</span>') +
     '<div class="hchips"><span>당월 발생 <b>' + (r.arrears.monthChange == null ? '–' : (r.arrears.monthChange > 0 ? '+' : '') + krw(r.arrears.monthChange)) + '</b></span>' +
@@ -1185,10 +1216,10 @@ function renderSite() {
     '<span>최대 미납 <b>' + (top ? esc(top.unit) : '–') + '</b>' + (top ? ' ' + krw(top.total) + '원 · ' + top.n + '개월' : '') + '</span></div>' +
     '<div class="spark">' + heroSpark(ser) + '</div><div class="cap">' + (ser.length > 1 ? '월간보고 ' + ser.length + '개 시점 추이' : '월간보고가 쌓이면 추이선이 그려집니다') + '</div></div>' +
     '<div class="rings">' +
-    ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대') +
-    ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대') +
-    ring(insN ? okN / insN : 1, (ia.length + ma.length) === 0 ? 'g' : (ia.some(i => i.st.lv === 'crit') || ma.some(m => m.lv === 'crit')) ? 'c' : 'w', insN ? Math.round(100 * okN / insN) + '%' : '–', '검사·선임 정상', (ia.length + ma.length) ? '주의 ' + (ia.length + ma.length) + '건 / ' + insN + '항목' : insN + '항목 모두 정상') +
-    ring(biz ? Math.min(1, dN / biz) : 0, !biz ? 'w' : dN / biz >= 0.9 ? 'g' : dN / biz >= 0.6 ? 'w' : 'c', biz ? Math.round(100 * dN / biz) + '%' : '–', shortMonth(state.month) + ' 일일보고', dN + ' / ' + biz + '일 (평일 기준)') +
+    ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대', { vals: sRate, fmt: pp, goodWhen: 'down' }) +
+    ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) +
+    ring(insN ? okN / insN : 1, (ia.length + ma.length) === 0 ? 'g' : (ia.some(i => i.st.lv === 'crit') || ma.some(m => m.lv === 'crit')) ? 'c' : 'w', insN ? Math.round(100 * okN / insN) + '%' : '–', '검사·선임 정상', (ia.length + ma.length) ? '주의 ' + (ia.length + ma.length) + '건 / ' + insN + '항목' : insN + '항목 모두 정상', { vals: sOk, fmt: pp, goodWhen: 'up' }) +
+    ring(biz ? Math.min(1, dN / biz) : 0, !biz ? 'w' : dN / biz >= 0.9 ? 'g' : dN / biz >= 0.6 ? 'w' : 'c', biz ? Math.round(100 * dN / biz) + '%' : '–', shortMonth(state.month) + ' 일일보고', dN + ' / ' + biz + '일 (평일 기준)', { vals: sD, fmt: pp, goodWhen: 'up' }) +
     '</div></div>';
   const insT = r.inspections.map(i => { const st = inspStatus(i); return { lv: st.lv || 'na', name: i.item, sub: [i.due, i.done].filter(Boolean).join(' · ') || '기록 없음', label: st.label }; });
   const mgrT = r.managers.map(m => { const na = /보조|기타/.test(sq(m.item)); const lv = m.name ? (isNA(m.name) ? 'na' : 'good') : (na ? 'na' : (/전기|소방/.test(m.item) ? 'crit' : 'warn')); return { lv, name: m.item, sub: m.name ? (isNA(m.name) ? '해당 없음' : m.name + (m.date ? ' · ' + m.date : '')) : '공란', label: m.name ? (isNA(m.name) ? '' : '선임') : (na ? '' : '확인 필요') }; });
