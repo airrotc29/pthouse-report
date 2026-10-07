@@ -519,6 +519,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .hero .sleg { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 5px 14px; margin-top: 9px; font-size: 12px; color: var(--hero-mut); }
 .hero .sleg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 .hero .sleg b { color: var(--hero-fg); font-variant-numeric: tabular-nums; }
+.hero .sleg.one { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 /* premium daily form */
 .fsum-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); margin-bottom: 12px; }
 .fsum { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -593,7 +594,12 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .mvtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
 .mv { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; row-gap: 3px; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 8px 12px; position: relative; }
 .mv svg { grid-row: 1 / span 2; width: 26px; height: 26px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.mv.in svg { stroke: var(--good); } .mv.out svg { stroke: var(--serious); } .mv.vacant svg { stroke: var(--gold); }
+.mv.occupied svg { stroke: var(--good); } .mv.vacant svg { stroke: var(--gold); }
+.mv.rate { grid-template-columns: 56px 1fr; }
+.rring { position: relative; width: 52px; height: 52px; grid-row: 1 / span 2; }
+.rring svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+.rring b { position: absolute; inset: 0; display: grid; place-content: center; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mv .rv { font-size: 18px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .mv .mvl { font-size: 11.5px; color: var(--fg-2); }
 .mv input { width: 100%; min-width: 0; font-weight: 600; font-size: 16px; padding: 3px 38px 3px 8px; min-height: 32px; font-variant-numeric: tabular-nums; }
 .mv small { position: absolute; right: 20px; bottom: 15px; font-size: 11px; color: var(--muted); }
@@ -1044,7 +1050,7 @@ function renderHome() {
   const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
   let h = '<div class="hero"><div><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
     (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
-    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div>' + siteShareBar(reps) + ageBar(reps.flatMap(r => unitSummary(r)), tot) + '</div>' +
+    '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div>' + siteShareBar(reps, true) + '</div>' +
     '<div class="rings">' +
       ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
       ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대', { vals: serLt, fmt: pp, goodWhen: 'down' }) +
@@ -1098,12 +1104,12 @@ function todayCard() {
   const urg = allDaily().filter(e => e.urgent && diffDays(td, e.date) >= 0 && diffDays(td, e.date) <= 7).reverse();
   const wdc = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
   const rows = all.slice().sort((a, b) => ((dailyEntry(a.key, td) ? 1 : 0) - (dailyEntry(b.key, td) ? 1 : 0)) || a.name.localeCompare(b.name, 'ko'));
-  const tbl = '<div class="tw"><table class="sumtbl cmp"><thead><tr><th>사업소</th><th class="c">오늘</th><th class="c">7일 제출</th></tr></thead><tbody>' + rows.map(s => {
+  const tbl = '<div class="tw"><table class="sumtbl cmp"><thead><tr><th>사업소</th><th class="c">오늘</th><th class="c">7일 제출</th><th></th></tr></thead><tbody>' + rows.map(s => {
     const es = days.map(d => ({ d, e: dailyEntry(s.key, d) })), n7 = es.filter(x => x.e && !isWeekend(x.d)).length, u7 = es.filter(x => x.e && x.e.urgent).length;
-    return '<tr><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td class="c">' + (dailyEntry(s.key, td) ? '<span class="chip good">제출</span>' : (wkd ? '<span class="chip na">휴일</span>' : '<span class="chip warn">미제출</span>')) + '</td><td class="c"><span class="lpill ' + (n7 >= biz7 ? 'g' : n7 >= biz7 * 0.6 ? 'w' : 'c') + '">' + n7 + '/' + biz7 + '</span>' + (u7 ? ' <span class="chip crit">긴급 ' + u7 + '</span>' : '') + '</td></tr>';
+    return '<tr class="click" data-go="daily" data-key="' + s.key + '" data-date="' + td + '" title="' + esc(s.name + (dailyEntry(s.key, td) ? ' 오늘 보고 열기' : ' 오늘 보고 작성')) + '"><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td class="c">' + (dailyEntry(s.key, td) ? '<span class="chip good">제출</span>' : (wkd ? '<span class="chip na">휴일</span>' : '<span class="chip warn">미제출</span>')) + '</td><td class="c"><span class="lpill ' + (n7 >= biz7 ? 'g' : n7 >= biz7 * 0.6 ? 'w' : 'c') + '">' + n7 + '/' + biz7 + '</span>' + (u7 ? ' <span class="chip crit">긴급 ' + u7 + '</span>' : '') + '</td><td class="r"><span class="btn link">' + (dailyEntry(s.key, td) ? '보고 열기' : '작성') + '</span></td></tr>';
   }).join('') + '</tbody></table></div>';
   return '<div class="card"><div class="hd"><h2>오늘의 일일보고 <span class="muted small">' + dateLabel(td) + '</span></h2><span class="chip ' + tone + '">' + tn + ' / ' + all.length + ' 제출</span></div><div class="bd">' +
-    '<div class="tgrid one"><div class="tring">' + bigRing(f, tone, tn + '/' + all.length) + '<div class="tx"><div class="lb">오늘 제출</div><div class="v">' + (wkd ? '휴일' : miss.length ? '미제출 ' + miss.length + '개소' : '전원 제출') + '</div><div class="d">' + (miss.length && !wkd ? esc(miss.map(s => s.name).join(', ')) : '최근 7일 긴급 ' + urg.length + '건') + '</div></div></div>' +
+    '<div class="tgrid one"><div class="tring">' + bigRing(f, tone, tn + '/' + all.length) + '<div class="tx"><div class="lb">오늘 제출</div><div class="v">' + (wkd ? '휴일' : miss.length ? '미제출 ' + miss.length + '개소' : '전원 제출') + '</div><div class="d">사업소를 누르면 오늘 보고를 열고, 미제출이면 바로 작성합니다' + (urg.length ? ' · 최근 7일 긴급 ' + urg.length + '건' : '') + '</div></div></div>' +
     '</div>' + tbl +
     (urg.length ? '<div class="eyebrow" style="margin:14px 0 6px">최근 7일 긴급 보고 ' + urg.length + '건</div><ul class="plain">' + urg.slice(0, 5).map(e => '<li><b>' + esc(e.site) + '</b> ' + esc(dateLabel(e.date)) + ' · ' + esc((e.issues || []).join(' / ') || '긴급 표시') + ' <button class="btn link" data-go="daily" data-key="' + e.siteKey + '" data-date="' + e.date + '">보기</button></li>').join('') + '</ul>' : '') +
     '</div></div>';
@@ -1160,7 +1166,7 @@ function ring(frac, tone, big, label, sub, tr) {
     if (vs.length >= 2) {
       const d = vs[vs.length - 1] - vs[vs.length - 2], good = tr.goodWhen === 'up' ? d > 0 : d < 0, bad = tr.goodWhen === 'up' ? d < 0 : d > 0, col = bad ? 'var(--hc)' : good ? 'var(--hg)' : 'var(--hero-mut)';
       t = '<div class="rtr" title="최근 ' + vs.length + '개월 추이 · 전월 대비"><span class="rd" style="color:' + col + '">' + (d > 0 ? '▲' : d < 0 ? '▼' : '–') + ' ' + (tr.fmt ? tr.fmt(Math.abs(d)) : Math.abs(d).toFixed(1)) + '</span>' + miniSpark(vs, col) + '</div>';
-    } else t = '<div class="rtr"><span class="rd dim">전월 자료 없음</span></div>';
+    }
   }
   return '<div class="ring"><div class="rg"><svg viewBox="0 0 88 88" aria-hidden="true"><circle class="rt" cx="44" cy="44" r="' + R + '"/>' + (f > 0 ? '<circle class="rv ' + tone + '" cx="44" cy="44" r="' + R + '" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg><div class="rc">' + esc(big) + '</div></div><div class="rl">' + esc(label) + '</div><div class="rs">' + esc(sub) + '</div>' + t + '</div>';
 }
@@ -1337,13 +1343,13 @@ function renderSite() {
   if (del) del.addEventListener('click', () => { if (del.dataset.arm) { store.deleteReport(r.id).then(() => toast('삭제했습니다')).catch(e => toast('삭제 실패: ' + e.message)); } else { del.dataset.arm = '1'; del.textContent = '정말 삭제하려면 한 번 더 누르세요'; setTimeout(() => { del.dataset.arm = ''; del.textContent = '이 보고서 삭제'; }, 4000); } });
 }
 /* 사업소별 체납 총액 비중 (상위 6개소 + 기타) */
-function siteShareBar(reps) {
+function siteShareBar(reps, compact) {
   const rows = reps.map(r => ({ lb: r.site, amt: arrearsTotal(r) || 0 })).filter(x => x.amt > 0).sort((a, b) => b.amt - a.amt);
   if (!rows.length) return '<div class="cap" style="margin-top:16px">체납 총액이 있는 보고서가 없습니다.</div>';
-  const top = rows.slice(0, 6), rest = rows.slice(6); if (rest.length) top.push({ lb: '기타 ' + rest.length + '개소', amt: rest.reduce((a, x) => a + x.amt, 0) });
+  const K = compact ? 3 : 6, top = rows.slice(0, K), rest = rows.slice(K); if (rest.length) top.push({ lb: '기타 ' + rest.length + '개소', amt: rest.reduce((a, x) => a + x.amt, 0) });
   const pal = ['#8fb4dc', '#5b92cc', '#e6c987', '#b08a4a', '#ff9c80', '#a3c9a8', '#9aa7b5'], sum = top.reduce((a, x) => a + x.amt, 0) || 1;
   return '<div class="cap" style="margin-top:14px">사업소별 체납 총액 비중</div><div class="sbar">' + top.map((x, i) => '<i style="width:' + (100 * x.amt / sum).toFixed(1) + '%;background:' + pal[i] + '" title="' + esc(x.lb + ' ' + won(x.amt)) + '"></i>').join('') + '</div>' +
-    '<div class="sleg">' + top.map((x, i) => '<div><i style="background:' + pal[i] + '"></i>' + esc(x.lb) + ' <b>' + krw(x.amt) + '</b>원 <span style="opacity:.75">(' + Math.round(100 * x.amt / sum) + '%)</span></div>').join('') + '</div>';
+    '<div class="sleg' + (compact ? ' one' : '') + '">' + top.map((x, i) => '<div><i style="background:' + pal[i] + '"></i>' + esc(x.lb) + ' <b>' + Math.round(100 * x.amt / sum) + '%</b>' + (compact ? '' : ' · ' + krw(x.amt) + '원') + '</div>').join('') + '</div>';
 }
 /* 체납 총액을 미납 개월 구간별 금액으로 분해한 가로 막대 (히어로 안, 어두운 배경 전용) */
 function ageBar(us, tot) {
@@ -1523,7 +1529,7 @@ const ROW = { works: () => ({ vendor: '', desc: '', time: '', safety: [] }), com
 function newDraft(key, date) {
   return { key: key || state.site || '', newName: '', date: date || state.dailyDate, author: '', role: '', staff: { mgr: '', worker: '', clean: '', guard: '', absent: '' },
     checks: Object.fromEntries(CHECK_ITEMS.map(c => [c[0], 'ok'])), checkNotes: {}, works: [], complaints: [], arrears: { collected: '', calls: '', sms: '', visits: '', promises: '' },
-    incidents: [], urgent: false, moves: { in: '', out: '', vacant: '' }, directives: [], plans: '', requests: '', memo: '' };
+    incidents: [], urgent: false, moves: { occupied: '', vacant: '' }, directives: [], plans: '', requests: '', memo: '' };
 }
 function draftFromEntry(e, key, date) {
   const d = newDraft(key, date);
@@ -1556,7 +1562,7 @@ function entryFromDraft(d) {
   return {
     v: 2, date: d.date, author: d.author.trim(), role: d.role, staff: staffN || null, staffDetail,
     checks: d.checks, checkNotes: Object.fromEntries(Object.keys(d.checkNotes).filter(k => d.checkNotes[k] && d.checkNotes[k].trim() && (d.checks[k] === 'bad' || d.checks[k] === 'fix')).map(k => [k, d.checkNotes[k].trim()])),
-    works, complaintsDetail: complaints, arrearsAct: nums(d.arrears), incidents, moves: nums(d.moves), directives,
+    works, complaintsDetail: complaints, arrearsAct: nums(d.arrears), incidents, moves: Object.assign(nums(d.moves), { rate: occStats(d).rate == null ? null : +occStats(d).rate.toFixed(1) }), directives,
     planLines: L(d.plans), requests: L(d.requests), memo: L(d.memo), urgent: !!d.urgent,
     /* 아래 4개는 기존 화면·집계·내보내기 호환용 요약 줄 */
     work: anomalies.concat(works.map(w => '[공사·업체] ' + [w.vendor, w.desc, w.time].filter(Boolean).join(' · ') + (w.safety.length ? ' (' + w.safety.join('·') + ')' : '')), L(d.memo)),
@@ -1566,7 +1572,7 @@ function entryFromDraft(d) {
     updatedAt: new Date().toISOString(),
   };
 }
-function draftHasContent(e) { return !!(e.work.length || e.complaints.length || e.issues.length || e.plans.length || e.directives.length || Object.values(e.arrearsAct).some(v => v) || Object.values(e.moves).some(v => v)); }
+function draftHasContent(e) { return !!(e.work.length || e.complaints.length || e.issues.length || e.plans.length || e.directives.length || Object.values(e.arrearsAct).some(v => v) || e.moves.occupied != null || e.moves.vacant != null); }
 function prevEntryOf(key, date) {
   let best = null;
   state.dailies.filter(d => d.siteKey === key).forEach(d => Object.keys(d.days || {}).forEach(dd => { const dt = d.period + '-' + dd; if (dt < date && (!best || dt > best.date)) best = Object.assign({ date: dt }, d.days[dd]); }));
@@ -1588,12 +1594,23 @@ function formSummary(d) {
   return '<span class="chip ' + (bad ? 'crit' : fix ? 'warn' : 'good') + '">점검 정상 ' + ok + '/' + (CHECK_ITEMS.length - na) + (bad ? ' · 이상 ' + bad : '') + (fix ? ' · 조치중 ' + fix : '') + '</span>' +
     '<span class="chip' + (wN ? ' info' : '') + '">공사·업체 ' + wN + '</span><span class="chip' + (oN ? ' crit' : cN ? ' info' : '') + '">민원 ' + cN + (oN ? ' · 미처리 ' + oN : '') + '</span><span class="chip' + (iN ? ' serious' : '') + '">사고 ' + iN + '</span>' + (dN ? '<span class="chip">지시 ' + dN + '</span>' : '') + (d.urgent ? '<span class="chip crit">긴급 · 본사 즉시 확인</span>' : '');
 }
-function mvNote(d) {
-  const n = v => (v === '' || v == null || isNaN(+v)) ? 0 : +v, net = n(d.moves.in) - n(d.moves.out);
-  const rr = d.key && d.key !== '__new' ? siteReports(d.key).slice(-1)[0] : null, u = rr && rr.arrears ? rr.arrears.units : null;
-  return '순증감 <b>' + (net > 0 ? '+' : '') + net + '세대</b>' + (u && d.moves.vacant !== '' && d.moves.vacant != null ? ' · 공실률 <b>' + (100 * n(d.moves.vacant) / u).toFixed(1) + '%</b> (총 ' + comma(u) + '세대 기준)' : (u ? ' · 총 ' + comma(u) + '세대' : ''));
+function occStats(d) {
+  const n = v => (v === '' || v == null || isNaN(+v)) ? null : +v, occ = n(d.moves.occupied), vac = n(d.moves.vacant);
+  const rr = d.key && d.key !== '__new' ? siteReports(d.key).slice(-1)[0] : null, units = rr && rr.arrears ? rr.arrears.units : null;
+  let total = null, basis = '';
+  if (occ != null && vac != null) { total = occ + vac; basis = '입주 ' + comma(occ) + ' + 공실 ' + comma(vac); }
+  else if (units) { total = units; basis = '보고서 총세대 ' + comma(units) + ' 기준'; }
+  const o2 = occ != null ? occ : (vac != null && total ? total - vac : null);
+  const rate = (o2 != null && total) ? Math.max(0, Math.min(100, 100 * o2 / total)) : null;
+  const diff = (units && occ != null && vac != null) ? occ + vac - units : 0;
+  return { occ, vac, units, total, rate, basis, diff };
 }
-function updateFormSummary() { const el = $('#fsum'); if (el && state.draft) el.innerHTML = formSummary(state.draft); const mv = $('#mvnet'); if (mv && state.draft) mv.innerHTML = mvNote(state.draft); $$('[data-cnt]').forEach(c => { c.textContent = String(state.draft[c.dataset.cnt] || '').split(/\r?\n/).filter(x => x.trim()).length + '건'; }); }
+function occTile(d) {
+  const st = occStats(d), R = 21, C = 2 * Math.PI * R, f = st.rate == null ? 0 : st.rate / 100, col = st.rate == null ? 'var(--muted)' : st.rate >= 95 ? 'var(--good)' : st.rate >= 85 ? 'var(--gold)' : 'var(--serious)';
+  return '<div class="rring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="' + R + '" fill="none" stroke="var(--surface)" stroke-width="5"/>' + (f > 0 ? '<circle cx="24" cy="24" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg><b>' + (st.rate == null ? '–' : Math.round(st.rate) + '%') + '</b></div>' +
+    '<div><span class="mvl">입주율</span><div class="rv">' + (st.rate == null ? '–' : st.rate.toFixed(1) + '%') + '</div><div class="small muted">' + (st.basis || '입주·공실 세대를 적으면 계산됩니다') + (st.diff ? ' · <span style="color:var(--crit)">총세대와 ' + (st.diff > 0 ? '+' : '') + st.diff + ' 차이</span>' : '') + '</div></div>';
+}
+function updateFormSummary() { const el = $('#fsum'); if (el && state.draft) el.innerHTML = formSummary(state.draft); const oc = $('#occTile'); if (oc && state.draft) oc.innerHTML = occTile(state.draft); $$('[data-cnt]').forEach(c => { c.textContent = String(state.draft[c.dataset.cnt] || '').split(/\r?\n/).filter(x => x.trim()).length + '건'; }); }
 function renderDailyForm(force) {
   const wrap = $('#dailyFormWrap'); if (!wrap) return;
   if (!force && wrap.innerHTML && wrap.contains(document.activeElement)) return;  /* 입력 중에는 데이터 갱신으로 다시 그리지 않는다 */
@@ -1635,8 +1652,9 @@ function renderDailyForm(force) {
     '<div class="statin">' + numI('arrears.calls', d.arrears.calls, '독촉 전화', '건') + numI('arrears.sms', d.arrears.sms, '독촉 문자', '건') + numI('arrears.visits', d.arrears.visits, '방문', '건') + numI('arrears.promises', d.arrears.promises, '납부약속', '세대') + '</div>');
   h += fsec(6, '안전 · 사고 · 긴급', '유형을 고르고 시각 · 내용 · 조치 · 신고를 적습니다', add('incidents', '사고·특이사항 추가') + '<button type="button" class="urgbtn" data-urg aria-pressed="' + (!!d.urgent) + '"><i></i>본사 즉시 확인 (긴급)</button>',
     (d.incidents.length ? d.incidents.map((x, i) => '<div class="irow ' + incSev(x.type) + '"><div class="irh">' + rno(i) + tchips('incidents.' + i + '.type', x.type, INC_TYPES, 'danger') + rm('incidents', i) + '</div><div class="irb"><div class="g1">' + inp('incidents.' + i + '.time', x.time, 'placeholder="발생 시각"') + '</div><div class="g3">' + inp('incidents.' + i + '.desc', x.desc, 'placeholder="무슨 일이 있었는지"') + '</div><div class="g2">' + inp('incidents.' + i + '.action', x.action, 'placeholder="조치 내용"') + '</div></div><div class="irf"><span class="irl">신고</span>' + tg('incidents.' + i + '.r119', x.r119, '119') + tg('incidents.' + i + '.r112', x.r112, '112') + tg('incidents.' + i + '.rins', x.rins, '보험') + '</div></div>').join('') : empty('사고·특이사항이 없으면 비워 두세요.')), d.urgent ? 'urgentfs' : '');
-  h += fsec(7, '입주 변동', '전입 · 전출 · 공실', '',
-    '<div class="mvtiles">' + [['in', '전입'], ['out', '전출'], ['vacant', '공실 (현재)']].map(x => '<label class="mv ' + x[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + MV_ICON[x[0]] + '"/></svg><span class="mvl">' + x[1] + '</span><input type="number" min="0" inputmode="numeric" data-f="moves.' + x[0] + '" value="' + esc(d.moves[x[0]]) + '" placeholder="0"><small>세대</small></label>').join('') + '</div><div class="note" id="mvnet" style="margin-top:8px">' + mvNote(d) + '</div>');
+  h += fsec(7, '입주 현황', '입주세대 · 공실세대를 적으면 입주율이 계산됩니다', '',
+    '<div class="mvtiles">' + [['occupied', '입주세대', 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20 M10 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M20 20v-1.2a3 3 0 0 0-2.2-2.9 M15 5.2a3 3 0 0 1 0 5.6'], ['vacant', '공실세대', 'M4 20V8l8-5 8 5v12 M4 20h16 M10 20v-6h4v6 M9 11h.01 M15 11h.01']].map(x => '<label class="mv ' + x[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + x[2] + '"/></svg><span class="mvl">' + x[1] + '</span><input type="number" min="0" inputmode="numeric" data-f="moves.' + x[0] + '" value="' + esc(d.moves[x[0]] == null ? '' : d.moves[x[0]]) + '" placeholder="0"><small>세대</small></label>').join('') +
+    '<div class="mv rate" id="occTile">' + occTile(d) + '</div></div>');
   h += fsec(8, '본사 지시사항 이행', '지시 내용과 이행 상태', add('directives', '지시사항 추가'),
     (d.directives.length ? d.directives.map((x, i) => '<div class="irow' + (x.status === 'done' ? ' donerow' : '') + '"><div class="irh">' + rno(i) + segs('directives.' + i + '.status', x.status, [['todo', '미착수'], ['doing', '진행중'], ['done', '완료']]) + rm('directives', i) + '</div><div class="irb"><div class="g6">' + inp('directives.' + i + '.text', x.text, 'placeholder="지시 내용"') + '</div></div></div>').join('') : empty('전일 보고 불러오기를 누르면 미완료 지시가 이어집니다.')));
   const Ln = t => String(t || '').split(/\r?\n/).filter(x => x.trim()).length;
