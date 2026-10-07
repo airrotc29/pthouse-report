@@ -447,6 +447,29 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .matrix th.today, .matrix td.today { background: var(--gold-soft); }
 .dcnt { display: flex; flex-wrap: wrap; gap: 5px; }
 .dcard { gap: 7px; }
+/* today card: ring + 7-day bars + per-site strips */
+.tgrid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px 32px; align-items: center; margin-bottom: 14px; }
+.tring { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.tring .tx .lb { font-size: 12.5px; color: var(--fg-2); }
+.tring .tx .v { font-size: 16px; font-weight: 600; }
+.tring .tx .d { font-size: 12px; color: var(--muted); max-width: 260px; }
+.bring { position: relative; width: 96px; height: 96px; flex: none; }
+.bring svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+.bring b { position: absolute; inset: 0; display: grid; place-content: center; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.dbars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; height: 104px; }
+.db { border: 0; background: none; padding: 0; display: grid; grid-template-rows: auto 1fr auto; gap: 3px; cursor: pointer; min-width: 0; font: inherit; }
+.db .v { font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg-2); }
+.db .bar { position: relative; background: var(--surface-2); border-radius: 6px; overflow: hidden; min-height: 40px; }
+.db .bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--s1); border-radius: 6px; min-height: 0; }
+.db.today .bar i { background: var(--gold); }
+.db.wk .bar i { opacity: .45; }
+.db .l { font-size: 11px; color: var(--muted); }
+.db.today .l { color: var(--gold); font-weight: 700; }
+.db:hover .bar, .db:focus-visible .bar { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dstrip.sm { gap: 3px; flex-wrap: nowrap; }
+.dstrip.sm .dc { width: 18px; height: 18px; border-radius: 5px; font-size: 0; }
+.chip.na { background: var(--surface-2); color: var(--muted); }
+@media (max-width: 640px) { .tgrid { grid-template-columns: 1fr; } .dbars { height: 92px; } }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 4px 11px; cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
@@ -552,6 +575,10 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
       <div class="hd"><h2>저장된 월간보고</h2><span class="note" id="storedCount"></span></div>
       <div class="bd tight tw" id="storedList"></div>
     </div>
+    <div class="card">
+      <div class="hd"><h2>사업소 목록 <span class="muted small" id="siteCount"></span></h2><span class="note">월간보고가 없는 사업소도 여기 등록해 두면 제출·미제출 집계에 포함됩니다. 이름을 고치면 바로 저장됩니다.</span></div>
+      <div class="bd tight tw" id="siteMgr"></div>
+    </div>
   </section>
   <section class="view" id="view-export" hidden></section>
 </main>
@@ -596,7 +623,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], siteList: [], issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp }));
@@ -622,6 +649,9 @@ const store = {
         state.dailies = snap.docs.filter(d => d.exists).map(d => d.data());
         gotD = true; if (gotR) state.loaded = true; onData();
       }, err => { console.error('dailies', err); }));
+      this.unsub.push(db.collection('sites').onSnapshot(snap => {
+        state.siteList = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
+      }, err => { console.error('sites', err); }));
       this.unsub.push(db.collection('acks').onSnapshot(snap => {
         state.acks = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
       }, err => { console.error('acks', err); }));
@@ -630,6 +660,7 @@ const store = {
       state.reports = lsGet('mwr.reports', []);
       state.dailies = lsGet('mwr.dailies', []);
       state.acks = lsGet('mwr.acks', []);
+      state.siteList = lsGet('mwr.sites', []);
       state.loaded = true;
       onData();
     }
@@ -644,6 +675,28 @@ const store = {
   async deleteReport(id) {
     if (this.db) { await this.db.doc('reports/' + id).delete(); }
     else { state.reports = state.reports.filter(r => r.id !== id); lsSet('mwr.reports', state.reports); onData(); }
+  },
+  async setSite(doc) {
+    if (this.db) await this.db.doc('sites/' + doc.id).set(doc);
+    else { state.siteList = state.siteList.filter(x => x.id !== doc.id).concat([doc]); lsSet('mwr.sites', state.siteList); onData(); }
+  },
+  async deleteSite(id) {
+    if (this.db) await this.db.doc('sites/' + id).delete();
+    else { state.siteList = state.siteList.filter(x => x.id !== id); lsSet('mwr.sites', state.siteList); onData(); }
+  },
+  /* 이름을 바꾸면 키가 달라지므로 일일보고 문서도 새 키로 옮긴다 (월간보고가 있는 사업소는 이름 변경 불가) */
+  async renameSite(oldKey, newName) {
+    const newKey = ReportParser.siteKey(newName);
+    if (newKey === oldKey) { await this.setSite({ id: oldKey, name: newName }); return; }
+    const docs = state.dailies.filter(d => d.siteKey === oldKey);
+    for (const d of docs) {
+      const nd = Object.assign({}, d, { id: newKey + '_' + d.period, siteKey: newKey, site: newName });
+      if (this.db) { await this.db.doc('dailies/' + nd.id).set(nd); await this.db.doc('dailies/' + d.id).delete(); }
+      else { state.dailies = state.dailies.filter(x => x.id !== d.id).concat([nd]); }
+    }
+    if (!this.db) lsSet('mwr.dailies', state.dailies);
+    await this.setSite({ id: newKey, name: newName });
+    await this.deleteSite(oldKey);
   },
   async setAck(doc) {
     if (this.db) await this.db.doc('acks/' + doc.id).set(doc);
@@ -698,6 +751,7 @@ function months() {
 function sites() {
   const m = new Map();
   const put = (key, name, period) => { if (!key) return; const cur = m.get(key); if (!cur || (period || '') >= (cur.last || '')) m.set(key, { key, name: name || (cur && cur.name) || key, last: period || (cur && cur.last) || '' }); };
+  (state.siteList || []).forEach(x => put(x.id, x.name, ''));
   state.reports.forEach(r => put(r.siteKey, r.site, r.period));
   state.dailies.forEach(d => put(d.siteKey, d.site, d.period));
   return Array.from(m.values()).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -765,8 +819,7 @@ function dailyList(month) {
 
 function issuesFor(month) {
   const out = [], all = sites(), reps = reportsFor(month);
-  const known = all.filter(s => state.reports.some(r => r.siteKey === s.key));
-  known.forEach(s => { if (!reps.some(r => r.siteKey === s.key) && month <= todayStr().slice(0, 7)) out.push({ lv: 'warn', key: s.key, site: s.name, title: '월간보고 미제출', detail: monthLabel(month) + ' 보고서가 아직 올라오지 않았습니다.', tab: 'upload' }); });
+  all.forEach(s => { if (!reps.some(r => r.siteKey === s.key) && month <= todayStr().slice(0, 7)) out.push({ lv: 'warn', key: s.key, site: s.name, title: '월간보고 미제출', detail: monthLabel(month) + ' 보고서가 아직 올라오지 않았습니다.', tab: 'upload' }); });
   reps.forEach(r => {
     const tot = arrearsTotal(r), pt = prevTotalOf(r), ptot = pt.v;
     if (tot != null && ptot != null && ptot > 0) {
@@ -874,7 +927,7 @@ function renderHome() {
   const au = reps.reduce((a, r) => a + (arrearsUnits(r) || 0), 0), un = reps.reduce((a, r) => a + ((r.arrears && r.arrears.units) || 0), 0);
   const inspN = reps.reduce((a, r) => a + inspAlerts(r).length, 0), mgrN = reps.reduce((a, r) => a + managerAlerts(r).length, 0);
   const ltN = reps.reduce((a, r) => a + longTerm(r).length, 0);
-  const knownN = all.filter(s => state.reports.some(r => r.siteKey === s.key)).length;
+  const knownN = all.length;
   const td = todayStr(), dToday = all.filter(s => dailyEntry(s.key, td)).length;
   const issues = issuesFor(month);
   const dMiss = all.length - dToday, wkd = isWeekend(td);
@@ -932,15 +985,29 @@ async function toggleAck(id) {
 
 /* ---- 오늘의 일일보고 (보고 월과 무관하게 항상 오늘 기준) ---- */
 function todayCard() {
-  const all = sites(), td = todayStr(), yd = addDays(td, -1);
+  const all = sites(), td = todayStr();
   if (!all.length) return '<div class="card"><div class="hd"><h2>오늘의 일일보고</h2></div><div class="bd"><div class="empty small">아직 사업소가 없습니다. 일일보고를 작성하면 여기에 제출 현황이 나타납니다.</div></div></div>';
-  const miss = all.filter(s => !dailyEntry(s.key, td)), wkd = isWeekend(td);
-  const ydDone = all.filter(s => dailyEntry(s.key, yd)).length;
+  const days = Array.from({ length: 7 }, (_, i) => addDays(td, i - 6)), biz7 = days.filter(d => !isWeekend(d)).length;
+  const cnt = d => all.filter(s => dailyEntry(s.key, d)).length;
+  const miss = all.filter(s => !dailyEntry(s.key, td)), wkd = isWeekend(td), tn = all.length - miss.length, f = all.length ? tn / all.length : 0;
+  const tone = wkd ? 'na' : f >= 1 ? 'good' : f > 0 ? 'warn' : 'crit';
   const urg = allDaily().filter(e => e.urgent && diffDays(td, e.date) >= 0 && diffDays(td, e.date) <= 7).reverse();
-  let h = '<div class="card"><div class="hd"><h2>오늘의 일일보고 <span class="muted small">' + dateLabel(td) + '</span></h2><span class="chip ' + (wkd ? 'na' : miss.length ? 'warn' : 'good') + '">' + (all.length - miss.length) + ' / ' + all.length + ' 제출</span></div><div class="bd todaybox">';
-  h += '<div><div class="lbl">' + (wkd ? '휴일 · 미제출 ' + miss.length + '개소 (참고)' : '미제출 사업소') + '</div>' + (miss.length ? '<div class="missing">' + miss.map(s => '<button class="btn" data-go="daily" data-key="' + s.key + '" data-date="' + td + '">' + esc(s.name) + '</button>').join('') + '</div>' : '<span class="small fg2">모든 사업소가 오늘 보고를 올렸습니다.</span>') + '</div>';
-  h += '<div><div class="lbl">최근 7일 긴급 보고 ' + urg.length + '건</div>' + (urg.length ? '<ul class="plain">' + urg.slice(0, 5).map(e => '<li><b>' + esc(e.site) + '</b> ' + esc(dateLabel(e.date)) + ' · ' + esc((e.issues || []).join(' / ') || '긴급 표시') + ' <button class="btn link" data-go="daily" data-key="' + e.siteKey + '" data-date="' + e.date + '">보기</button></li>').join('') + '</ul>' : '<span class="small fg2">없음</span>') + '</div>';
-  return h + '</div></div>';
+  const wdc = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
+  const bars = '<div class="dbars">' + days.map(d => { const n = cnt(d), wk = isWeekend(d), hgt = all.length ? Math.round(100 * n / all.length) : 0; return '<button class="db' + (d === td ? ' today' : '') + (wk ? ' wk' : '') + '" data-go="daily" data-date="' + d + '" title="' + esc(dateLabel(d) + ' · ' + n + '/' + all.length + ' 제출') + '"><span class="v">' + n + '</span><span class="bar"><i style="height:' + hgt + '%"></i></span><span class="l">' + (d === td ? '오늘' : '일월화수목금토'[wdc(d)]) + '</span></button>'; }).join('') + '</div>';
+  const rows = all.slice().sort((a, b) => ((dailyEntry(a.key, td) ? 1 : 0) - (dailyEntry(b.key, td) ? 1 : 0)) || a.name.localeCompare(b.name, 'ko'));
+  const tbl = '<div class="tw"><table class="sumtbl cmp"><thead><tr><th>사업소</th><th>최근 7일</th><th class="c">오늘</th><th class="c">7일 제출</th></tr></thead><tbody>' + rows.map(s => {
+    const es = days.map(d => ({ d, e: dailyEntry(s.key, d) })), n7 = es.filter(x => x.e && !isWeekend(x.d)).length, u7 = es.filter(x => x.e && x.e.urgent).length;
+    return '<tr><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td><div class="dstrip sm">' + es.map(x => '<button class="dc' + (x.e ? (x.e.urgent ? ' urgent' : ' has') : (isWeekend(x.d) ? ' wk' : ' miss')) + '" data-go="daily" data-key="' + s.key + '" data-date="' + x.d + '" title="' + esc(dateLabel(x.d) + (x.e ? (x.e.urgent ? ' 긴급' : ' 제출') : isWeekend(x.d) ? ' 휴일' : ' 미제출')) + '" aria-label="' + esc(s.name + ' ' + x.d) + '"></button>').join('') + '</div></td><td class="c">' + (dailyEntry(s.key, td) ? '<span class="chip good">제출</span>' : (wkd ? '<span class="chip na">휴일</span>' : '<span class="chip warn">미제출</span>')) + '</td><td class="c"><span class="lpill ' + (n7 >= biz7 ? 'g' : n7 >= biz7 * 0.6 ? 'w' : 'c') + '">' + n7 + '/' + biz7 + '</span>' + (u7 ? ' <span class="chip crit">긴급 ' + u7 + '</span>' : '') + '</td></tr>';
+  }).join('') + '</tbody></table></div>';
+  return '<div class="card"><div class="hd"><h2>오늘의 일일보고 <span class="muted small">' + dateLabel(td) + '</span></h2><span class="chip ' + tone + '">' + tn + ' / ' + all.length + ' 제출</span></div><div class="bd">' +
+    '<div class="tgrid"><div class="tring">' + bigRing(f, tone, tn + '/' + all.length) + '<div class="tx"><div class="lb">오늘 제출</div><div class="v">' + (wkd ? '휴일' : miss.length ? '미제출 ' + miss.length + '개소' : '전원 제출') + '</div><div class="d">' + (miss.length && !wkd ? esc(miss.map(s => s.name).join(', ')) : '최근 7일 긴급 ' + urg.length + '건') + '</div></div></div>' +
+    '<div class="tbars"><div class="eyebrow" style="margin-bottom:6px">최근 7일 · 제출 사업소 수</div>' + bars + '</div></div>' + tbl +
+    (urg.length ? '<div class="eyebrow" style="margin:14px 0 6px">최근 7일 긴급 보고 ' + urg.length + '건</div><ul class="plain">' + urg.slice(0, 5).map(e => '<li><b>' + esc(e.site) + '</b> ' + esc(dateLabel(e.date)) + ' · ' + esc((e.issues || []).join(' / ') || '긴급 표시') + ' <button class="btn link" data-go="daily" data-key="' + e.siteKey + '" data-date="' + e.date + '">보기</button></li>').join('') + '</ul>' : '') +
+    '</div></div>';
+}
+function bigRing(frac, tone, big) {
+  const R = 40, C = 2 * Math.PI * R, f = Math.max(0, Math.min(1, frac || 0)), col = { good: 'var(--good)', warn: 'var(--warn)', crit: 'var(--crit)', na: 'var(--muted)' }[tone] || 'var(--s1)';
+  return '<div class="bring"><svg viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="9"/>' + (f > 0 ? '<circle cx="48" cy="48" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg><b>' + esc(big) + '</b></div>';
 }
 
 /* ---- 월별 추이 (전 사업소 합산) ---- */
@@ -1060,7 +1127,7 @@ function sparkArea(vals) {
   return '<svg class="spa" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + col + '" stop-opacity=".28"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs><path d="' + d + ' L' + X(vals.length - 1).toFixed(1) + ' ' + H + ' L' + X(0).toFixed(1) + ' ' + H + ' z" fill="url(#' + id + ')"/><path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + X(vals.length - 1).toFixed(1) + '" cy="' + Y(vals[vals.length - 1]).toFixed(1) + '" r="3" fill="' + col + '" stroke="var(--surface)" stroke-width="1.5"/></svg>';
 }
 function sumTable(month) {
-  const known = sites().filter(s => state.reports.some(r => r.siteKey === s.key));
+  const known = sites();
   const have = known.map(s => reportBy(s.key, month)).filter(Boolean).map(siteCalc).sort((a, b) => a.score - b.score);
   const miss = known.filter(s => !reportBy(s.key, month));
   const maxT = Math.max(1, ...have.map(x => x.t || 0));
@@ -1080,7 +1147,7 @@ function sumTable(month) {
       '<td>' + (x.ma.length ? x.ma.map(m => '<span class="chip ' + m.lv + '">' + esc(m.item) + ' 공란</span>').join(' ') : '<span class="chip good">선임</span>') + '</td>' +
       '</tr>';
   });
-  miss.forEach(s => { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="c">' + scoreRing(0) + '</td><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td colspan="7"><span class="chip warn">미제출</span> <span class="muted small">최근 보고: ' + ((siteReports(s.key).slice(-1)[0] || {}).period || '–') + '</span></td></tr>'; });
+  miss.forEach(s => { h += '<tr class="click" data-go="site" data-key="' + s.key + '"><td class="c">' + scoreRing(0) + '</td><td class="site"><div class="sn">' + esc(s.name) + '</div></td><td colspan="7"><span class="chip warn">미제출</span> <span class="muted small">' + (siteReports(s.key).length ? '최근 보고: ' + siteReports(s.key).slice(-1)[0].period : '월간보고 업로드 이력 없음') + '</span></td></tr>'; });
   return h + '</tbody></table></div></div>';
 }
 
@@ -1357,7 +1424,26 @@ function renderUpload() {
   else wrap.innerHTML = state.pending.length ? state.pending.map((p, i) => pendCard(p, i)).join('') + '<div class="row"><button class="btn primary" id="saveAll">' + state.pending.length + '건 모두 저장</button><button class="btn" id="clearAll">목록 비우기</button><span class="note">같은 사업소·같은 월의 보고서가 이미 있으면 새 파일로 교체됩니다.</span></div>' : '';
   const list = state.reports.slice().sort((a, b) => b.period.localeCompare(a.period) || (a.site || '').localeCompare(b.site || '', 'ko'));
   $('#storedCount').textContent = list.length + '건 · 사업소 ' + new Set(list.map(r => r.siteKey)).size + '개소';
+  renderSiteMgr();
   $('#storedList').innerHTML = list.length ? '<table><thead><tr><th>보고 월</th><th>사업소</th><th>작성자</th><th class="r">체납총액</th><th class="r">미납세대</th><th>파일</th><th>업로드</th><th></th></tr></thead><tbody>' + list.map(r => '<tr><td class="num">' + monthLabel(r.period) + '</td><td class="site">' + esc(r.site) + '</td><td>' + esc(r.author) + '</td><td class="r">' + won(arrearsTotal(r)) + '</td><td class="r">' + (r.unpaidSummary ? comma(r.unpaidSummary.units) : '–') + '</td><td class="small wrap sm">' + esc(r.fileName) + '</td><td class="small num">' + (r.uploadedAt || '').slice(0, 10) + '</td><td class="r"><button class="btn link" data-go="site" data-key="' + r.siteKey + '" data-month="' + r.period + '">보기</button>' + (state.canWrite ? ' <button class="btn link" data-del="' + r.id + '" style="color:var(--crit)">삭제</button>' : '') + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">저장된 월간보고가 없습니다.</div>';
+}
+function renderSiteMgr() {
+  const all = sites(), masterIds = new Set((state.siteList || []).map(x => x.id));
+  $('#siteCount').textContent = all.length + '개소';
+  const rows = all.map(s => {
+    const nR = siteReports(s.key).length, nD = state.dailies.filter(d => d.siteKey === s.key).length, locked = nR > 0;
+    return '<tr><td>' + (state.canWrite && !locked ? '<input type="text" class="sname" data-sk="' + s.key + '" value="' + esc(s.name) + '" aria-label="사업소명" style="min-width:220px">' : '<b>' + esc(s.name) + '</b>') + '</td>' +
+      '<td class="small">' + (nR ? '<span class="chip good">월간보고 ' + nR + '건</span>' : '<span class="chip warn">월간보고 없음</span>') + ' ' + (nD ? '<span class="chip info">일일보고 ' + nD + '개월</span>' : '') + (masterIds.has(s.key) ? '' : ' <span class="chip na">보고서에서 자동 생성</span>') + '</td>' +
+      '<td class="r">' + (state.canWrite ? (locked || nD ? '<span class="note">' + (locked ? '보고서가 있어 이름 변경·삭제 불가' : '') + '</span>' : '<button class="btn link" data-sdel="' + s.key + '" style="color:var(--crit)">삭제</button>') : '') + '</td></tr>';
+  }).join('');
+  $('#siteMgr').innerHTML = '<table><thead><tr><th>사업소명</th><th>보고 현황</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="3" class="muted">등록된 사업소가 없습니다.</td></tr>') + '</tbody></table>' +
+    (state.canWrite ? '<div class="row" style="padding:10px 12px;border-top:1px solid var(--line-soft)"><input type="text" id="siteNew" placeholder="새 사업소명" aria-label="새 사업소명" style="min-width:240px"><button class="btn primary sm" id="siteAdd">사업소 추가</button><span class="note" id="siteMsg"></span></div>' : '');
+}
+async function addSite(name) {
+  name = ReportParser.normalizeSite(name); if (!name) return;
+  const key = ReportParser.siteKey(name);
+  if (sites().some(s => s.key === key)) { toast('이미 있는 사업소입니다'); return; }
+  try { await store.setSite({ id: key, name }); toast(name + ' 추가'); } catch (e) { toast('저장 실패: ' + (e.message || e.code || e)); }
 }
 function pendCard(p, i) {
   const dup = p.id && state.reports.find(r => r.id === p.id);
@@ -1391,6 +1477,20 @@ function bindUpload() {
     if (f === 'site') { p.site = ReportParser.normalizeSite(e.target.value); p.siteKey = p.site ? ReportParser.siteKey(p.site) : ''; }
     else if (f === 'period') p.period = e.target.value; else p.author = e.target.value.trim();
     p.id = p.siteKey && p.period ? p.siteKey + '_' + p.period : ''; renderUpload();
+  });
+  $('#siteMgr').addEventListener('click', async e => {
+    if (e.target.id === 'siteAdd') { const inp = $('#siteNew'); await addSite(inp.value); inp.value = ''; return; }
+    const b = e.target.closest('[data-sdel]'); if (!b) return;
+    if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '삭제'; }, 4000); return; }
+    try { await store.deleteSite(b.dataset.sdel); toast('삭제했습니다'); } catch (err) { toast('삭제 실패: ' + err.message); }
+  });
+  $('#siteMgr').addEventListener('keydown', e => { if (e.target.id === 'siteNew' && e.key === 'Enter') { e.preventDefault(); $('#siteAdd').click(); } });
+  $('#siteMgr').addEventListener('change', async e => {
+    const inp = e.target.closest('input.sname'); if (!inp) return;
+    const name = ReportParser.normalizeSite(inp.value), old = inp.dataset.sk;
+    if (!name) { toast('사업소명을 비울 수 없습니다'); renderSiteMgr(); return; }
+    if (sites().some(s => s.key === ReportParser.siteKey(name) && s.key !== old)) { toast('같은 이름의 사업소가 이미 있습니다'); renderSiteMgr(); return; }
+    try { await store.renameSite(old, name); if (state.site === old) state.site = ReportParser.siteKey(name); toast('이름을 바꿨습니다'); } catch (err) { toast('저장 실패: ' + (err.message || err.code || err)); }
   });
   $('#storedList').addEventListener('click', async e => {
     const b = e.target.closest('[data-del]'); if (!b) return;
