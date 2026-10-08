@@ -2511,7 +2511,7 @@ function openDailyPdf(key, date) { openReportPdf(key, null, date); }
 /* ---------- 화상회의 (Jitsi Meet) ---------- */
 const MEET_HOST = 'meet.jit.si';
 const meetRoom = m => 'pthouse-' + m.room;
-const meetUrl = m => 'https://' + MEET_HOST + '/' + meetRoom(m) + '#userInfo.displayName="' + encodeURIComponent(meDisplayName()) + '"&config.prejoinConfig.enabled=false&config.startWithAudioMuted=true';
+const meetUrl = m => 'https://' + MEET_HOST + '/' + meetRoom(m) + '#userInfo.displayName="' + encodeURIComponent(meDisplayName()) + '"&config.prejoinConfig.enabled=false&config.startWithAudioMuted=true&config.disableLocalVideoFlip=true';
 function meDisplayName() { if (!state.me) return '참석자'; return isMgr() ? siteName(state.me.site_key) + ' ' + (state.me.name || '소장') : '본사 ' + (state.me.name || ''); }
 function meetForMe(m) { return !isMgr() || !m.siteKeys || m.siteKeys.includes(mySite()); }
 function liveMeetings() { return state.meetings.filter(m => m.status === 'live' && meetForMe(m)).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')); }
@@ -2536,7 +2536,7 @@ async function joinMeeting(id) {
   try {
     await loadJitsi();
     jitsiApi = new JitsiMeetExternalAPI(MEET_HOST, { roomName: meetRoom(m), parentNode: host, lang: 'ko', userInfo: { displayName: meDisplayName() },
-      configOverwrite: { prejoinConfig: { enabled: false }, startWithAudioMuted: true, disableDeepLinking: true, subject: m.title },
+      configOverwrite: { prejoinConfig: { enabled: false }, startWithAudioMuted: true, disableDeepLinking: true, disableLocalVideoFlip: true, subject: m.title },
       interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, MOBILE_APP_PROMO: false } });
     jitsiApi.addListener('readyToClose', () => { leaveMeeting(); renderMeet(); });
   } catch (e) {
