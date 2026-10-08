@@ -584,6 +584,14 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 @media (max-width: 640px) { .mgrid { grid-template-columns: 1fr; } .cbar { grid-template-columns: minmax(0, 1fr) 80px 40px; } }
 .seg.lg button { padding: 7px 15px; font-size: 13.5px; }
 .mini.mini5 { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 0; }
+.akpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.akp { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; border-left: 3px solid var(--line); min-width: 0; }
+.akp span { display: block; font-size: 11.5px; color: var(--muted); } .akp b { display: block; font-size: 20px; margin-top: 4px; letter-spacing: -.01em; } .akp small { display: block; font-size: 11.5px; color: var(--fg-2); margin-top: 3px; } .akp em { font-style: normal; font-weight: 600; } .akp em.crit { color: var(--crit); } .akp em.good { color: var(--good); }
+.akp.crit { border-left-color: var(--crit); } .akp.warn { border-left-color: var(--gold); background: var(--warn-soft); } .akp.good { border-left-color: var(--good); }
+.abars { display: grid; gap: 6px; align-items: end; } .ab { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; } .ab b { font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; } .ab.na b { color: var(--muted); }
+.ab .abt { width: 100%; height: 110px; display: flex; align-items: flex-end; background: var(--surface-2); border-radius: 6px; overflow: hidden; } .ab .abt i { display: block; width: 100%; border-radius: 6px 6px 0 0; opacity: .9; } .ab span { font-size: 11px; color: var(--muted); }
+table.ana td.crit { color: var(--crit); font-weight: 700; } table.ana td.good { color: var(--good); } table.ana td.warn { color: var(--gold); font-weight: 600; }
+@media (max-width: 760px) { .akpis { grid-template-columns: 1fr 1fr; } .abars { gap: 3px; } .ab b { font-size: 10px; } }
 @media (max-width: 640px) { .mini.mini5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .seg.lg { flex-wrap: wrap; } .seg.lg button { flex: 1 1 auto; border-right: 0; border-bottom: 1px solid var(--line); } }
 .hm .cellv.two { height: auto; min-height: 36px; padding: 4px 8px; display: grid; gap: 1px; line-height: 1.25; }
 .hm .cellv.two small { font-weight: 400; font-size: 10.5px; opacity: .8; }
@@ -1062,6 +1070,7 @@ body.manager .hq-only { display: none !important; }
     <button role="tab" data-tab="home">종합 현황</button>
     <button role="tab" data-tab="site">사업소별</button>
     <button role="tab" data-tab="compare">항목 비교</button>
+    <button role="tab" data-tab="analysis">업무 분석</button>
     <button role="tab" data-tab="daily">일일보고</button>
     <button role="tab" data-tab="orders">지시사항<span class="tabn" id="tabOrdN" hidden></span></button>
     <button role="tab" data-tab="meet">화상회의<span class="tabn live" id="tabMeetN" hidden></span></button>
@@ -1074,6 +1083,7 @@ body.manager .hq-only { display: none !important; }
   <section class="view" id="view-home"></section>
   <section class="view" id="view-site" hidden></section>
   <section class="view" id="view-compare" hidden></section>
+  <section class="view" id="view-analysis" hidden></section>
   <section class="view" id="view-orders" hidden></section>
   <section class="view" id="view-meet" hidden></section>
   <section class="view" id="view-daily" hidden>
@@ -1509,7 +1519,7 @@ function setTab(t) { state.tab = t; $$('#tabs button').forEach(b => b.setAttribu
 function go(tab, key, extra) { if (key) state.site = key; if (extra && extra.date) { state.dailyDate = extra.date; state.dailyMonth = extra.date.slice(0, 7); } setTab(tab); }
 function render() {
   renderBadge();
-  ({ home: renderHome, site: renderSite, compare: renderCompare, daily: renderDaily, orders: renderOrders, meet: renderMeet, upload: renderUpload })[state.tab]();
+  ({ home: renderHome, site: renderSite, compare: renderCompare, analysis: renderAnalysis, daily: renderDaily, orders: renderOrders, meet: renderMeet, upload: renderUpload })[state.tab]();
   updateOrdBadge(); updateLiveBar();
 }
 
@@ -1920,6 +1930,86 @@ const ITEMS = [
 ];
 const CMP = [['unpaid', '미납관리'], ['insp', '법정검사'], ['mgr', '선임관리자 현황'], ['staff', '인원현황'], ['notes', '특이사항'], ['complaints', '민원'], ['tasks', '금월 주요업무']];
 const METRICS = ITEMS.filter(i => i.num && i.id !== 'tasks');
+/* ---------- 업무 분석: 분기·반기·연간 (월간·일일보고 누적 데이터) ---------- */
+function anaRange() {
+  const ms = months(), latest = ms.length ? ms[ms.length - 1] : todayStr().slice(0, 7);
+  if (!state.anaKind) state.anaKind = 'q';
+  if (!state.anaYear) state.anaYear = +latest.slice(0, 4);
+  const mo = +latest.slice(5, 7), kind = state.anaKind;
+  if (state.anaIdx == null || state.anaYearSet !== state.anaYear + kind) { state.anaIdx = kind === 'q' ? Math.ceil(mo / 3) : kind === 'h' ? (mo <= 6 ? 1 : 2) : 1; state.anaYearSet = state.anaYear + kind; }
+  const idx = state.anaIdx, y = state.anaYear, from = kind === 'q' ? (idx - 1) * 3 + 1 : kind === 'h' ? (idx - 1) * 6 + 1 : 1, n = kind === 'q' ? 3 : kind === 'h' ? 6 : 12;
+  const list = Array.from({ length: n }, (_, i) => y + '-' + String(from + i).padStart(2, '0'));
+  const label = kind === 'q' ? y + '년 ' + idx + '분기' : kind === 'h' ? y + '년 ' + (idx === 1 ? '상반기' : '하반기') : y + '년 연간';
+  return { kind, y, idx, list, label, prevList: list.map(m => { const d = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1 - n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }) };
+}
+function anaMonth(m) {
+  const future = m > todayStr().slice(0, 7), reps = reportsFor(m), dl = dailyList(m), all = future ? [] : sites();
+  const tot = reps.map(arrearsTotal).filter(v => v != null), un = reps.map(arrearsUnits).filter(v => v != null);
+  const cnt = (e, k) => (e[k] || []).filter(x => x && (typeof x !== 'string' || x.trim())).length;
+  const bad = dl.reduce((a, e) => a + CHECK_ITEMS.filter(c => (e.checks || {})[c[0]] === 'bad').length, 0), fix = dl.reduce((a, e) => a + CHECK_ITEMS.filter(c => (e.checks || {})[c[0]] === 'fix').length, 0);
+  const ords = state.orders.filter(o => (o.createdAt || '').slice(0, 7) === m), og = new Set(ords.map(o => o.groupId)), st = future ? { quota: 0 } : staffStat(m, true);
+  return { m, future, reps: reps.length, sites: all.length, total: tot.length ? tot.reduce((a, b) => a + b, 0) : null, units: un.length ? un.reduce((a, b) => a + b, 0) : null,
+    daily: dl.length, complaints: dl.reduce((a, e) => a + cnt(e, 'complaints'), 0), issues: dl.reduce((a, e) => a + cnt(e, 'issues') + cnt(e, 'incidents'), 0), works: dl.reduce((a, e) => a + cnt(e, 'works'), 0), urgent: dl.filter(e => e.urgent).length, bad, fix,
+    orders: og.size, ordRows: ords.length, ordDone: ords.filter(o => o.status === 'done').length, staffRate: st.quota ? st.cur / st.quota : null };
+}
+function anaSite(key, list) {
+  const reps = list.map(m => reportsFor(m).find(r => r.siteKey === key)).filter(Boolean), dl = list.flatMap(m => dailyList(m)).filter(e => e.siteKey === key);
+  const cnt = (e, k) => (e[k] || []).filter(x => x && (typeof x !== 'string' || x.trim())).length;
+  const first = reps[0], last = reps[reps.length - 1], ords = state.orders.filter(o => o.siteKey === key && list.includes((o.createdAt || '').slice(0, 7)));
+  return { key, name: siteName(key), reps: reps.length, months: list.filter(m => m <= todayStr().slice(0, 7)).length, start: first ? arrearsTotal(first) : null, end: last ? arrearsTotal(last) : null, units: last ? arrearsUnits(last) : null, daily: dl.length,
+    complaints: dl.reduce((a, e) => a + cnt(e, 'complaints'), 0), issues: dl.reduce((a, e) => a + cnt(e, 'issues') + cnt(e, 'incidents'), 0), works: dl.reduce((a, e) => a + cnt(e, 'works'), 0), bad: dl.reduce((a, e) => a + CHECK_ITEMS.filter(c => (e.checks || {})[c[0]] === 'bad').length, 0),
+    orders: ords.length, ordDone: ords.filter(o => o.status === 'done').length };
+}
+function anaBars(rows, key, fmt, color, title, note) {
+  const vals = rows.map(r => r[key]), max = Math.max(1, ...vals.map(v => v || 0));
+  return '<div class="card"><div class="hd"><h2>' + title + '</h2><span class="note">' + (note || '') + '</span></div><div class="bd"><div class="abars" style="grid-template-columns:repeat(' + rows.length + ',minmax(0,1fr))">' +
+    rows.map(r => { const v = r[key]; return '<div class="ab' + (v == null ? ' na' : '') + '"><b>' + (v == null ? '–' : fmt(v)) + '</b><div class="abt"><i style="height:' + (v == null ? 0 : Math.max(3, 100 * v / max)).toFixed(0) + '%;background:' + color + '"></i></div><span>' + shortMonth(r.m) + '</span></div>'; }).join('') + '</div></div></div>';
+}
+function renderAnalysis() {
+  const el = $('#view-analysis'), rg = anaRange(), rows = rg.list.map(anaMonth), prev = rg.prevList.map(anaMonth);
+  const years = Array.from(new Set(months().map(m => +m.slice(0, 4)).concat([rg.y]))).sort();
+  const idxOpts = rg.kind === 'q' ? [1, 2, 3, 4].map(i => [i, i + '분기']) : rg.kind === 'h' ? [[1, '상반기'], [2, '하반기']] : [[1, '연간']];
+  const has = rows.filter(r => r.total != null), startT = has.length ? has[0].total : null, endT = has.length ? has[has.length - 1].total : null, diff = (startT != null && endT != null && has.length > 1) ? endT - startT : null;
+  const sum = k => rows.reduce((a, r) => a + (r[k] || 0), 0), psum = k => prev.reduce((a, r) => a + (r[k] || 0), 0);
+  const rates = rows.map(r => r.staffRate).filter(v => v != null), avgRate = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
+  const submit = rows.reduce((a, r) => a + r.reps, 0), expect = rows.reduce((a, r) => a + r.sites, 0);
+  const dchip = (v, pv, inv) => (pv == null || v == null) ? '' : (v === pv ? '<em class="muted">전기 동일</em>' : '<em class="' + ((v > pv) !== !!inv ? 'crit' : 'good') + '">' + (v > pv ? '▲' : '▼') + ' ' + comma(Math.abs(v - pv)) + ' (전기 ' + comma(pv) + ')</em>');
+  const kpi = (v, lb, sub, lv) => '<div class="akp ' + (lv || '') + '"><span>' + lb + '</span><b>' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+  let h = '<div class="card"><div class="hd"><div class="row" style="gap:10px;flex-wrap:wrap"><h2>업무 분석</h2>' +
+    '<div class="seg" id="anaKind">' + [['q', '분기'], ['h', '반기'], ['y', '연간']].map(x => '<button data-ak="' + x[0] + '" aria-pressed="' + (rg.kind === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' +
+    '<select id="anaYear" aria-label="연도">' + years.map(y => '<option value="' + y + '"' + (y === rg.y ? ' selected' : '') + '>' + y + '년</option>').join('') + '</select>' +
+    '<select id="anaIdx" aria-label="기간">' + idxOpts.map(x => '<option value="' + x[0] + '"' + (x[0] === rg.idx ? ' selected' : '') + '>' + x[1] + '</option>').join('') + '</select></div>' +
+    '<div class="row" style="gap:8px"><button class="btn sm" id="anaCsv">기간 데이터 CSV</button><span class="note">월간·일일보고는 삭제하지 않는 한 모두 보관되어 분기·반기·연간 비교에 그대로 쓰입니다</span></div></div>' +
+    '<div class="bd"><div class="eyebrow">' + rg.label + ' · ' + shortMonth(rg.list[0]) + '~' + shortMonth(rg.list[rg.list.length - 1]) + ' · 월간보고 ' + submit + '건 · 일일보고 ' + sum('daily') + '건</div>' +
+    '<div class="akpis">' +
+    kpi(endT == null ? '–' : krw(endT) + '원', '체납 총액 (기간 말)', diff == null ? (has.length ? '기간 내 보고 ' + has.length + '개월' : '월간보고 없음') : (diff > 0 ? '▲ ' : '▼ ') + krw(Math.abs(diff)) + '원 (기간 초 대비)', diff == null ? '' : diff > 0 ? 'crit' : 'good') +
+    kpi(has.length ? comma(has[has.length - 1].units) + '세대' : '–', '미납 세대 (기간 말)', has.length > 1 ? '기간 초 ' + comma(has[0].units) + '세대' : '', '') +
+    kpi(comma(sum('complaints')), '민원 접수', dchip(sum('complaints'), prev.some(r => r.daily) ? psum('complaints') : null, true), '') +
+    kpi(comma(sum('bad')), '시설 이상 보고', (sum('fix') ? '조치중 ' + sum('fix') + '건 · ' : '') + '긴급 보고 ' + sum('urgent') + '건', sum('bad') ? 'warn' : '') +
+    kpi(comma(sum('issues')), '특이사항 · 사고', dchip(sum('issues'), prev.some(r => r.daily) ? psum('issues') : null, true), '') +
+    kpi(comma(sum('works')), '공사 · 외부업체 출입', '', '') +
+    kpi(sum('orders') + '건', '지시사항', sum('ordRows') ? '사업소별 완료 ' + sum('ordDone') + '/' + sum('ordRows') + ' (' + Math.round(100 * sum('ordDone') / sum('ordRows')) + '%)' : '지시 없음', '') +
+    kpi(avgRate == null ? '–' : Math.round(100 * avgRate) + '%', '평균 인원 충원율', rates.length ? rates.length + '개월 평균' : '정원·인원 기록 없음', avgRate == null ? '' : avgRate >= .95 ? 'good' : avgRate >= .85 ? 'warn' : 'crit') +
+    kpi(expect ? Math.round(100 * submit / expect) + '%' : '–', '월간보고 제출률', submit + ' / ' + expect + ' (사업소×월)', expect && submit < expect ? 'warn' : 'good') +
+    '</div></div></div>';
+  h += '<div class="grid2">' + anaBars(rows, 'total', v => krw(v), 'var(--accent)', '월별 체납 총액', '월간보고 합계') + anaBars(rows, 'complaints', v => v + '건', '#c97b57', '월별 민원 접수', '일일보고 집계') +
+    anaBars(rows, 'bad', v => v + '건', 'var(--crit)', '월별 시설 이상', '일일보고 점검 "이상" 항목 수') + anaBars(rows, 'staffRate', v => Math.round(100 * v) + '%', 'var(--good)', '월별 인원 충원율', '정원 대비 현원') + '</div>';
+  const ss = sites().map(s => anaSite(s.key, rg.list)).sort((a, b) => (b.end || 0) - (a.end || 0));
+  h += '<div class="card"><div class="hd"><h2>사업소별 집계 <span class="muted small">' + rg.label + '</span></h2><span class="note">체납은 기간 초·말 월간보고 기준, 민원·이상·공사는 일일보고 누적</span></div><div class="bd tw"><table class="ltbl ana"><thead><tr><th>사업소</th><th class="r">기간 초 체납</th><th class="r">기간 말 체납</th><th class="r">증감</th><th class="c">미납 세대</th><th class="c">민원</th><th class="c">시설 이상</th><th class="c">특이·사고</th><th class="c">공사</th><th class="c">지시 완료</th><th class="c">월간보고</th><th class="c">일일보고</th></tr></thead><tbody>' +
+    ss.map(x => { const d = (x.start != null && x.end != null && x.reps > 1) ? x.end - x.start : null; return '<tr class="click" data-go="site" data-key="' + x.key + '"><td><b>' + esc(x.name) + '</b></td><td class="r num">' + (x.start == null ? '–' : comma(x.start)) + '</td><td class="r num">' + (x.end == null ? '–' : comma(x.end)) + '</td><td class="r num ' + (d == null ? 'muted' : d > 0 ? 'crit' : d < 0 ? 'good' : '') + '">' + (d == null ? '–' : (d > 0 ? '+' : '') + comma(d)) + '</td><td class="c">' + (x.units == null ? '–' : x.units) + '</td><td class="c">' + x.complaints + '</td><td class="c' + (x.bad ? ' crit' : '') + '">' + x.bad + '</td><td class="c">' + x.issues + '</td><td class="c">' + x.works + '</td><td class="c">' + (x.orders ? x.ordDone + '/' + x.orders : '–') + '</td><td class="c' + (x.reps < x.months ? ' warn' : '') + '">' + x.reps + '/' + x.months + '</td><td class="c">' + x.daily + '</td></tr>'; }).join('') +
+    '</tbody></table></div></div>';
+  el.innerHTML = h;
+  el.querySelectorAll('#anaKind button').forEach(b => b.addEventListener('click', () => { state.anaKind = b.dataset.ak; state.anaIdx = null; renderAnalysis(); }));
+  $('#anaYear').addEventListener('change', e => { state.anaYear = +e.target.value; state.anaIdx = null; renderAnalysis(); });
+  $('#anaIdx').addEventListener('change', e => { state.anaIdx = +e.target.value; renderAnalysis(); });
+  $('#anaCsv').addEventListener('click', () => {
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const l1 = [['월', '월간보고 수', '체납 총액', '미납 세대', '일일보고 수', '민원', '특이·사고', '공사', '시설 이상', '조치중', '긴급 보고', '지시 건', '지시 완료/대상', '인원 충원율']].concat(rows.map(r => [r.m, r.reps, r.total, r.units, r.daily, r.complaints, r.issues, r.works, r.bad, r.fix, r.urgent, r.orders, r.ordDone + '/' + r.ordRows, r.staffRate == null ? '' : Math.round(100 * r.staffRate) + '%']));
+    const l2 = [['사업소', '기간 초 체납', '기간 말 체납', '미납 세대', '민원', '시설 이상', '특이·사고', '공사', '지시 완료', '지시 건', '월간보고 수', '일일보고 수']].concat(ss.map(x => [x.name, x.start, x.end, x.units, x.complaints, x.bad, x.issues, x.works, x.ordDone, x.orders, x.reps, x.daily]));
+    const csv = '﻿' + rg.label + '\n' + l1.map(r => r.map(q).join(',')).join('\n') + '\n\n사업소별\n' + l2.map(r => r.map(q).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = '업무분석_' + rg.label.replace(/\s+/g, '_') + '.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  });
+}
 function renderCompare() {
   const el = $('#view-compare'), month = state.month, reps = reportsFor(month);
   const cmp = CMP.some(c => c[0] === state.cmp) ? state.cmp : 'unpaid';
@@ -2993,7 +3083,7 @@ function applyRole() {
   document.body.classList.toggle('manager', isMgr());
   if (me) { box.hidden = false; box.innerHTML = (isMgr() ? '<b>' + esc(me.name || '소장') + '</b><span class="muted">' + esc(siteName(me.site_key)) + ' · 소장</span>' : (me.name ? '<b>' + esc(me.name) + '</b>' : '')) + '<button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
-  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'];
+  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'analysis', 'daily', 'orders', 'meet', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
   if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
   setTab(state.tab);
@@ -3103,7 +3193,7 @@ document.addEventListener('click', async e => {
 });
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
-  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'].includes(hash)) state.tab = hash;
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'analysis', 'daily', 'orders', 'meet', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
   bindOrders(); bindMeet(); bindBuilding(); updateInstallBtn();
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
