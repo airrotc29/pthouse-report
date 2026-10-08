@@ -2030,7 +2030,7 @@ function bindAuth() {
     e.preventDefault(); const a = $('#pw1').value, b = $('#pw2').value, msg = $('#pwMsg');
     if (a.length < 8 || !/[A-Za-z]/.test(a) || !/\d/.test(a)) { msg.textContent = '8자 이상, 영문과 숫자를 모두 포함해야 합니다.'; return; }
     if (a !== b) { msg.textContent = '두 비밀번호가 서로 다릅니다.'; return; }
-    if (a === '1234' || /^1234/.test(a)) { msg.textContent = '초기 비밀번호와 다른 값을 쓰세요.'; return; }
+    if (a === '123456' || /^1234/.test(a)) { msg.textContent = '초기 비밀번호와 다른 값을 쓰세요.'; return; }
     $('#pwBtn').disabled = true; msg.textContent = '변경 중…';
     const { error } = await sb.auth.updateUser({ password: a });
     $('#pwBtn').disabled = false;

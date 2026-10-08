@@ -1,7 +1,7 @@
 -- 소장 계정 생성 (본사가 SQL Editor 또는 Edge Function 에서 실행)
 -- anon key 로는 다른 사용자를 만들 수 없으므로, 아래 둘 중 하나로 운영한다.
 --  (A) Supabase 대시보드: Authentication → Users → Add user
---      Email: <코드>@pthouse.local, Password: 1234, Auto Confirm 체크
+--      Email: <코드>@pthouse.local, Password: 123456, Auto Confirm 체크
 --      그 다음 아래 insert 로 profiles 행을 만든다.
 --  (B) Edge Function `create-manager` (service_role 사용, 호출자가 hq 인지 JWT 로 확인) — 앱의 사업소 목록에서 버튼으로 호출
 --
@@ -10,4 +10,4 @@
 -- values ('<auth.users.id>', 'manager', 's4clhcb', '홍길동', '010-0000-0000');
 --
 -- 본사 계정은 role = 'hq', site_key = null 로 등록한다.
--- 초기 비밀번호 1234 는 must_change_pw = true (기본값) 이므로 첫 로그인 때 변경 화면이 뜬다.
+-- 초기 비밀번호 123456 은 must_change_pw = true (기본값) 이므로 첫 로그인 때 변경 화면이 뜬다.

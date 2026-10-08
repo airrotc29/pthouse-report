@@ -1,7 +1,7 @@
 -- 사업소 보고 현황판 · Supabase 스키마 (설계안, v1)
 -- 실행 순서: Supabase SQL Editor에서 이 파일 전체를 한 번에 실행
 -- 계정 정책: 사업소당 1계정, 아이디 = 사업소 코드 (이메일 별칭 <코드>@pthouse.local),
---            초기 비밀번호 1234, 첫 로그인 시 변경 강제 (profiles.must_change_pw)
+--            초기 비밀번호 123456 (Supabase 최소 6자 제약), 첫 로그인 시 변경 강제 (profiles.must_change_pw)
 
 -- ───────────────────────── 1. 테이블 ─────────────────────────
 create table if not exists public.sites (
