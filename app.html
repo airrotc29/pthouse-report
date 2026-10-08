@@ -1339,16 +1339,27 @@ function prevTotalOf(r) {
 }
 const arrearsTotal = r => r && r.arrears ? (r.arrears.total != null ? r.arrears.total : (r.unpaidSummary ? r.unpaidSummary.total : null)) : null;
 const arrearsUnits = r => r && r.arrears ? (r.arrears.arrearsUnits != null ? r.arrears.arrearsUnits : (r.unpaidSummary ? r.unpaidSummary.units : null)) : null;
+/* 연속 구간 묶기: ['2021-09'..'2022-04','2026-07','2026-08'] → '2021-09~2022-04 · 2026-07~08' */
+function monthSpans(ms) {
+  const idx = m => +m.slice(0, 4) * 12 + (+m.slice(5, 7) - 1), out = []; let a = null, b = null;
+  ms.forEach(m => { if (a && idx(m) === idx(b) + 1) { b = m; return; } if (a) out.push([a, b]); a = b = m; }); if (a) out.push([a, b]);
+  return out.map(([x, y]) => x === y ? x : x + '~' + (y.slice(0, 4) === x.slice(0, 4) ? y.slice(5) : y)).join(' · ');
+}
 function unitSummary(r) {
   const m = new Map();
   const multiDong = new Set((r.unpaid || []).map(x => x.dong || '')).size > 1;
   (r.unpaid || []).forEach(x => {
     const k = (multiDong && x.dong ? x.dong + '동 ' : '') + x.unit + '호';
     const u = m.get(k) || { unit: k, months: new Set(), total: 0, charge: 0, late: 0, notes: [], items: [], type: x.type };
-    u.months.add(x.month); u.items.push({ month: x.month, total: x.total || 0 }); u.total += x.total; u.charge += x.charge; u.late += x.late; if (x.note) u.notes.push(x.note);
+    u.months.add(x.month); u.items.push({ month: x.month, total: x.total || 0 }); (u.rowsRaw = u.rowsRaw || []).push(x); u.total += x.total; u.charge += x.charge; u.late += x.late; if (x.note) u.notes.push(x.note);
     m.set(k, u);
   });
-  return Array.from(m.values()).map(u => Object.assign(u, { n: u.months.size, oldest: Array.from(u.months).sort()[0] })).sort((a, b) => b.total - a.total);
+  return Array.from(m.values()).map(u => {
+    /* 미납 개월 = 관리비(부과액)가 남은 달만 센다. 부과액 0원에 연체료만 남은 달은 따로 표시 */
+    const rows = u.rowsRaw || [], chargedM = new Set(rows.filter(x => (x.charge || 0) > 0 || !rows.some(y => (y.charge || 0) > 0)).map(x => x.month)), lateOnlyM = new Set(rows.filter(x => !(x.charge || 0) && (x.late || 0) > 0 && !chargedM.has(x.month)).map(x => x.month));
+    const ms = Array.from(chargedM).sort(), oldest = ms[0] || Array.from(u.months).sort()[0];
+    return Object.assign(u, { n: chargedM.size || u.months.size, nAll: u.months.size, lateOnly: lateOnlyM.size, oldest, span: monthSpans(ms) });
+  }).sort((a, b) => b.total - a.total);
 }
 const longTerm = r => unitSummary(r).filter(u => u.n >= 2);
 function inspStatus(ins) {
@@ -1818,7 +1829,7 @@ function renderSite() {
   bindSiteSel();
   const drawU = () => {
     const only = $('#ltOnly').checked, allU = $('#showAllU').checked, src = only ? lt : us, rows = allU ? src : src.slice(0, 10), maxU = Math.max(1, ...src.map(u => u.total));
-    $('#unpaidTbl').innerHTML = '<table class="sumtbl cmp"><thead><tr><th>세대</th><th class="c">개월</th><th>최초 부과월</th><th>미납 합계</th><th>비고</th></tr></thead><tbody>' + (rows.length ? rows.map(u => '<tr title="' + esc('부과액 ' + comma(u.charge) + ' · 연체료 ' + comma(u.late) + (u.type ? ' · ' + u.type : '')) + '"><td class="num"><b>' + esc(u.unit) + '</b></td><td class="c"><span class="lpill ' + (u.n >= 6 ? 'c' : u.n >= 3 ? 's' : u.n >= 2 ? 'w' : 'g') + '">' + u.n + '</span></td><td class="num small">' + esc(u.oldest) + '</td><td><div class="cs"><div class="cv"><b>' + comma(u.total) + '</b></div>' + pbar(u.total / maxU, u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + '</div></td><td class="small wrap sm"><div class="clamp2">' + esc(u.notes.join(' ') || '–') + '</div></td></tr>').join('') : '<tr><td colspan="5" class="muted">미납 세대 내역이 없습니다.</td></tr>') + '</tbody></table>' + (!allU && src.length > 10 ? '<div class="note" style="padding:8px 12px">상위 10세대 표시 · 전체를 켜면 ' + src.length + '세대</div>' : '');
+    $('#unpaidTbl').innerHTML = '<table class="sumtbl cmp"><thead><tr><th>세대</th><th class="c">개월</th><th>최초 부과월</th><th>미납 합계</th><th>비고</th></tr></thead><tbody>' + (rows.length ? rows.map(u => '<tr title="' + esc('미납 ' + u.span + (u.lateOnly ? ' · 연체료만 남은 달 ' + u.lateOnly + '개월' : '') + ' · 부과액 ' + comma(u.charge) + ' · 연체료 ' + comma(u.late) + (u.type ? ' · ' + u.type : '')) + '"><td class="num"><b>' + esc(u.unit) + '</b></td><td class="c"><span class="lpill ' + (u.n >= 6 ? 'c' : u.n >= 3 ? 's' : u.n >= 2 ? 'w' : 'g') + '">' + u.n + '</span></td><td class="num small">' + esc(u.oldest) + '</td><td><div class="cs"><div class="cv"><b>' + comma(u.total) + '</b></div>' + pbar(u.total / maxU, u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + '</div></td><td class="small wrap sm"><div class="clamp2">' + esc([u.span !== u.oldest ? u.span : '', u.lateOnly ? '연체료만 ' + u.lateOnly + '개월' : '', u.notes.join(' ')].filter(Boolean).join(' · ') || '–') + '</div></td></tr>').join('') : '<tr><td colspan="5" class="muted">미납 세대 내역이 없습니다.</td></tr>') + '</tbody></table>' + (!allU && src.length > 10 ? '<div class="note" style="padding:8px 12px">상위 10세대 표시 · 전체를 켜면 ' + src.length + '세대</div>' : '');
   };
   $('#ltOnly').addEventListener('change', drawU); $('#showAllU').addEventListener('change', drawU); drawU();
   const del = $('#delRep');
@@ -2762,7 +2773,7 @@ function monthlyReportHtml(r) {
   } else body += sec(5, '시설 점검 상태', '이 달 일일보고 없음') + '<p class="none">이 달 일일보고가 없어 시설 점검 집계를 표시할 수 없습니다.</p>';
   /* 5. 미납 세대 */
   const maxU = Math.max(1, ...top.map(u => u.total));
-  body += sec(6, '미납 세대', '상위 ' + top.length + '세대 / 전체 ' + units.length + '세대') + (top.length ? '<table><tr><th>세대</th><th>미납</th><th>최초 부과월</th><th style="width:38%">미납 합계</th><th>비고</th></tr>' + top.map(u => '<tr><td><b>' + esc(u.unit) + '</b></td><td>' + pill(u.n >= 6 ? 'crit' : u.n >= 3 ? 'serious' : u.n >= 2 ? 'warn' : 'good', u.n + '개월') + '</td><td>' + esc(u.oldest) + '</td><td><div class="ub"><i style="width:' + (100 * u.total / maxU).toFixed(1) + '%;background:' + (u.n >= 6 ? '#e0463a' : u.n >= 2 ? '#c97b57' : '#5b92cc') + '"></i><b>' + comma(u.total) + '원</b></div></td><td class="sm">' + esc(u.notes.join(' ')) + '</td></tr>').join('') + '</table>' : '<p class="none">세대별 미납 내역 없음</p>');
+  body += sec(6, '미납 세대', '상위 ' + top.length + '세대 / 전체 ' + units.length + '세대') + (top.length ? '<table><tr><th>세대</th><th>미납</th><th>최초 부과월</th><th style="width:38%">미납 합계</th><th>비고</th></tr>' + top.map(u => '<tr><td><b>' + esc(u.unit) + '</b></td><td>' + pill(u.n >= 6 ? 'crit' : u.n >= 3 ? 'serious' : u.n >= 2 ? 'warn' : 'good', u.n + '개월') + '</td><td>' + esc(u.oldest) + '</td><td><div class="ub"><i style="width:' + (100 * u.total / maxU).toFixed(1) + '%;background:' + (u.n >= 6 ? '#e0463a' : u.n >= 2 ? '#c97b57' : '#5b92cc') + '"></i><b>' + comma(u.total) + '원</b></div></td><td class="sm">' + esc([u.span !== u.oldest ? u.span : '', u.lateOnly ? '연체료만 ' + u.lateOnly + '개월' : '', u.notes.join(' ')].filter(Boolean).join(' · ')) + '</td></tr>').join('') + '</table>' : '<p class="none">세대별 미납 내역 없음</p>');
   /* 5-2. 미납 세대 전체 내역 (보고서 원본 행) */
   const ur = (r.unpaid || []).slice().sort((p1, p2) => (p1.dong || '').localeCompare(p2.dong || '') || String(p1.unit).localeCompare(String(p2.unit), 'ko', { numeric: true }) || (p1.month || '').localeCompare(p2.month || ''));
   if (ur.length) body += '<div class="cap" style="margin-top:10px">미납 내역 전체 <small>' + ur.length + '행 · 부과월별</small></div><table class="dense"><tr>' + (ur.some(x => x.dong) ? '<th>동</th>' : '') + '<th>호</th><th>부과월</th>' + (ur.some(x => x.type) ? '<th>구분</th>' : '') + '<th class="r">관리비</th><th class="r">연체료</th><th class="r">합계</th><th>비고</th></tr>' + ur.map(x => '<tr>' + (ur.some(y => y.dong) ? '<td>' + T(x.dong) + '</td>' : '') + '<td>' + T(x.unit) + '</td><td>' + T(x.month) + '</td>' + (ur.some(y => y.type) ? '<td>' + T(x.type) + '</td>' : '') + '<td class="r">' + comma(x.charge || 0) + '</td><td class="r">' + comma(x.late || 0) + '</td><td class="r"><b>' + comma(x.total || 0) + '</b></td><td class="sm">' + T(x.note) + '</td></tr>').join('') + '<tr class="tot"><td colspan="' + (3 + (ur.some(x => x.dong) ? 1 : 0) + (ur.some(x => x.type) ? 1 : 0)) + '">합계</td><td class="r">' + comma(ur.reduce((s2, x) => s2 + (x.charge || 0), 0)) + '</td><td class="r">' + comma(ur.reduce((s2, x) => s2 + (x.late || 0), 0)) + '</td><td class="r"><b>' + comma(ur.reduce((s2, x) => s2 + (x.total || 0), 0)) + '</b></td><td></td></tr></table>' + (r.unpaidSummary ? '<p class="none">보고서 집계: 미납 ' + comma(r.unpaidSummary.units) + '세대 · ' + won(r.unpaidSummary.total) + '</p>' : '');
