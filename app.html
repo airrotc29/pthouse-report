@@ -660,6 +660,14 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .sti input { width: 100%; min-width: 0; font-weight: 600; font-size: 15px; padding: 4px 34px 4px 8px; min-height: 32px; font-variant-numeric: tabular-nums; }
 .sti small { position: absolute; right: 18px; bottom: 15px; font-size: 11px; color: var(--muted); }
 .sti.wide { flex: 1 1 260px; } .sti.wide input { padding-right: 8px; font-weight: 500; font-size: 13.5px; }
+.sti.stx { border: 1px dashed var(--accent); background: var(--accent-soft); }
+.sti.stx span input { width: 100%; min-height: 24px; padding: 2px 6px; font-size: 12px; font-weight: 600; border-color: transparent; background: transparent; }
+.sti.stx input[type=number] { padding-right: 56px; }
+.sti.stx .stxrm { position: absolute; right: 6px; bottom: 8px; padding: 1px 6px; font-size: 11px; }
+.sti.stadd { align-items: flex-start; justify-content: center; border: 1px dashed var(--line); background: var(--surface); cursor: pointer; min-height: 62px; }
+.sti.stadd b { font-size: 13px; color: var(--accent); }
+.sti.stadd span { font-size: 11px; }
+.sti.stadd:hover { border-color: var(--accent); }
 .cktiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
 .cktile { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line-soft); border-left: 4px solid var(--good); border-radius: 10px; background: var(--surface); transition: background .15s, border-color .15s; }
 .cktile.bad { border-left-color: var(--crit); background: var(--crit-soft); }
@@ -1994,13 +2002,13 @@ function cmpStaff(reps, month) {
   const withQ = rows.filter(r => r.quota && r.cur != null), tq = withQ.reduce((a, r) => a + r.quota, 0), tc = withQ.reduce((a, r) => a + r.cur, 0);
   const short = withQ.filter(r => r.cur < r.quota), noQ = rows.filter(r => !r.quota).length, noR = rows.filter(r => r.cur == null).length;
   let h = minis([[tq ? Math.round(100 * tc / tq) + '%' : '–', '전체 충원율', !tq ? '' : tc / tq >= .95 ? 'good' : tc / tq >= .85 ? 'warn' : 'crit'], [comma(tc) + ' / ' + comma(tq), '현원 / 정원', ''], [short.length, '결원 사업소', short.length ? 'serious' : 'good'], [short.reduce((a, r) => a + (r.quota - r.cur), 0), '결원 인원', short.length ? 'serious' : 'good'], [rows.reduce((a, r) => a + r.leave, 0), '휴가 인원', rows.some(r => r.leave) ? 'info' : ''], [rows.reduce((a, r) => a + r.vacancy, 0), '공석 인원', rows.some(r => r.vacancy) ? 'crit' : 'good'], [noQ + '·' + noR, '정원 미입력 · 보고 없음', (noQ || noR) ? 'warn' : '']]);
-  const tot = Object.fromEntries(STAFF_ROLES.map(x => [x[0], rows.reduce((a, r) => a + (+r.sd[x[0]] || 0), 0)])), totN = Object.values(tot).reduce((a, b) => a + b, 0) || 1;
+  const tot = Object.fromEntries(STAFF_ROLES.map(x => [x[0], rows.reduce((a, r) => a + (+r.sd[x[0]] || 0), 0)])), exTot = rows.reduce((a, r) => a + ((r.sd.extra || []).reduce((b, x) => b + (+x.count || 0), 0)), 0), totN = (Object.values(tot).reduce((a, b) => a + b, 0) + exTot) || 1;
   const sring = r => { const R = 15, C = 2 * Math.PI * R, f = r.rate == null ? 0 : Math.min(1, r.rate), col = r.rate == null ? 'var(--muted)' : r.rate >= .95 ? 'var(--good)' : r.rate >= .85 ? 'var(--gold)' : 'var(--crit)'; return '<svg class="mrg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="5"/><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="10" font-weight="700" fill="var(--fg)">' + (r.rate == null ? '–' : Math.round(100 * r.rate)) + '</text></svg>'; };
   const RP = ['#2f5f93', '#5b92cc', '#6f9f7a', '#b08a4a', '#8a6fb8', '#c97b57', '#9aa7b5'];
   const sbar = r => { if (r.roles) { const n = r.roles.reduce((a, x) => a + (x.count || 0), 0); if (!n) return '<div class="stbw"><div class="stbar empty"></div></div>'; return '<div class="stbw"><div class="stbar">' + r.roles.map((x, i) => x.count ? '<i style="flex:' + x.count + ';background:' + RP[i % RP.length] + '" title="' + esc(x.role) + ' ' + x.count + '명"><span>' + x.count + '</span></i>' : '').join('') + '</div><div class="stsrc">월간보고 ' + esc(shortMonth(r.date)) + ' 기준 · ' + r.roles.map(x => esc(x.role) + ' ' + x.count).join(' · ') + '</div></div>'; }
-    const n = STAFF_ROLES.reduce((a, x) => a + (+r.sd[x[0]] || 0), 0); if (!n) return '<div class="stbw"><div class="stbar empty"></div></div>'; return '<div class="stbw"><div class="stbar">' + STAFF_ROLES.map(x => { const v = +r.sd[x[0]] || 0; return v ? '<i style="flex:' + v + ';background:' + x[2] + '" title="' + x[1] + ' ' + v + '명"><span>' + v + '</span></i>' : ''; }).join('') + '</div></div>'; };
+    const ex = r.sd.extra || [], n = STAFF_ROLES.reduce((a, x) => a + (+r.sd[x[0]] || 0), 0) + ex.reduce((a, x) => a + (+x.count || 0), 0); if (!n) return '<div class="stbw"><div class="stbar empty"></div></div>'; return '<div class="stbw"><div class="stbar">' + STAFF_ROLES.map(x => { const v = +r.sd[x[0]] || 0; return v ? '<i style="flex:' + v + ';background:' + x[2] + '" title="' + x[1] + ' ' + v + '명"><span>' + v + '</span></i>' : ''; }).join('') + ex.map((x, i) => (+x.count || 0) ? '<i style="flex:' + (+x.count) + ';background:' + ['#8a6fb8', '#c97b57', '#9aa7b5'][i % 3] + '" title="' + esc(x.role) + ' ' + x.count + '명"><span>' + x.count + '</span></i>' : '').join('') + '</div>' + (ex.length ? '<div class="stsrc">추가 항목 · ' + ex.map(x => esc(x.role) + ' ' + (+x.count || 0)).join(' · ') + '</div>' : '') + '</div>'; };
   h += '<div class="grid2"><div class="card"><div class="hd"><h2>직종별 현원</h2><span class="note">최근 일일보고 기준 · ' + comma(totN === 1 && !tc ? 0 : Object.values(tot).reduce((a, b) => a + b, 0)) + '명</span></div><div class="bd cgroups">' +
-    STAFF_ROLES.map(x => '<div class="cbar"><span class="cl"><i class="swc" style="background:' + x[2] + ';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px"></i>' + x[1] + '</span><div class="ct"><i style="width:' + (100 * tot[x[0]] / totN).toFixed(1) + '%;background:' + x[2] + '"></i></div><b>' + tot[x[0]] + '명</b></div>').join('') +
+    STAFF_ROLES.map(x => '<div class="cbar"><span class="cl"><i class="swc" style="background:' + x[2] + ';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px"></i>' + x[1] + '</span><div class="ct"><i style="width:' + (100 * tot[x[0]] / totN).toFixed(1) + '%;background:' + x[2] + '"></i></div><b>' + tot[x[0]] + '명</b></div>').join('') + (exTot ? '<div class="cbar"><span class="cl"><i class="swc" style="background:#8a6fb8;display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px"></i>추가 항목 (전기과장 등)</span><div class="ct"><i style="width:' + (100 * exTot / totN).toFixed(1) + '%;background:#8a6fb8"></i></div><b>' + exTot + '명</b></div>' : '') +
     '<div class="note" style="margin-top:6px">현원은 일일보고 인원을 우선 쓰고, 없으면 월간업무보고의 근무인원 표를 씁니다. 정원은 업로드 탭 입력값이 없으면 월간보고의 근무인원+결원으로 봅니다. 충원율 = 현원 ÷ 정원.</div></div></div>' +
     '<div class="card"><div class="hd"><h2>결원·대체 근무 메모</h2><span class="note">일일보고 "결원·대체" 기재분</span></div><div class="bd olist">' + (rows.filter(r => r.absent).length ? rows.filter(r => r.absent).map(r => '<div class="mcard2"><div class="mi"><b>' + esc(r.name) + '</b><span>' + esc(r.absent) + '</span></div><span class="note num">' + esc(r.date) + '</span></div>').join('') : '<div class="empty small">기재된 결원·대체 메모가 없습니다.</div>') + '</div></div></div>';
   h += '<div class="card"><div class="hd"><h2>사업소별 인원 현황</h2><span class="legend">' + STAFF_ROLES.map(x => '<span><i style="background:' + x[2] + ';border-color:' + x[2] + '"></i>' + x[1] + '</span>').join('') + '</span></div><div class="bd tight"><div class="stlist"><div class="sth"><span></span><span>사업소</span><span>현원 / 정원</span><span>직종별 현원</span><span>기준일</span></div>' +
@@ -2076,9 +2084,9 @@ const CMP_TYPES = ['소음', '누수', '주차', '관리비', '시설', '위생�
 const INC_TYPES = ['화재', '침수·누수', '정전', '승강기 갇힘·고장', '부상·안전사고', '도난·침입', '분쟁·폭언', '기타'];
 const ROLES = ['관리소장', '과장', '주임', '관리원', '경비', '미화', '기타'];
 const SAFETY = ['화기', '고소', '밀폐', '전기', '외부인 출입'];
-const ROW = { works: () => ({ vendor: '', desc: '', time: '', safety: [] }), complaints: () => ({ unit: '', type: '', desc: '', result: '', status: 'done' }), incidents: () => ({ type: '', time: '', desc: '', action: '', r119: false, r112: false, rins: false }), directives: () => ({ text: '', status: 'todo' }) };
+const ROW = { staffExtra: () => ({ role: '', count: '' }), works: () => ({ vendor: '', desc: '', time: '', safety: [] }), complaints: () => ({ unit: '', type: '', desc: '', result: '', status: 'done' }), incidents: () => ({ type: '', time: '', desc: '', action: '', r119: false, r112: false, rins: false }), directives: () => ({ text: '', status: 'todo' }) };
 function newDraft(key, date) {
-  return { key: key || state.site || '', newName: '', date: date || state.dailyDate, author: '', role: '', staff: { mgr: '', worker: '', clean: '', guard: '', leave: '', vacancy: '', absent: '' },
+  return { key: key || state.site || '', newName: '', date: date || state.dailyDate, author: '', role: '', staff: { mgr: '', worker: '', clean: '', guard: '', leave: '', vacancy: '', absent: '' }, staffExtra: [],
     checks: Object.fromEntries(CHECK_ITEMS.map(c => [c[0], 'ok'])), checkNotes: {}, works: [], complaints: [], arrears: { collected: '', calls: '', sms: '', visits: '', promises: '' },
     incidents: [], urgent: false, moves: { occupied: '', vacant: '' }, directives: [], plans: '', requests: '', memo: '' };
 }
@@ -2086,7 +2094,7 @@ function draftFromEntry(e, key, date) {
   const d = newDraft(key, date);
   d.author = e.author || ''; d.urgent = !!e.urgent;
   if (e.v === 2) {
-    Object.assign(d, { role: e.role || '', staff: Object.assign(d.staff, e.staffDetail || {}), checks: Object.assign(d.checks, e.checks || {}), checkNotes: Object.assign({}, e.checkNotes || {}),
+    Object.assign(d, { role: e.role || '', staff: Object.assign(d.staff, Object.fromEntries(Object.entries(e.staffDetail || {}).filter(([k]) => k !== 'extra'))), staffExtra: ((e.staffDetail || {}).extra || []).map(x => ({ role: x.role || '', count: x.count == null ? '' : String(x.count) })), checks: Object.assign(d.checks, e.checks || {}), checkNotes: Object.assign({}, e.checkNotes || {}),
       works: (e.works || []).map(w => Object.assign(ROW.works(), w)), complaints: (e.complaintsDetail || []).map(c => Object.assign(ROW.complaints(), c)), arrears: Object.assign(d.arrears, e.arrearsAct || {}),
       incidents: (e.incidents || []).map(i => Object.assign(ROW.incidents(), i)), moves: Object.assign(d.moves, e.moves || {}), directives: (e.directives || []).map(x => Object.assign(ROW.directives(), x)),
       plans: (e.planLines || []).join('\n'), requests: (e.requests || []).join('\n'), memo: (e.memo || []).join('\n') });
@@ -2108,7 +2116,8 @@ function entryFromDraft(d) {
   const complaints = d.complaints.filter(c => c.unit || c.desc).map(c => Object.assign({}, c, { unit: c.unit.trim(), desc: c.desc.trim(), result: c.result.trim() }));
   const incidents = d.incidents.filter(i => i.desc || i.type).map(i => Object.assign({}, i, { desc: i.desc.trim(), action: i.action.trim() }));
   const directives = d.directives.filter(x => x.text.trim()).map(x => Object.assign({}, x, { text: x.text.trim() }));
-  const staffDetail = nums(d.staff), staffN = ['mgr', 'worker', 'clean', 'guard'].reduce((a, k) => a + (staffDetail[k] || 0), 0);
+  const staffDetail = nums(d.staff), extra = (d.staffExtra || []).filter(x => (x.role || '').trim() || num(x.count) != null).map(x => ({ role: (x.role || '').trim() || '기타', count: num(x.count) || 0 })); if (extra.length) staffDetail.extra = extra;
+  const staffN = ['mgr', 'worker', 'clean', 'guard'].reduce((a, k) => a + (staffDetail[k] || 0), 0) + extra.reduce((a, x) => a + x.count, 0);
   const repOf = i => [i.r119 && '119', i.r112 && '112', i.rins && '보험'].filter(Boolean);
   return {
     v: 2, date: d.date, author: d.author.trim(), role: d.role, staff: staffN || null, staffDetail,
@@ -2203,7 +2212,10 @@ function renderDailyForm(force) {
     '<div class="f"><label>보고 일자</label><input type="date" data-f="date" id="dDate" value="' + esc(d.date) + '" required></div>' +
     '<div class="f"><label>작성자</label>' + inp('author', d.author, 'placeholder="성명" id="dAuthor"') + '</div>' +
     '<div class="f"><label>직책</label>' + sel('role', d.role, ROLES, '선택') + '</div></div>' +
-    '<div class="statin" style="margin-top:12px">' + [['mgr', '소장·과장'], ['worker', '관리원'], ['clean', '미화'], ['guard', '경비'], ['leave', '휴가 인원'], ['vacancy', '공석 인원']].map(x => numI('staff.' + x[0], d.staff[x[0]], x[1], '명')).join('') + '<label class="sti wide"><span>결원 · 대체</span>' + inp('staff.absent', d.staff.absent, 'placeholder="예: 경비 1명 연차 · 대체근무"') + '</label></div>');
+    '<div class="statin" style="margin-top:12px">' + [['mgr', '소장·과장'], ['worker', '관리원'], ['clean', '미화'], ['guard', '경비'], ['leave', '휴가 인원'], ['vacancy', '공석 인원']].map(x => numI('staff.' + x[0], d.staff[x[0]], x[1], '명')).join('') +
+    (d.staffExtra || []).map((x, i) => '<label class="sti stx"><span><input type="text" data-f="staffExtra.' + i + '.role" value="' + esc(x.role) + '" placeholder="항목명 (예: 전기과장)" aria-label="추가 항목명"></span><input type="number" min="0" step="1" inputmode="numeric" data-f="staffExtra.' + i + '.count" value="' + esc(x.count) + '" placeholder="0"><small>명</small><button type="button" class="btn sm rmrow stxrm" data-rm="staffExtra:' + i + '" aria-label="항목 삭제">✕</button></label>').join('') +
+    '<button type="button" class="sti stadd" data-add="staffExtra"><b>+ 항목 추가</b><span>전기과장 · 경리담당 · 기사 등</span></button>' +
+    '<label class="sti wide"><span>결원 · 대체</span>' + inp('staff.absent', d.staff.absent, 'placeholder="예: 경비 1명 연차 · 대체근무"') + '</label></div>');
   h += fsec(2, '시설 점검', '기본값 정상 · 이상/조치중일 때만 비고를 적습니다', '<span class="chip good">정상 ' + CHECK_ITEMS.filter(c => (d.checks[c[0]] || 'ok') === 'ok').length + '/' + CHECK_ITEMS.length + '</span>',
     '<div class="cktiles">' + CHECK_ITEMS.map(c => { const st = d.checks[c[0]] || 'ok'; return '<div class="cktile ckrow ' + st + '" data-ckrow="' + c[0] + '"><div class="ckh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + CK_ICON[c[0]] + '"/></svg><div><b>' + c[1] + '</b><div class="small muted">' + c[2] + '</div></div></div><div class="seg">' + CHECK_STATES.map(x => '<button type="button" data-ck="' + c[0] + '" data-v="' + x[0] + '" class="' + x[0] + '" aria-pressed="' + (st === x[0]) + '">' + x[1] + '</button>').join('') + '</div><div class="cknote"' + (st === 'bad' || st === 'fix' ? '' : ' hidden') + '>' + inp('checkNotes.' + c[0], d.checkNotes[c[0]], 'placeholder="이상 내용 · 조치 계획 · 업체 연락 여부"') + '</div></div>'; }).join('') + '</div>');
   h += fsec(3, '공사 · 외부업체 출입', '업체명 · 작업 · 시간 · 안전조치', add('works', '추가'),
@@ -2503,8 +2515,8 @@ function dailyReportHtml(key, date, e) {
     const si = state.siteList.find(x => x.id === key) || {}, quota = si.quota > 0 ? si.quota : null;
     /* 1 기본·인원 */
     body += sec(1, '기본 · 근무 인원', (quota && staffN != null) ? '충원율 ' + Math.round(100 * staffN / quota) + '% (정원 ' + quota + '명)' : quota ? '정원 ' + quota + '명 · 근무 인원 미기재' : '') +
-      '<div class="kpis k7">' + roles.map(x => '<div class="kp"><span>' + x[1] + '</span><b>' + (N(sd[x[0]]) == null ? '–' : N(sd[x[0]])) + '<small>명</small></b></div>').join('') +
-      '<div class="kp ' + (N(sd.leave) ? 'lv' : '') + '"><span>휴가</span><b>' + (N(sd.leave) == null ? '–' : N(sd.leave)) + '<small>명</small></b></div><div class="kp ' + (N(sd.vacancy) ? 'vc' : '') + '"><span>공석</span><b>' + (N(sd.vacancy) == null ? '–' : N(sd.vacancy)) + '<small>명</small></b>' + (N(sd.vacancy) ? '<em>채용·보충 필요</em>' : '') + '</div>' +
+      '<div class="kpis k7" style="grid-template-columns:repeat(' + (7 + (sd.extra || []).length) + ',minmax(0,1fr))">' + roles.map(x => '<div class="kp"><span>' + x[1] + '</span><b>' + (N(sd[x[0]]) == null ? '–' : N(sd[x[0]])) + '<small>명</small></b></div>').join('') +
+      ((sd.extra || []).map(x => '<div class="kp"><span>' + esc(x.role) + '</span><b>' + (N(x.count) == null ? '–' : N(x.count)) + '<small>명</small></b></div>').join('')) + '<div class="kp ' + (N(sd.leave) ? 'lv' : '') + '"><span>휴가</span><b>' + (N(sd.leave) == null ? '–' : N(sd.leave)) + '<small>명</small></b></div><div class="kp ' + (N(sd.vacancy) ? 'vc' : '') + '"><span>공석</span><b>' + (N(sd.vacancy) == null ? '–' : N(sd.vacancy)) + '<small>명</small></b>' + (N(sd.vacancy) ? '<em>채용·보충 필요</em>' : '') + '</div>' +
       '<div class="kp big"><span>근무 인원 합계</span><b>' + (staffN == null ? '–' : staffN) + '<small>명</small></b>' + (quota && staffN != null ? '<em>정원 ' + quota + '명 · ' + (staffN >= quota ? '충원 완료' : '결원 ' + (quota - staffN) + '명') + '</em>' : staffN == null ? '<em>인원 미기재</em>' : '') + '</div></div>' +
       (sd.absent ? '<div class="box"><b>결원 · 대체 근무</b>' + esc(sd.absent) + '</div>' : '');
     /* 2 시설 점검 */
