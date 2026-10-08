@@ -483,6 +483,47 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .certs { display: flex; flex-direction: column; gap: 6px; }
 .certl { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .certl b { margin-right: 4px; }
+.mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.mcard { border: 1px solid var(--line-soft); border-radius: 12px; padding: 12px 14px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+.mcard::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--good); }
+.mcard.warn::before { background: var(--gold); } .mcard.crit::before { background: var(--crit); }
+.mcard:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.mcard .mh { display: flex; align-items: center; gap: 10px; }
+.mcard .mrg { width: 40px; height: 40px; flex: none; }
+.mcard .mtt { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.mcard .mtt b { font-size: 14.5px; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcard .mtt span { font-size: 11.5px; color: var(--muted); }
+.mroles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.mr { display: grid; grid-template-rows: auto auto; padding: 6px 9px; border-radius: 8px; background: var(--surface-2); border-left: 3px solid var(--line); min-width: 0; }
+.mr .rl { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mr .rn { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mr small { font-size: 10.5px; color: var(--muted); }
+.mr.good { border-left-color: var(--good); } .mr.good .rn { color: var(--good); }
+.mr.warn { border-left-color: var(--gold); background: var(--warn-soft); } .mr.warn .rn { color: #7a5300; }
+.mr.crit { border-left-color: var(--crit); background: var(--crit-soft); } .mr.crit .rn { color: var(--crit); }
+.mr.na .rn { color: var(--muted); font-weight: 500; }
+.mgap { font-size: 12.5px; color: var(--fg-2); background: var(--surface-2); border-radius: 8px; padding: 7px 10px; line-height: 1.45; }
+.mgap span { display: inline-block; font-size: 11px; color: var(--muted); margin-right: 6px; font-weight: 600; }
+.cgroups { display: flex; flex-direction: column; gap: 14px; }
+.cgh { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; font-size: 13px; }
+.cgh i { width: 10px; height: 10px; border-radius: 3px; }
+.cgh span { color: var(--muted); font-size: 12px; margin-left: auto; }
+.cbar { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 40px; gap: 8px; align-items: center; padding: 3px 0; font-size: 12.5px; }
+.cbar .cl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cbar .ct { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.cbar .ct i { display: block; height: 100%; border-radius: 99px; opacity: .85; }
+.cbar b { text-align: right; font-variant-numeric: tabular-nums; }
+.plist { display: flex; flex-direction: column; }
+.psite { padding: 11px 16px; border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+.psite:last-child { border-bottom: 0; } .psite:hover { background: var(--surface-2); }
+.psh { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; } .psh b { font-size: 14px; }
+.ppl { display: flex; flex-direction: column; gap: 5px; }
+.pp { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; }
+.pp > b { flex: none; min-width: 48px; padding-top: 2px; }
+.pcs { display: flex; flex-wrap: wrap; gap: 4px; }
+.cchip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 6px; border-radius: 999px; background: color-mix(in srgb, var(--cc) 12%, var(--surface)); color: color-mix(in srgb, var(--cc) 80%, var(--fg)); font-size: 11.5px; font-weight: 500; border: 1px solid color-mix(in srgb, var(--cc) 28%, transparent); }
+.cchip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--cc); }
+@media (max-width: 640px) { .mgrid { grid-template-columns: 1fr; } .cbar { grid-template-columns: minmax(0, 1fr) 80px 40px; } }
 .seg.lg button { padding: 7px 15px; font-size: 13.5px; }
 .mini.mini5 { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 0; }
 @media (max-width: 640px) { .mini.mini5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .seg.lg { flex-wrap: wrap; } .seg.lg button { flex: 1 1 auto; border-right: 0; border-bottom: 1px solid var(--line); } }
@@ -1698,14 +1739,23 @@ function cmpMgr(reps) {
   const gaps = reps.flatMap(r => managerAlerts(r)), critN = gaps.filter(g => g.lv === 'crit').length, pctV = tot.need ? Math.round(100 * tot.ok / tot.need) : 100;
   const people = reps.reduce((a, r) => a + new Set(r.certs.map(c => c.name)).size, 0), certs = certCounts(reps);
   let h = minis([[critN, '전기·소방 공란', critN ? 'crit' : 'good'], [gaps.length - critN, '기타 공란', gaps.length - critN ? 'warn' : 'good'], [tot.ok + '/' + tot.need, '선임 완료 / 필요', tot.need && tot.ok >= tot.need ? 'good' : 'warn'], [tot.na, '해당 없음', ''], [people, '자격 보유 인원', '']]);
-  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good-soft)"></i>선임</span><span><i style="background:var(--warn-soft)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">행을 누르면 사업소 상세</span></span></div><div class="bd tight tw"><table class="hm"><thead><tr><th></th>' + items.map(i => '<th>' + esc(i) + '</th>').join('') + '<th>미선임 대처</th></tr></thead><tbody>' +
-    reps.slice().sort((a, b) => managerAlerts(b).length - managerAlerts(a).length).map(r => {
-      const need = r.managers.filter(m => !isAuxItem(m.item) && !(m.name && isNA(m.name))).length, ok = r.managers.filter(m => !isAuxItem(m.item) && m.name && !isNA(m.name)).length, ga = managerAlerts(r);
-      return '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="nm">' + esc(r.site) + '</td>' + items.map(it => { const m = r.managers.find(x => x.item === it); if (!m) return '<td><div class="cellv na">–</div></td>'; if (!m.name) return '<td><div class="cellv ' + (isAuxItem(it) ? 'na' : (/전기|소방/.test(it) ? 'crit' : 'warn')) + '">' + (isAuxItem(it) ? '공란' : '확인 필요') + '</div></td>'; return '<td><div class="cellv two ' + (isNA(m.name) ? 'na' : 'good') + '"><span>' + esc(isNA(m.name) ? '해당 없음' : m.name) + '</span><small>' + esc(m.date || '') + '</small></div></td>'; }).join('') +
-        '<td class="small wrap sm" style="white-space:normal;min-width:140px">' + esc(r.managerGap || '–') + '</td></tr>';
-    }).join('') + '</tbody></table></div></div>';
-  h += '<div class="grid2"><div class="card"><div class="hd"><h2>자격증 종류별 보유 인원</h2><span class="note">' + certs.length + '종 · ' + people + '명</span></div><div class="bd">' + (certs.length ? '<div class="chart" id="certBar"></div>' : '<span class="muted small">자격증 기록이 없습니다.</span>') + '</div></div>' +
-    '<div class="card"><div class="hd"><h2>사업소별 자격증</h2></div><div class="bd tight tw"><table><thead><tr><th>사업소</th><th class="c">인원</th><th>성명 · 자격증</th></tr></thead><tbody>' + reps.map(r => '<tr class="click" data-go="site" data-key="' + r.siteKey + '"><td class="site">' + esc(r.site) + '</td><td class="c"><span class="lpill ' + (r.certs.length ? 'g' : '') + '">' + new Set(r.certs.map(c => c.name)).size + '</span></td><td class="wrap" style="max-width:none">' + (r.certs.length ? '<div class="certs">' + r.certs.map(c => '<div class="certl"><b>' + esc(c.name) + '</b>' + String(c.certs || '').split(/[,·/]\s*/).filter(Boolean).map(x => '<span class="chip">' + esc(x.trim()) + '</span>').join('') + '</div>').join('') + '</div>' : '<span class="muted">기록 없음</span>') + '</td></tr>').join('') + '</tbody></table></div></div></div>';
+  const order = items.slice().sort((x, y) => (isAuxItem(x) ? 1 : 0) - (isAuxItem(y) ? 1 : 0));
+  const mring = (ok, need) => { const R = 15, C = 2 * Math.PI * R, f = need ? ok / need : 1, col = !need ? 'var(--muted)' : f >= 1 ? 'var(--good)' : f >= .5 ? 'var(--gold)' : 'var(--crit)'; return '<svg class="mrg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="5"/><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="var(--fg)">' + ok + '</text></svg>'; };
+  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good)"></i>선임</span><span><i style="background:var(--gold)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">카드를 누르면 사업소 상세</span></span></div><div class="bd"><div class="mgrid">' +
+    reps.slice().sort((x, y) => { const gx = managerAlerts(x), gy = managerAlerts(y); return gy.filter(g => g.lv === 'crit').length - gx.filter(g => g.lv === 'crit').length || gy.length - gx.length || x.site.localeCompare(y.site, 'ko'); }).map(r => {
+      const ga = managerAlerts(r), crit = ga.filter(g => g.lv === 'crit').length, need = r.managers.filter(m => !isAuxItem(m.item) && !(m.name && isNA(m.name))).length, ok = r.managers.filter(m => !isAuxItem(m.item) && m.name && !isNA(m.name)).length;
+      const lv = crit ? 'crit' : ga.length ? 'warn' : 'good';
+      return '<div class="mcard ' + lv + ' click" data-go="site" data-key="' + r.siteKey + '"><div class="mh">' + mring(ok, need) + '<div class="mtt"><b>' + esc(r.site) + '</b><span>선임 ' + ok + ' / 필요 ' + need + (r.managers.length ? '' : ' · 기록 없음') + '</span></div><span class="chip ' + lv + '">' + (crit ? '전기·소방 공란 ' + crit : ga.length ? '공란 ' + ga.length : need ? '선임 완비' : '기록 없음') + '</span></div>' +
+        (r.managers.length ? '<div class="mroles">' + order.map(it => { const m = r.managers.find(x => x.item === it); const st = !m ? 'na' : !m.name ? (isAuxItem(it) ? 'na' : (/전기|소방/.test(it) ? 'crit' : 'warn')) : isNA(m.name) ? 'na' : 'good'; const txt = !m ? '–' : !m.name ? (isAuxItem(it) ? '공란' : '확인 필요') : isNA(m.name) ? '해당 없음' : esc(m.name); return '<div class="mr ' + st + '"><span class="rl">' + esc(it) + '</span><span class="rn">' + txt + '</span>' + (m && m.date && st === 'good' ? '<small class="num">' + esc(m.date) + '</small>' : '') + '</div>'; }).join('') + '</div>' : '') +
+        (r.managerGap ? '<div class="mgap"><span>미선임 대처</span>' + esc(r.managerGap) + '</div>' : '') + '</div>';
+    }).join('') + '</div></div></div>';
+  const CAT = [['전기', /전기/, '#2f6db5'], ['소방', /소방|위험물/, '#c44b3c'], ['기계·설비', /기계|설비|냉동|공조|가스|보일러|에너지|승강기/, '#2e8b57'], ['건축·안전', /건축|토목|안전|산업/, '#b08a4a'], ['기타', /./, '#7a8794']];
+  const catOf = lb => CAT.find(c => c[1].test(lb)) || CAT[CAT.length - 1];
+  const groups = CAT.map(c => ({ name: c[0], col: c[2], list: certs.filter(x => catOf(x.label) === c) })).filter(g => g.list.length), maxC = Math.max(1, ...certs.map(x => x.value));
+  h += '<div class="grid2"><div class="card"><div class="hd"><h2>자격증 종류별 보유 인원</h2><span class="note">' + certs.length + '종 · ' + people + '명</span></div><div class="bd cgroups">' + (certs.length ? groups.map(g => '<div class="cgrp"><div class="cgh"><i style="background:' + g.col + '"></i><b>' + g.name + '</b><span>' + g.list.length + '종 · ' + g.list.reduce((a2, x) => a2 + x.value, 0) + '명</span></div>' + g.list.map(x => '<div class="cbar"><span class="cl">' + esc(x.label) + '</span><div class="ct"><i style="width:' + (100 * x.value / maxC).toFixed(1) + '%;background:' + g.col + '"></i></div><b>' + x.value + '명</b></div>').join('') + '</div>').join('') : '<span class="muted small">자격증 기록이 없습니다.</span>') + '</div></div>' +
+    '<div class="card"><div class="hd"><h2>사업소별 자격증</h2><span class="legend">' + CAT.slice(0, 4).map(c => '<span><i style="background:' + c[2] + ';border-color:' + c[2] + '"></i>' + c[0] + '</span>').join('') + '</span></div><div class="bd tight"><div class="plist">' +
+    reps.slice().sort((x, y) => y.certs.length - x.certs.length).map(r => { const ppl = new Map(); r.certs.forEach(c => { if (!ppl.has(c.name)) ppl.set(c.name, []); String(c.certs || '').split(/[,·/]\s*/).map(x => x.trim()).filter(Boolean).forEach(x => ppl.get(c.name).push(x)); });
+      return '<div class="psite click" data-go="site" data-key="' + r.siteKey + '"><div class="psh"><b>' + esc(r.site) + '</b><span class="lpill ' + (ppl.size ? 'g' : '') + '">' + ppl.size + '명</span></div>' + (ppl.size ? '<div class="ppl">' + Array.from(ppl.entries()).map(([nm, cs]) => '<div class="pp"><b>' + esc(nm) + '</b><span class="pcs">' + cs.map(x => '<span class="cchip" style="--cc:' + catOf(x)[2] + '">' + esc(x) + '</span>').join('') + '</span></div>').join('') + '</div>' : '<div class="muted small" style="padding:2px 0 4px">자격증 기록 없음</div>') + '</div>'; }).join('') + '</div></div></div></div>';
   return h;
 }
 /* 특이사항: 사업소별 특이·지시·예정·대처 */
