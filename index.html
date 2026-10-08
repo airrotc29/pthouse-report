@@ -86,6 +86,7 @@ a { color: var(--accent); }
 .badge.on .dot { background: var(--good); }
 nav.tabs { max-width: 1180px; margin: 0 auto; padding: 6px 16px 0; display: flex; gap: 2px; overflow-x: auto; }
 nav.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px 9px; color: var(--fg-2); cursor: pointer; white-space: nowrap; font-weight: 500; }
+nav.tabs button[hidden] { display: none; }
 nav.tabs button:hover { color: var(--fg); }
 nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 nav.tabs button:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -1072,7 +1073,7 @@ body.manager .hq-only { display: none !important; }
     <button role="tab" data-tab="home">종합 현황</button>
     <button role="tab" data-tab="site">사업소별</button>
     <button role="tab" data-tab="compare">항목 비교</button>
-    <button role="tab" data-tab="analysis">업무 분석</button>
+    <button role="tab" data-tab="analysis" hidden>업무 분석</button>
     <button role="tab" data-tab="daily">일일보고</button>
     <button role="tab" data-tab="orders">지시사항<span class="tabn" id="tabOrdN" hidden></span></button>
     <button role="tab" data-tab="meet">화상회의<span class="tabn live" id="tabMeetN" hidden></span></button>
@@ -3093,7 +3094,7 @@ function applyRole() {
   document.body.classList.toggle('manager', isMgr());
   if (me) { box.hidden = false; box.innerHTML = (isMgr() ? '<b>' + esc(me.name || '소장') + '</b><span class="muted">' + esc(siteName(me.site_key)) + ' · 소장</span>' : (me.name ? '<b>' + esc(me.name) + '</b>' : '')) + '<button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
-  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'analysis', 'daily', 'orders', 'meet', 'upload'];
+  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
   if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
   setTab(state.tab);
@@ -3204,7 +3205,7 @@ document.addEventListener('click', async e => {
 });
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
-  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'analysis', 'daily', 'orders', 'meet', 'upload'].includes(hash)) state.tab = hash;
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
   bindOrders(); bindMeet(); bindBuilding(); updateInstallBtn();
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
