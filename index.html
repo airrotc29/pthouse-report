@@ -755,6 +755,27 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .ur .pbar { height: 7px; }
 .urn { font-size: 12.5px; color: var(--fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-left: 10px; border-left: 2px solid var(--gold); }
 @media (max-width: 640px) { .ur { grid-template-columns: 28px 1fr; gap: 8px; padding: 10px 12px; } .urk { width: 26px; height: 26px; font-size: 11.5px; } .uamt { margin-left: 0; width: 100%; } }
+.uu2 { display: flex; flex-direction: column; }
+.uh2, .ur2 { display: grid; grid-template-columns: 34px minmax(0, 1fr) 72px 150px 170px; gap: 12px; align-items: center; padding: 10px 14px; }
+.uh2 { font-size: 11.5px; color: var(--muted); border-bottom: 1px solid var(--line-soft); padding-block: 8px; }
+.uh2 .r { text-align: right; }
+.ur2 { border-bottom: 1px solid var(--line-soft); }
+.ur2:last-child { border-bottom: 0; }
+.ur2:hover { background: var(--surface-2); }
+.uinfo { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.uinfo b { font-size: 14.5px; letter-spacing: -.01em; }
+.uinfo .usub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uinfo .unote { font-size: 12px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mpill { display: inline-grid; place-content: center; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--surface-2); color: var(--fg-2); justify-self: start; }
+.mpill.w { background: var(--warn-soft); color: #7a5300; } .mpill.s { background: var(--serious-soft); color: #9a3f1b; } .mpill.c { background: var(--crit-soft); color: var(--crit); }
+.sol { display: flex; flex-direction: column; font-size: 12.5px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.sol small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.sol.crit { color: var(--crit); } .sol.warn { color: #9a3f1b; } .sol.na { color: var(--muted); font-weight: 500; }
+.uamt2 { text-align: right; min-width: 0; }
+.uamt2 b { font-size: 14.5px; font-variant-numeric: tabular-nums; display: block; margin-bottom: 4px; }
+.uamt2 b small { font-size: 11px; font-weight: 500; color: var(--muted); margin-left: 1px; }
+.uamt2 .pbar { height: 5px; }
+@media (max-width: 760px) { .uh2 { display: none; } .ur2 { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 4px 10px; padding: 10px 12px; } .ur2 .urk { grid-row: 1 / span 2; width: 26px; height: 26px; font-size: 11.5px; } .ur2 .uinfo { grid-column: 2; } .ur2 .uamt2 { grid-column: 3; grid-row: 1; } .ur2 .mpill { grid-column: 2; grid-row: 2; } .ur2 .sol { grid-column: 3; grid-row: 2; align-items: flex-end; text-align: right; } }
 /* compare: ranking secondary line, bullets, timeline, status board */
 .rks { margin-top: 4px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .rks b { color: var(--fg-2); }
@@ -1142,8 +1163,8 @@ function unitSummary(r) {
   const multiDong = new Set((r.unpaid || []).map(x => x.dong || '')).size > 1;
   (r.unpaid || []).forEach(x => {
     const k = (multiDong && x.dong ? x.dong + '동 ' : '') + x.unit + '호';
-    const u = m.get(k) || { unit: k, months: new Set(), total: 0, charge: 0, late: 0, notes: [], type: x.type };
-    u.months.add(x.month); u.total += x.total; u.charge += x.charge; u.late += x.late; if (x.note) u.notes.push(x.note);
+    const u = m.get(k) || { unit: k, months: new Set(), total: 0, charge: 0, late: 0, notes: [], items: [], type: x.type };
+    u.months.add(x.month); u.items.push({ month: x.month, total: x.total || 0 }); u.total += x.total; u.charge += x.charge; u.late += x.late; if (x.note) u.notes.push(x.note);
     m.set(k, u);
   });
   return Array.from(m.values()).map(u => Object.assign(u, { n: u.months.size, oldest: Array.from(u.months).sort()[0] })).sort((a, b) => b.total - a.total);
@@ -1699,10 +1720,21 @@ function cmpUnpaid(reps, month) {
   const allU = reps.flatMap(r => unitSummary(r).map(u => Object.assign({ site: r.site, key: r.siteKey }, u))), topRows = allU.slice().sort((a, b) => b.total - a.total).slice(0, 20), maxU = Math.max(1, ...topRows.map(u => u.total));
   const allSum = allU.reduce((a, u) => a + u.total, 0) || 1, topSum = topRows.reduce((a, u) => a + u.total, 0), avgN = topRows.length ? topRows.reduce((a, u) => a + u.n, 0) / topRows.length : 0;
   const siteIdx = new Map(reps.map((r, i) => [r.siteKey, i]));
+  /* 채권 소멸시효(3년, 민법 제163조 제1호) 추정: 부과월 1일 + 3년을 시효 완성일로 본다 */
+  const sol = u => { const today = todayStr(), out = { expAmt: 0, expN: 0, near: null, days: null };
+    (u.items || []).forEach(it => { if (!/^\d{4}-\d{2}$/.test(it.month || '')) return; const [y, mo] = it.month.split('-').map(Number); const exp = new Date(y + 3, mo - 1, 1); const expS = exp.toISOString().slice(0, 10);
+      if (expS <= today) { out.expAmt += it.total; out.expN++; } else if (!out.near || expS < out.near) { out.near = expS; out.days = Math.round((exp - new Date(today + 'T00:00:00')) / 86400000); } });
+    return out; };
+  const solChip = u => { const x = sol(u); if (x.expN) return '<span class="chip crit" title="부과월 기준 3년 경과분 (추정)">시효 경과 ' + x.expN + '개월분 · ' + krw(x.expAmt) + '원</span>'; if (x.near == null) return ''; if (x.days <= 180) return '<span class="chip serious" title="가장 오래된 미납분 시효 완성 예정일 ' + x.near + '">시효 D-' + x.days + ' · ' + x.near.slice(0, 7) + '분</span>'; return '<span class="chip na" title="가장 오래된 미납분 시효 완성 예정일">시효 ' + x.near.slice(0, 7) + '</span>'; };
+  const solRisk = topRows.filter(u => { const x = sol(u); return x.expN || (x.days != null && x.days <= 180); }).length;
   const mdots = n => { const k = Math.min(n, 12); return '<span class="mdots ' + (n >= 6 ? 'c' : n >= 3 ? 's' : n >= 2 ? 'w' : 'g') + '" title="' + n + '개월 미납">' + Array.from({ length: 12 }, (_, i) => '<i' + (i < k ? ' class="on"' : '') + '></i>').join('') + '<b>' + n + '개월' + (n > 12 ? '+' : '') + '</b></span>'; };
-  h += '<div class="card"><div class="hd"><h2>미납 상위 세대 <span class="muted small">사업소별 상위 5세대 · 전체 20위</span></h2></div>' +
-    (topRows.length ? minis([[krw(topSum) + '원', '상위 20세대 합계', ''], [Math.round(100 * topSum / allSum) + '%', '전체 미납액 대비', topSum / allSum >= 0.5 ? 'warn' : ''], [avgN.toFixed(1), '평균 미납 개월', avgN >= 6 ? 'crit' : avgN >= 3 ? 'serious' : ''], [topRows.filter(u => u.n >= 6).length, '6개월 이상 세대', topRows.filter(u => u.n >= 6).length ? 'crit' : 'good'], [topRows.filter(u => u.notes.length).length, '조치 비고 기재', '']]).replace('mini mini5', 'mini mini5 inpad') : '') +
-    '<div class="bd tight"><div class="uu">' + (topRows.length ? topRows.map((u, i) => '<div class="ur' + (i < 3 ? ' top' : '') + '"><div class="urk ' + (i === 0 ? 'g1' : i === 1 ? 'g2' : i === 2 ? 'g3' : '') + '">' + (i + 1) + '</div><div class="urb"><div class="urh"><b class="unit">' + esc(u.unit) + '</b><span class="usite"><i style="background:' + pal[(siteIdx.get(u.key) || 0) % pal.length] + '"></i>' + esc(u.site) + '</span>' + mdots(u.n) + '<span class="since">' + esc(u.oldest) + '부터</span><span class="uamt">' + comma(u.total) + '<small>원</small></span></div>' + pbar(u.total / maxU, u.n >= 6 ? 'linear-gradient(90deg, var(--serious), var(--crit))' : u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + (u.notes.length ? '<div class="urn" title="' + esc(u.notes.join(' ')) + '">' + esc(u.notes.join(' ')) + '</div>' : '') + '</div></div>').join('') : '<div class="empty small">미납 세대 내역이 없습니다.</div>') + '</div></div></div>';
+  const shown = state.topuAll ? topRows : topRows.slice(0, 10);
+  const mpill = n => '<span class="mpill ' + (n >= 6 ? 'c' : n >= 3 ? 's' : n >= 2 ? 'w' : 'g') + '">' + n + '개월' + (n > 12 ? '+' : '') + '</span>';
+  const solCell = u => { const x = sol(u); if (x.expN) return '<span class="sol crit">시효 경과 ' + x.expN + '개월분<small>' + krw(x.expAmt) + '원</small></span>'; if (x.near == null) return '<span class="sol na">–</span>'; if (x.days <= 180) return '<span class="sol warn">시효 D-' + x.days + '<small>' + x.near.slice(0, 7) + '분</small></span>'; return '<span class="sol na">' + x.near.slice(0, 7) + '<small>시효 예정</small></span>'; };
+  h += '<div class="card"><div class="hd"><h2>미납 상위 세대 <span class="muted small">사업소별 상위 5세대 · 전체 ' + topRows.length + '위</span></h2>' + (topRows.length > 10 ? '<button class="btn sm" id="topuMore">' + (state.topuAll ? '10위까지만' : '20위까지 보기') + '</button>' : '') + '</div>' +
+    (topRows.length ? minis([[krw(topSum) + '원', '상위 ' + topRows.length + '세대 합계', ''], [Math.round(100 * topSum / allSum) + '%', '전체 미납액 대비', topSum / allSum >= 0.5 ? 'warn' : ''], [topRows.filter(u => u.n >= 6).length, '6개월 이상 세대', topRows.filter(u => u.n >= 6).length ? 'crit' : 'good'], [solRisk, '시효 경과·임박(6개월 내)', solRisk ? 'crit' : 'good']]).replace('mini mini5', 'mini auto inpad') : '') +
+    '<div class="bd tight"><div class="uu2"><div class="uh2"><span></span><span>세대 · 사업소</span><span>미납</span><span>소멸시효</span><span class="r">미납액</span></div>' + (topRows.length ? shown.map((u, i) => '<div class="ur2' + (i < 3 ? ' top' : '') + '"><div class="urk ' + (i === 0 ? 'g1' : i === 1 ? 'g2' : i === 2 ? 'g3' : '') + '">' + (i + 1) + '</div><div class="uinfo"><b>' + esc(u.unit) + '</b><span class="usub">' + esc(u.site) + ' · ' + esc(u.oldest) + '부터</span>' + (u.notes.length ? '<span class="unote" title="' + esc(u.notes.join(' ')) + '">' + esc(u.notes.join(' ')) + '</span>' : '') + '</div>' + mpill(u.n) + solCell(u) + '<div class="uamt2"><b>' + comma(u.total) + '<small>원</small></b>' + pbar(u.total / maxU, u.n >= 6 ? 'linear-gradient(90deg, var(--serious), var(--crit))' : u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + '</div></div>').join('') : '<div class="empty small">미납 세대 내역이 없습니다.</div>') + '</div>' +
+    (topRows.length ? '<div class="note" style="padding:9px 14px 11px;border-top:1px solid var(--line-soft)">관리비 채권 소멸시효 <b>3년</b> (민법 제163조 제1호) · 부과월 기준 추정 · 청구·압류·가압류·승인 시 중단 (민법 제168조)</div>' : '') + '</div></div>';
   cmpUnpaid._line = ms.length >= 2 ? { pts: ms.map(m => ({ x: shortMonth(m), y: agg(m), extra: reportsFor(m).length + '개소' })).filter(p => p.y != null), fmt: item.fmt, axis, title: item.name + ' 추이' } : null;
   return h;
 }
@@ -2336,6 +2368,7 @@ async function bootSupabase(cfg) {
 
 /* ===================== 전역 이벤트 ===================== */
 document.addEventListener('click', e => {
+  if (e.target.id === 'topuMore') { state.topuAll = !state.topuAll; render(); return; }
   const t = e.target.closest('[data-go]'); if (!t) return;
   if (t.dataset.month) { state.month = t.dataset.month; renderMonthSel(); }
   go(t.dataset.go, t.dataset.key, { date: t.dataset.date });
