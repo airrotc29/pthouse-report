@@ -369,12 +369,15 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 .bhead { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .bhead b { font-size: 16px; display: block; } .bhead span { font-size: 12.5px; color: var(--muted); }
 .bgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.bldc .bhead { align-items: flex-start; } .bldc .bt b { font-size: 18px; } .bldc .bt { padding: 13px 15px; }
+.bspec { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.bkv span { display: block; font-size: 11px; color: var(--muted); letter-spacing: .02em; } .bkv b { display: block; font-size: 13.5px; font-weight: 600; margin-top: 2px; word-break: keep-all; line-height: 1.35; } .bkv em { font-style: normal; } .bkv em.ok { color: var(--good); }
 .bt { background: var(--surface-2); border-radius: 12px; padding: 11px 13px; min-width: 0; border-left: 3px solid var(--line); }
 .bt span { display: block; font-size: 11.5px; color: var(--muted); } .bt b { display: block; font-size: 15px; margin-top: 3px; line-height: 1.3; word-break: keep-all; } .bt small { display: block; font-size: 11.5px; color: var(--fg-2); margin-top: 3px; }
 .bt.warn { border-left-color: var(--gold); background: var(--warn-soft); } .bt.good { border-left-color: var(--good); }
 .bldprev th { width: 160px; text-align: left; color: var(--muted); font-weight: 500; }
 .drop.over { border-color: var(--accent); background: var(--accent-soft); }
-@media (max-width: 760px) { .bgrid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 760px) { .bgrid, .bspec { grid-template-columns: 1fr 1fr; } }
 .stbar.empty { opacity: .5; }
 .stsrc { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 760px) { .sth { display: none; } .strow { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 6px 10px; } .strow .mrg { grid-row: 1 / span 2; } .strow .stbw { grid-column: 2 / span 2; } .strow .note { display: none; } }
@@ -1790,8 +1793,8 @@ function renderSite() {
     '</div></div>';
   const insT = r.inspections.map(i => { const st = inspStatus(i); return { lv: st.lv || 'na', name: i.item, sub: [i.due, i.done].filter(Boolean).join(' · ') || '기록 없음', label: st.label }; });
   const mgrT = r.managers.map(m => { const na = /보조|기타/.test(sq(m.item)); const lv = m.name ? (isNA(m.name) ? 'na' : 'good') : (na ? 'na' : (/전기|소방/.test(m.item) ? 'crit' : 'warn')); return { lv, name: m.item, sub: m.name ? (isNA(m.name) ? '해당 없음' : m.name + (m.date ? ' · ' + m.date : '')) : '공란', label: m.name ? (isNA(m.name) ? '' : '선임') : (na ? '' : '확인 필요') }; });
-  h += '<div class="grid2">';
   h += bldCard(r.siteKey, true);
+  h += '<div class="grid2">';
   h += '<div class="card"><div class="hd"><h2>법정검사 · 선임관리자</h2><span class="note">' + (ia.length + ma.length ? '주의 ' + (ia.length + ma.length) + '건' : '모두 정상') + (r.managerGap ? ' · 미선임 대처: ' + esc(r.managerGap) : '') + '</span></div><div class="bd">' +
     '<div class="eyebrow" style="margin-bottom:6px">법정 정기검사</div>' + (insT.length ? statusTiles(insT) : '<span class="muted small">기록 없음</span>') +
     '<div class="eyebrow" style="margin:12px 0 6px">선임관리자</div>' + (mgrT.length ? statusTiles(mgrT) : '<span class="muted small">기록 없음</span>') + '</div></div>';
@@ -2611,17 +2614,16 @@ function bldCard(key, forSite) {
   if (!b) return forSite && !isMgr() && state.canWrite ? '<div class="card"><div class="hd"><h2>건축물대장</h2><span class="note">건축법 제38조 · 집합건축물대장 표제부</span></div><div class="bd"><div class="empty small">아직 등록된 건축물대장이 없습니다. 업로드 탭에서 세움터 발급 PDF를 올리면 세대수·승강기·주차·사용승인일 등이 여기에 표시됩니다.</div></div></div>' : '';
   const rr = siteReports(key).slice(-1)[0], ru = rr && rr.arrears ? rr.arrears.units : null, diff = (ru != null && b.units != null) ? ru - b.units : null;
   const tile = (lb, v, sub, lv) => '<div class="bt' + (lv ? ' ' + lv : '') + '"><span>' + lb + '</span><b>' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
-  return '<div class="card"><div class="hd"><h2>건축물대장 <span class="muted small">' + esc(b.kind || '집합건축물대장') + '</span></h2><span class="row" style="gap:8px">' + (b.violation ? '<span class="chip crit">위반건축물 표기</span>' : '<span class="chip good">위반 표기 없음</span>') + '<span class="note">발급 ' + esc(b.issued || '–') + (b.uid ? ' · 고유번호 ' + esc(b.uid) : '') + '</span></span></div><div class="bd">' +
-    '<div class="bhead"><div><b>' + esc(b.name || siteName(key)) + '</b><span>' + esc(b.roadAddr || b.lotAddr) + (b.jibun ? ' (지번 ' + esc(b.jibun) + ')' : '') + '</span></div></div>' +
+  const kv = (lb, v) => v ? '<div class="bkv"><span>' + lb + '</span><b>' + v + '</b></div>' : '';
+  return '<div class="card bldc"><div class="hd"><h2>건축물대장 <span class="muted small">' + esc(b.kind || '집합건축물대장') + '</span></h2><span class="note">발급 ' + esc(b.issued || '–') + (b.uid ? ' · 고유번호 ' + esc(b.uid) : '') + '</span></div><div class="bd">' +
+    '<div class="bhead"><div><b>' + esc(b.name || siteName(key)) + '</b><span>' + esc(b.roadAddr || b.lotAddr) + (b.jibun ? ' · 지번 ' + esc(b.jibun) : '') + '</span></div>' + (b.violation ? '<span class="chip crit">위반건축물 표기</span>' : '<span class="chip good">위반 표기 없음</span>') + '</div>' +
     '<div class="bgrid">' + tile('호수 · 세대', (b.units != null ? comma(b.units) + '호' : '–') + (b.hh ? ' / ' + comma(b.hh) + '세대' : ''), diff == null ? '대장 기준' : diff === 0 ? '보고서 세대수와 일치' : '보고서 ' + comma(ru) + '세대 (' + (diff > 0 ? '+' : '') + diff + ')', diff ? 'warn' : '') +
       tile('사용승인일', esc(b.approvalDate || '–'), b.approvalDate ? '준공 ' + yearsSince(b.approvalDate) + ' 경과' : '') +
-      tile('승강기', (b.elevPass != null ? '승용 ' + b.elevPass + '대' : '–') + (b.elevEmerg ? ' · 비상용 ' + b.elevEmerg + '대' : ''), '승강기 정기검사 대상') +
-      tile('주차장', b.parkTotal != null ? comma(b.parkTotal) + '대' : '–', [b.parkSelf ? '자주식 ' + comma(b.parkSelf) : '', b.parkMech ? '기계식 ' + comma(b.parkMech) : '', b.parkEv ? '전기차 ' + b.parkEv : ''].filter(Boolean).join(' · '), b.parkMech ? 'warn' : '') +
-      tile('연면적', fmtArea(b.floorArea), b.landArea ? '대지 ' + fmtArea(b.landArea) : '') +
-      tile('층수 · 구조', esc(b.floors || '–'), esc(b.structure || '') + (b.height ? ' · 높이 ' + esc(b.height) : '')) +
-      tile('주용도', esc(b.mainUse || '–'), '') +
-      tile('내진설계', esc(b.seismic || '–'), esc(b.seismicCap || ''), /적용/.test(b.seismic) ? 'good' : '') + '</div>' +
-    (b.permitDate || b.startDate ? '<div class="note" style="margin-top:10px">허가 ' + esc(b.permitDate || '–') + ' · 착공 ' + esc(b.startDate || '–') + ' · 사용승인 ' + esc(b.approvalDate || '–') + (b.parkMech ? ' · 기계식주차장은 주차장법 제19조의9에 따른 정기검사 대상' : '') + '</div>' : '') + '</div></div>';
+      tile('승강기', (b.elevPass != null ? '승용 ' + b.elevPass + '대' : '–') + (b.elevEmerg ? ' · 비상용 ' + b.elevEmerg + '대' : ''), '정기검사 대상') +
+      tile('주차장', b.parkTotal != null ? comma(b.parkTotal) + '대' : '–', [b.parkSelf ? '자주식 ' + comma(b.parkSelf) : '', b.parkMech ? '기계식 ' + comma(b.parkMech) : '', b.parkEv ? '전기차 ' + b.parkEv : ''].filter(Boolean).join(' · '), b.parkMech ? 'warn' : '') + '</div>' +
+    '<div class="bspec">' + kv('연면적', fmtArea(b.floorArea)) + kv('대지면적', b.landArea ? fmtArea(b.landArea) : '') + kv('층수', esc(b.floors || '')) + kv('구조 · 높이', esc(b.structure || '') + (b.height ? ' · ' + esc(b.height) : '')) + kv('주용도', esc(b.mainUse || '')) +
+      kv('내진설계', (b.seismic ? '<em class="' + (/적용/.test(b.seismic) ? 'ok' : '') + '">' + esc(b.seismic) + '</em>' : '') + (b.seismicCap ? ' ' + esc(b.seismicCap) : '')) + kv('허가 · 착공', [b.permitDate, b.startDate].filter(Boolean).map(esc).join(' · ')) + kv('사용승인', esc(b.approvalDate || '')) + '</div>' +
+    (b.parkMech ? '<div class="note" style="margin-top:10px">기계식주차장은 주차장법 제19조의9에 따른 정기검사 대상입니다.</div>' : '') + '</div></div>';
 }
 let bldDraft = null;
 async function handleBuildingFile(file) {
