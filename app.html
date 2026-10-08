@@ -2185,6 +2185,7 @@ function renderDailyForm(force) {
   if (!force && wrap.innerHTML && wrap.contains(document.activeElement)) return;  /* 입력 중에는 데이터 갱신으로 다시 그리지 않는다 */
   if (!state.draft) { const saved = lsGet('mwr.draft2', null); state.draft = saved && saved.date && saved.checks ? saved : newDraft(); }
   const d = state.draft, all = mgrSites(), ed = state.editing;
+  if (!Array.isArray(d.staffExtra)) d.staffExtra = []; if (!d.staff) d.staff = newDraft().staff; ['leave', 'vacancy'].forEach(k => { if (d.staff[k] == null) d.staff[k] = ''; });
   if (isMgr()) { d.key = mySite(); if (!d.author && state.me.name) d.author = state.me.name; }
   if (d.key && d.key !== '__new' && !all.some(s => s.key === d.key)) d.key = '';
   if ((!d.key || (d.key === '__new' && !d.newName)) && all.length) d.key = (state.site && all.some(x => x.key === state.site)) ? state.site : all[0].key;
@@ -2264,7 +2265,7 @@ function bindDaily() {
     if (tgb) { const p = tgb.dataset.tg; let on; if (tgb.dataset.mode === 'arr') { const arr = (getPath(state.draft, p) || []).slice(); const i = arr.indexOf(tgb.dataset.val); if (i >= 0) arr.splice(i, 1); else arr.push(tgb.dataset.val); setPath(state.draft, p, arr); on = i < 0; } else { on = !getPath(state.draft, p); setPath(state.draft, p, on); } tgb.setAttribute('aria-pressed', on); saveDraft(); updateFormSummary(); return; }
     if (e.target.closest('[data-urg]')) { state.draft.urgent = !state.draft.urgent; renderDailyForm(true); saveDraft(); return; }
     const ad = e.target.closest('[data-add]');
-    if (ad) { const k = ad.dataset.add; state.draft[k].push(ROW[k]()); renderDailyForm(true); const first = $('[data-f^="' + k + '.' + (state.draft[k].length - 1) + '."]', wrap); if (first) first.focus(); saveDraft(); return; }
+    if (ad) { const k = ad.dataset.add; if (!Array.isArray(state.draft[k])) state.draft[k] = []; state.draft[k].push(ROW[k]()); renderDailyForm(true); const first = $('[data-f^="' + k + '.' + (state.draft[k].length - 1) + '."]', wrap); if (first) first.focus(); saveDraft(); return; }
     const rmb = e.target.closest('[data-rm]');
     if (rmb) { const [k, i] = rmb.dataset.rm.split(':'); state.draft[k].splice(+i, 1); renderDailyForm(true); saveDraft(); return; }
     if (e.target.id === 'dPrev') { const p = prevEntryOf(state.draft.key, state.draft.date); if (!p) { toast('이 사업소의 이전 일일보고가 없습니다'); return; } const pd = draftFromEntry(p, state.draft.key, state.draft.date); Object.assign(state.draft, { author: state.draft.author || pd.author, role: state.draft.role || pd.role, staff: pd.staff, checks: pd.checks, checkNotes: {}, directives: pd.directives.filter(x => x.status !== 'done') }); renderDailyForm(true); saveDraft(); toast(dateLabel(p.date) + ' 보고에서 인원 · 점검 상태 · 미완료 지시를 가져왔습니다'); return; }
