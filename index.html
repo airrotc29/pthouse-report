@@ -987,6 +987,10 @@ body.manager .hq-only { display: none !important; }
 .jhead b { font-size: 15px; } .jhead span { font-size: 12.5px; color: var(--muted); }
 .jhead .btn { margin-left: auto; }
 .jnote { font-size: 12.5px; color: var(--fg-2); line-height: 1.5; }
+.jlaunch .jl { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 12px; background: linear-gradient(135deg, #0f2340, #1f4a78); color: #fff; margin-bottom: 12px; }
+.jlaunch .jl svg { width: 40px; height: 40px; flex: none; opacity: .9; }
+.jlaunch .jl b { display: block; font-size: 15px; }
+.jlaunch .jl span { font-size: 12.5px; opacity: .85; }
 .sn.pdfl { cursor: pointer; color: var(--accent); display: inline-flex; align-items: center; gap: 5px; }
 .sn.pdfl:hover { text-decoration: underline; }
 .pdfi { width: 14px; height: 14px; opacity: .7; }
@@ -2634,7 +2638,7 @@ function openDailyPdf(key, date) { openReportPdf(key, null, date); }
 /* ---------- 화상회의 (Jitsi Meet) ---------- */
 const MEET_HOST = 'meet.jit.si';
 const meetRoom = m => 'pthouse-' + m.room;
-const meetUrl = m => 'https://' + MEET_HOST + '/' + meetRoom(m) + '#userInfo.displayName="' + encodeURIComponent(meDisplayName()) + '"&config.prejoinConfig.enabled=false&config.startWithAudioMuted=true&config.disableLocalVideoFlip=true';
+const meetUrl = m => 'https://' + MEET_HOST + '/' + meetRoom(m) + '#userInfo.displayName="' + encodeURIComponent(meDisplayName()) + '"&config.prejoinConfig.enabled=false&config.startWithAudioMuted=true';
 function meDisplayName() { if (!state.me) return '참석자'; return isMgr() ? siteName(state.me.site_key) + ' ' + (state.me.name || '소장') : '본사 ' + (state.me.name || ''); }
 function meetForMe(m) { return !isMgr() || !m.siteKeys || m.siteKeys.includes(mySite()); }
 function liveMeetings() { return state.meetings.filter(m => m.status === 'live' && meetForMe(m)).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')); }
@@ -2652,20 +2656,12 @@ function loadJitsi() {
   if (window.top !== window) return Promise.reject(new Error('embedded'));
   return new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://' + MEET_HOST + '/external_api.js'; sc.onload = () => res(); sc.onerror = () => rej(new Error('load')); document.head.appendChild(sc); });
 }
+let meetWin = null;
 async function joinMeeting(id) {
   const m = state.meetings.find(x => x.id === id); if (!m) return;
   state.joined = id; if (state.tab !== 'meet') setTab('meet'); else renderMeet();
-  const host = $('#jitsiHost'); if (!host) return;
-  try {
-    await loadJitsi();
-    jitsiApi = new JitsiMeetExternalAPI(MEET_HOST, { roomName: meetRoom(m), parentNode: host, lang: 'ko', userInfo: { displayName: meDisplayName() },
-      configOverwrite: { prejoinConfig: { enabled: false }, startWithAudioMuted: true, disableDeepLinking: true, disableLocalVideoFlip: true, subject: m.title },
-      interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, MOBILE_APP_PROMO: false } });
-    jitsiApi.addListener('readyToClose', () => { leaveMeeting(); renderMeet(); });
-  } catch (e) {
-    host.innerHTML = '<div class="empty" style="color:#fff"><p>이 화면 안에서는 회의 창을 열 수 없어 새 탭으로 엽니다.</p><a class="btn primary" target="_blank" rel="noopener" href="' + meetUrl(m) + '">새 탭에서 회의 열기</a></div>';
-    window.open(meetUrl(m), '_blank', 'noopener');
-  }
+  try { meetWin = window.open(meetUrl(m), 'pth-meet', 'noopener'); } catch (e) { meetWin = null; }
+  if (!meetWin) toast('팝업이 차단되었습니다. 아래 "회의 창 열기"를 누르세요.');
 }
 function renderMeet() {
   const el = $('#view-meet');
@@ -2676,8 +2672,10 @@ function renderMeet() {
     const m = state.meetings.find(x => x.id === state.joined);
     if (!m || m.status !== 'live') { leaveMeeting(); }
     else {
-      h += '<div class="card"><div class="jhead"><span class="chip good">진행 중</span><b>' + esc(m.title) + '</b><span>' + (m.siteKeys ? m.siteKeys.map(siteName).join(', ') : '전체 사업소') + '</span>' + (hq ? '<button class="btn sm danger" data-mend="' + m.id + '">회의 종료</button>' : '') + '<button class="btn sm" id="meetLeave"' + (hq ? ' style="margin-left:0"' : '') + '>나가기</button></div><div class="bd tight"><div class="jwrap" id="jitsiHost"></div></div>' +
-        '<div class="bd jnote">카메라·마이크 권한을 허용하세요. 화면이 열리지 않으면 <a target="_blank" rel="noopener" href="' + meetUrl(m) + '">새 탭에서 열기</a>. 휴대폰에서는 Jitsi Meet 앱 또는 브라우저로 참여할 수 있습니다.</div></div>';
+      h += '<div class="card"><div class="jhead"><span class="chip good">진행 중</span><b>' + esc(m.title) + '</b><span>' + (m.siteKeys ? m.siteKeys.map(siteName).join(', ') : '전체 사업소') + '</span>' + (hq ? '<button class="btn sm danger" data-mend="' + m.id + '">회의 종료</button>' : '') + '<button class="btn sm" id="meetLeave"' + (hq ? ' style="margin-left:0"' : '') + '>목록으로</button></div>' +
+        '<div class="bd jlaunch"><div class="jl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.5-2.5v9L15 14M3 8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div><b>회의가 별도 창에서 열립니다</b><span>창이 보이지 않으면 아래 버튼을 누르세요. 카메라·마이크 권한을 허용해야 합니다.</span></div></div>' +
+        '<div class="row"><a class="btn primary" target="pth-meet" rel="noopener" href="' + meetUrl(m) + '">회의 창 열기</a><button class="btn" data-copy="' + esc(meetUrl(m)) + '">초대 링크 복사</button></div>' +
+        '<div class="note" style="margin-top:10px">내 화면이 좌우로 뒤집혀 보이는 것은 Jitsi가 본인 미리보기만 거울처럼 보여주기 때문이며, 다른 참석자에게는 바르게 보입니다. 바꾸려면 회의 창의 설정(톱니바퀴) → "내 비디오 반전"을 끄세요.</div></div></div>';
       el.innerHTML = h; return;
     }
   }
@@ -2699,6 +2697,7 @@ function bindMeet() {
     const j = e.target.closest('[data-join]'); if (j) { joinMeeting(j.dataset.join); return; }
     const en = e.target.closest('[data-mend]'); if (en) { if (!confirm('회의를 종료할까요? 참석자 화면의 알림이 사라집니다.')) return; try { await store.updateMeeting(en.dataset.mend, { status: 'ended' }); if (state.joined === en.dataset.mend) leaveMeeting(); toast('회의를 종료했습니다'); renderMeet(); } catch (err) { toast('종료 실패: ' + (err.message || err)); } return; }
     if (e.target.id === 'meetLeave') { leaveMeeting(); renderMeet(); return; }
+    const cp = e.target.closest('[data-copy]'); if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copy); toast('초대 링크를 복사했습니다'); } catch (err) { prompt('초대 링크', cp.dataset.copy); } return; }
     const t = e.target.closest('[data-mtgt]'); if (t) { const sel = state.meetSel || (state.meetSel = new Set()); if (t.dataset.mtgt === '__none') sel.clear(); else sel.has(t.dataset.mtgt) ? sel.delete(t.dataset.mtgt) : sel.add(t.dataset.mtgt); const title = $('#meetTitle').value; renderMeet(); $('#meetTitle').value = title; }
   });
   document.addEventListener('submit', async e => {
