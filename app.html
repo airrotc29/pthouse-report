@@ -2614,6 +2614,16 @@ function openReportPdf(key, kind, pick) {
   else { const r = siteReports(key).find(x => x.period === cur); $('#pdfTitle').textContent = siteName(key) + ' · ' + monthLabel(cur) + ' 월간업무보고'; $('#pdfFrame').srcdoc = monthlyReportHtml(r); note.textContent = 'PDF 저장을 누르면 인쇄 창에서 "PDF로 저장"을 고를 수 있습니다'; }
   $('#pdfModal').hidden = false;
 }
+function openUnitList(kind) {
+  const list = (cmpUnpaid._lists || {})[kind] || [], sol = cmpUnpaid._sol;
+  $('#listTitle').textContent = kind === 'lt' ? '6개월 이상 미납 세대' : '소멸시효 경과·임박 세대';
+  $('#listSub').textContent = list.length + '세대 · ' + (kind === 'lt' ? '미납 개월 많은 순' : '경과분 먼저, 이후 시효 임박 순') + ' · ' + monthLabel(state.month);
+  const solTxt = u => { const x = sol ? sol(u) : null; if (!x) return '–'; if (x.expN) return '<span class="sol crit">시효 경과 ' + x.expN + '개월분<small>' + krw(x.expAmt) + '원</small></span>'; if (x.near == null) return '–'; return '<span class="sol ' + (x.days <= 180 ? 'warn' : 'na') + '">' + (x.days <= 180 ? 'D-' + x.days : x.near.slice(0, 7)) + '<small>' + x.near.slice(0, 7) + '분 완성</small></span>'; };
+  $('#listBody').innerHTML = list.length ? '<table class="ltbl"><thead><tr><th>#</th><th>사업소</th><th>세대</th><th class="c">미납</th><th>최초 부과월</th><th class="r">미납액</th><th>소멸시효</th><th>비고</th></tr></thead><tbody>' +
+    list.map((u, i) => '<tr class="click" data-go="site" data-key="' + u.key + '"><td class="muted">' + (i + 1) + '</td><td>' + esc(u.site) + '</td><td><b>' + esc(u.unit) + '</b></td><td class="c"><span class="mpill ' + (u.n >= 6 ? 'c' : u.n >= 3 ? 's' : u.n >= 2 ? 'w' : 'g') + '">' + u.n + '개월</span></td><td class="num">' + esc(u.oldest) + '</td><td class="r num"><b>' + comma(u.total) + '</b>원</td><td>' + solTxt(u) + '</td><td class="small wrap" style="max-width:260px">' + esc(u.notes.join(' ')) + '</td></tr>').join('') +
+    '</tbody></table><div class="note" style="padding:8px 2px 0">행을 누르면 사업소 상세로 이동 · 합계 ' + comma(list.reduce((a, u) => a + u.total, 0)) + '원</div>' : '<div class="empty"><p>해당 세대가 없습니다.</p></div>';
+  $('#listModal').hidden = false;
+}
 function openDailyPdf(key, date) { openReportPdf(key, null, date); }
 /* ---------- 화상회의 (Jitsi Meet) ---------- */
 const MEET_HOST = 'meet.jit.si';
