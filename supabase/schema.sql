@@ -148,3 +148,5 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
 do $$ begin
   alter publication supabase_realtime add table public.sites, public.reports, public.dailies, public.acks;
 exception when duplicate_object then null; end $$;
+-- 인원 충원율용 근무 정원
+alter table public.sites add column if not exists staff_quota int;
