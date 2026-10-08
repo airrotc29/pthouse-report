@@ -917,6 +917,19 @@ body.manager .hq-only { display: none !important; }
 .tgt.tg2 button i { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); background: var(--surface); flex: none; }
 .tgt.tg2 button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .tgt.tg2 button[aria-pressed="true"] i { background: var(--accent); border-color: var(--accent); background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 6 9 17l-5-5%22/></svg>'); background-size: 11px; background-position: center; background-repeat: no-repeat; }
+.selbar { height: 4px; border-radius: 99px; background: var(--line-soft); overflow: hidden; margin: -2px 0 2px; }
+.selbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 99px; transition: width .2s; }
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.tcard { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) 18px; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; text-align: left; transition: border-color .15s, box-shadow .15s, transform .12s, background .15s; }
+.tcard:hover { border-color: var(--c); transform: translateY(-1px); box-shadow: var(--shadow); }
+.tcard .av { width: 34px; height: 34px; border-radius: 10px; display: grid; place-content: center; font-style: normal; font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 65%, #000 10%)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+.tcard .tn { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tcard .tn b { font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tcard .tn small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcard .ck { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); transition: all .15s; }
+.tcard[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 9%, var(--surface)); box-shadow: 0 0 0 1px var(--c) inset; }
+.tcard[aria-pressed="true"] .ck { background: var(--c); border-color: var(--c); background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M20 6 9 17l-5-5%22/></svg>'); background-size: 11px; background-position: center; background-repeat: no-repeat; }
+.tcard[aria-pressed="true"] .tn b { color: var(--c); }
 .ocsend { margin-top: auto; justify-content: center; padding: 11px 16px; font-size: 14px; font-weight: 600; border-radius: 10px; }
 .ocsend svg { width: 16px; height: 16px; }
 @media (max-width: 860px) { .ocf { grid-template-columns: 1fr; } .ocl { border-right: 0; border-bottom: 1px solid var(--line-soft); } }
@@ -2369,8 +2382,9 @@ function renderOrders() {
       '<form id="ordForm" class="ocf"><div class="ocl"><label class="fi">제목<input type="text" id="ordTitle" required maxlength="120" placeholder="예: 동절기 동파 예방 점검 결과 보고"></label>' +
       '<label class="fi">내용<textarea id="ordBody" placeholder="구체적인 지시 내용, 기준, 제출 방법 등을 적습니다"></textarea></label>' +
       '<div class="ocopts"><label class="fi">기한<input type="date" id="ordDue"></label><label class="sw"><input type="checkbox" id="ordUrgent"><i></i><span>긴급 지시</span><small>소장 화면에 빨간 표시</small></label></div></div>' +
-      '<div class="ocr"><div class="och"><b>대상 사업소</b><span class="cnt' + (sel.size ? ' on' : '') + '">' + sel.size + ' / ' + all.length + '</span></div><div class="tgt" id="ordTgt"><button type="button" class="all" data-tgt="__all">전체 선택</button><button type="button" class="all" data-tgt="__none">해제</button></div><div class="tgt tg2">' +
-      all.map(x => '<button type="button" data-tgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '"><i></i>' + esc(x.name) + '</button>').join('') + '</div>' +
+      '<div class="ocr"><div class="och"><b>대상 사업소</b><span class="cnt' + (sel.size ? ' on' : '') + '">' + sel.size + ' / ' + all.length + '</span></div><div class="selbar"><i style="width:' + (all.length ? 100 * sel.size / all.length : 0).toFixed(1) + '%"></i></div><div class="tgt"><button type="button" class="all" data-tgt="__all">전체 선택</button><button type="button" class="all" data-tgt="__none">해제</button></div><div class="tgrid">' +
+      all.map((x, i) => { const col = ['#2f5f93', '#b08a4a', '#5b92cc', '#c97b57', '#6f9f7a', '#8a6fb8', '#9aa7b5', '#d6ae66'][i % 8], rr = siteReports(x.key).slice(-1)[0], un = rr && rr.arrears ? rr.arrears.units : null, op = state.orders.filter(o => o.siteKey === x.key && o.status !== 'done').length;
+        return '<button type="button" class="tcard" data-tgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '" style="--c:' + col + '"><i class="av">' + esc(x.name.replace(/\s/g, '').slice(0, 1)) + '</i><span class="tn"><b>' + esc(x.name) + '</b><small>' + (un ? comma(un) + '세대' : '세대수 미등록') + (op ? ' · 진행 중 지시 ' + op : '') + '</small></span><span class="ck"></span></button>'; }).join('') + '</div>' +
       '<button type="submit" class="btn primary ocsend" id="ordSend"' + (sel.size ? '' : ' disabled') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>' + (sel.size ? sel.size + '개 사업소에 지시 발송' : '대상 사업소를 선택하세요') + '</button></div></form></div>';
   }
   const f = state.ordFilter, list = isMgr() ? (f === 'open' ? open : f === 'done' ? done : mine) : (f === 'all' ? mine : ordGroups(mine).filter(g => (f === 'open') === g.some(o => o.status !== 'done')).flat());
