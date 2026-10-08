@@ -345,6 +345,31 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 .dstat div { text-align: center; background: var(--surface-2); border-radius: 10px; padding: 9px 6px; min-width: 0; }
 .dstat b { display: block; font-size: 16px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dstat span { font-size: 11px; color: var(--fg-2); }
+.dcomb { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 18px 26px; align-items: start; }
+.dcl { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 70px; }
+.dcl .donut.lg { width: 212px; height: 212px; margin: 2px auto 0; }
+.dstat.col { grid-template-columns: 1fr; border-top: 0; padding-top: 0; }
+.dstat.col div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 12px; }
+.dstat.col b { font-size: 15px; order: 2; max-width: 60%; } .dstat.col span { order: 1; font-size: 12px; }
+.dcr { display: flex; flex-direction: column; min-width: 0; }
+.trend2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.trend2 > div { min-width: 0; }
+.trend2 > div + div { border-left: 1px solid var(--line-soft); }
+@media (max-width: 860px) { .trend2 { grid-template-columns: 1fr; } .trend2 > div + div { border-left: 0; } }
+.rk2 { display: grid; grid-template-columns: 26px 10px minmax(0, 1fr); gap: 8px; align-items: center; padding: 9px 4px 9px 0; border-bottom: 1px solid var(--line-soft); cursor: pointer; border-radius: 8px; }
+.rk2:last-child { border-bottom: 0; }
+.rk2:hover { background: var(--surface-2); }
+.rk2 .swc { width: 10px; height: 10px; border-radius: 3px; }
+.rk2 .rno { width: 22px; height: 22px; border-radius: 50%; display: grid; place-content: center; background: var(--surface-2); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; color: var(--fg-2); }
+.rk2 .rno.top { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.rk2 .rkh { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+.rk2 .rkh b { font-size: 13.5px; }
+.rk2 .rkp { font-size: 12px; font-weight: 700; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.rk2 .rkv { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rk2 .rbar { height: 7px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.rk2 .rbar i { display: block; height: 100%; border-radius: 99px; opacity: .9; }
+.rk2 .rks { margin-top: 4px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 860px) { .dcomb { grid-template-columns: 1fr; } .dcl { position: static; } .dstat.col { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dstat.col div { flex-direction: column; align-items: center; text-align: center; } .dstat.col b { order: 1; max-width: 100%; font-size: 14px; } .dstat.col span { order: 2; } }
 @media (max-width: 640px) { .dlegb .dl .v { min-width: 0; } .dstat { grid-template-columns: 1fr 1fr 1fr; } .dstat b { font-size: 14px; } }
 .hm { width: 100%; border-collapse: separate; border-spacing: 4px; }
 .hm th { position: static; background: none; text-align: center; font-size: 11.5px; padding: 2px 4px; border: 0; white-space: nowrap; }
@@ -1764,8 +1789,10 @@ function cmpUnpaid(reps, month) {
   const max = Math.max(1, ...rows.map(x => x.v));
   let h = '<div class="row"><label class="small fg2" for="itemSel">지표</label><select id="itemSel">' + METRICS.map(i => '<option value="' + i.id + '"' + (i.id === item.id ? ' selected' : '') + '>' + i.name + '</option>').join('') + '</select><span class="muted small">' + monthLabel(month) + ' · ' + rows.length + '개소</span></div>';
   const sumV = rows.reduce((a2, x) => a2 + x.v, 0) || 1, isRate = item.id === 'rate', pal = ['#2f5f93', '#b08a4a', '#5b92cc', '#c97b57', '#6f9f7a', '#8a6fb8', '#9aa7b5', '#d6ae66'];
-  h += '<div class="grid2"><div class="card"><div class="hd"><h2>' + item.name + ' 순위</h2><span class="note">높은 순</span></div><div class="bd tight"><div class="rank">' +
+  const leftCard = '<div class="card"><div class="hd"><h2>' + item.name + ' 순위</h2><span class="note">높은 순</span></div><div class="bd tight"><div class="rank">' +
     (rows.length ? rows.map((x, i) => { const d = (x.p != null) ? x.v - x.p : null, au = arrearsUnits(x.r), un = x.r.arrears && x.r.arrears.units; return '<div class="rk"><span class="rno' + (i < 3 ? ' top' : '') + '">' + (i + 1) + '</span><div class="rkb"><div class="rkh"><b>' + esc(x.r.site) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + item.fmt(Math.abs(d)) + '</span>') + '<span class="rkv">' + item.fmt(x.v) + '</span></div>' + pbar(x.v / max, i < 3 ? 'linear-gradient(90deg, var(--accent), var(--s1))' : 'color-mix(in srgb, var(--s1) 55%, var(--surface))') + '<div class="rks">' + (au != null && un ? '체납 ' + comma(au) + ' / ' + comma(un) + '세대 · 체납률 ' + pct(au, un) : '') + (isRate ? '' : ' · 비중 <b>' + Math.round(100 * x.v / sumV) + '%</b>') + '</div></div></div>'; }).join('') : '<div class="empty small">값이 있는 보고서가 없습니다.</div>') + '</div></div></div>';
+  const rankList = rows.map((x, i) => { const d = (x.p != null) ? x.v - x.p : null, au = arrearsUnits(x.r), un = x.r.arrears && x.r.arrears.units, col = i < 7 ? pal[i] : pal[7], pc = 100 * x.v / sumV;
+    return '<div class="rk2 click" data-go="site" data-key="' + x.r.siteKey + '"><span class="rno' + (i < 3 ? ' top' : '') + '">' + (i + 1) + '</span><i class="swc" style="background:' + col + '"></i><div class="rkb"><div class="rkh"><b>' + esc(x.r.site) + '</b>' + (d == null ? '' : '<span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + item.fmt(Math.abs(d)) + '</span>') + '<span class="rkp">' + Math.round(pc) + '%</span><span class="rkv">' + item.fmt(x.v) + '</span></div><div class="rbar"><i style="width:' + (100 * x.v / max).toFixed(1) + '%;background:' + col + '"></i></div><div class="rks">' + (au != null && un ? '체납 ' + comma(au) + ' / ' + comma(un) + '세대 · 체납률 ' + pct(au, un) : '') + '</div></div></div>'; }).join('');
   const axis = item.fmt === won ? krw : (isRate ? v => v.toFixed(0) + '%' : v => comma(v));
   const agg = m => { const vs = reportsFor(m).map(r => item.get(r)).filter(v => v != null); return vs.length ? (isRate ? vs.reduce((a2, b2) => a2 + b2, 0) / vs.length : vs.reduce((a2, b2) => a2 + b2, 0)) : null; };
   let right = '';
@@ -1774,21 +1801,21 @@ function cmpUnpaid(reps, month) {
     const R = 52, C = 2 * Math.PI * R; let off = 0, segs = '';
     top.forEach(t => { const len = C * t.v / sumV; segs += '<circle class="sg" cx="66" cy="66" r="' + R + '" stroke-dasharray="' + Math.max(0, len - 2).toFixed(1) + ' ' + (C - Math.max(0, len - 2)).toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" style="stroke:' + t.col + '"><title>' + esc(t.lb + ' ' + item.fmt(t.v)) + '</title></circle>'; off += len; });
     const top3 = top.slice(0, 3).reduce((a2, t) => a2 + t.v, 0), avgV = sumV / rows.length;
-    right = '<div class="card"><div class="hd"><h2>' + item.name + ' 구성</h2><span class="note">' + monthLabel(month) + ' · ' + rows.length + '개소</span></div><div class="bd dcomp">' +
+    right = '<div class="card"><div class="hd"><h2>' + item.name + ' 현황 <span class="muted small">순위 · 구성</span></h2><span class="note">' + monthLabel(month) + ' · ' + rows.length + '개소 · 행을 누르면 사업소 상세</span></div><div class="bd dcomb"><div class="dcl">' +
       '<div class="donut lg"><svg viewBox="0 0 132 132" role="img" aria-label="' + esc(item.name + ' 사업소별 구성') + '"><circle class="c0" cx="66" cy="66" r="' + R + '"/>' + segs + '</svg><div class="ct"><div>' + (item.fmt === won ? krw(sumV) : comma(sumV)) + '<small>' + (item.fmt === won ? '원 합계' : '합계') + '</small></div></div></div>' +
-      '<div class="dlegb">' + top.map(t => { const pc = 100 * t.v / sumV; return '<div class="dl"><i style="background:' + t.col + '"></i><span class="n">' + esc(t.lb) + '</span><b>' + Math.round(pc) + '%</b><span class="v num">' + item.fmt(t.v) + '</span><div class="dbar"><i style="width:' + pc.toFixed(1) + '%;background:' + t.col + '"></i></div></div>'; }).join('') + '</div>' +
-      '<div class="dstat"><div><b>' + Math.round(100 * top3 / sumV) + '%</b><span>상위 3개소 비중</span></div><div><b>' + (item.fmt === won ? krw(avgV) : comma(Math.round(avgV))) + '</b><span>개소당 평균</span></div><div><b>' + esc(rows[0].r.site) + '</b><span>최대 ' + Math.round(100 * rows[0].v / sumV) + '%</span></div></div>' +
-      '</div></div>';
+      '<div class="dstat col"><div><b>' + Math.round(100 * top3 / sumV) + '%</b><span>상위 3개소 비중</span></div><div><b>' + (item.fmt === won ? krw(avgV) : comma(Math.round(avgV))) + '</b><span>개소당 평균</span></div><div><b>' + esc(rows[0].r.site) + '</b><span>최대 ' + Math.round(100 * rows[0].v / sumV) + '%</span></div></div></div>' +
+      '<div class="dcr">' + rankList + (rest.length ? '<div class="note" style="padding:6px 0 0 44px">' + rest.length + '개소는 도넛에서 "기타"로 묶임</div>' : '') + '</div></div></div>';
   } else if (rows.length) {
     const avg = rows.reduce((a2, x) => a2 + x.v, 0) / rows.length;
     right = '<div class="card"><div class="hd"><h2>체납률 분포</h2><span class="note">평균 ' + avg.toFixed(1) + '% · 평균 이상 ' + rows.filter(x => x.v >= avg).length + '개소</span></div><div class="bd"><div class="bullets">' + rows.map(x => '<div class="bl"><span class="bln">' + esc(x.r.site) + '</span><div class="blt"><i style="width:' + Math.min(100, x.v * 2).toFixed(1) + '%;background:' + (x.v >= 25 ? 'var(--crit)' : x.v >= 15 ? 'var(--serious)' : x.v >= 10 ? 'var(--warn)' : 'var(--good)') + '"></i><u style="left:' + Math.min(100, avg * 2).toFixed(1) + '%"></u></div><b>' + x.v.toFixed(1) + '%</b></div>').join('') + '</div><div class="note" style="margin-top:8px">막대 눈금 0~50% · 세로선은 평균</div></div></div>';
   }
   if (ms.length >= 2) {
     const known = sites().filter(s2 => state.reports.some(r => r.siteKey === s2.key));
-    right = right.replace(/<\/div>$/, '') + '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>' + (isRate ? '평균' : '합계') + ' 추이 <span class="muted small">최근 ' + ms.length + '개월</span></h3></div><div class="bd"><div class="chart" id="cmpLine"></div></div>' +
-      '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>사업소별 추이</h3></div><div class="smg">' + known.map(s2 => { const vals = ms.map(m => { const r = reportBy(s2.key, m); return r ? item.get(r) : null; }), nn = vals.filter(v => v != null); if (nn.length < 2) return ''; const last = nn[nn.length - 1], d = last - nn[nn.length - 2]; return '<div class="sm"><div class="smh"><b title="' + esc(s2.name) + '">' + esc(s2.name) + '</b><span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲' : d < 0 ? '▼' : '–') + '</span></div>' + sparkArea(vals) + '<div class="smv">' + item.fmt(last) + '</div></div>'; }).join('') + '</div></div>';
+    const tA = '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>' + (isRate ? '평균' : '합계') + ' 추이 <span class="muted small">최근 ' + ms.length + '개월</span></h3></div><div class="bd"><div class="chart" id="cmpLine"></div></div>';
+    right = right.replace(/<\/div>$/, '') + (isRate ? tA : '<div class="trend2"><div>' + tA + '</div><div>') +
+      '<div class="hd" style="border-top:1px solid var(--line-soft)"><h3>사업소별 추이</h3></div><div class="smg">' + known.map(s2 => { const vals = ms.map(m => { const r = reportBy(s2.key, m); return r ? item.get(r) : null; }), nn = vals.filter(v => v != null); if (nn.length < 2) return ''; const last = nn[nn.length - 1], d = last - nn[nn.length - 2]; return '<div class="sm"><div class="smh"><b title="' + esc(s2.name) + '">' + esc(s2.name) + '</b><span class="dchip ' + (d > 0 ? 'up' : d < 0 ? 'dn' : '') + '">' + (d > 0 ? '▲' : d < 0 ? '▼' : '–') + '</span></div>' + sparkArea(vals) + '<div class="smv">' + item.fmt(last) + '</div></div>'; }).join('') + '</div>' + (isRate ? '' : '</div></div>') + '</div>';
   }
-  h += right + '</div>';
+  h += isRate ? '<div class="grid2">' + leftCard + right + '</div>' : right;
   const allU = reps.flatMap(r => unitSummary(r).map(u => Object.assign({ site: r.site, key: r.siteKey }, u))), topRows = allU.slice().sort((a, b) => b.total - a.total).slice(0, 20), maxU = Math.max(1, ...topRows.map(u => u.total));
   const allSum = allU.reduce((a, u) => a + u.total, 0) || 1, topSum = topRows.reduce((a, u) => a + u.total, 0), avgN = topRows.length ? topRows.reduce((a, u) => a + u.n, 0) / topRows.length : 0;
   const siteIdx = new Map(reps.map((r, i) => [r.siteKey, i]));
