@@ -964,12 +964,13 @@ body.manager .hq-only { display: none !important; }
 .mt.hot { position: relative; overflow: hidden; background: linear-gradient(135deg, #c0392b, #8e1f16); color: #fff; box-shadow: 0 10px 24px -14px rgba(192, 57, 43, .9), inset 0 0 0 1px rgba(255,255,255,.12); }
 .mt.hot::before { content: ""; position: absolute; right: -18px; top: -18px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,.08); }
 .mt.hot::after { content: "!"; position: absolute; left: 10px; top: 8px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.22); color: #fff; font-size: 12px; font-weight: 800; display: grid; place-content: center; }
-.mt.hot b { color: #fff; font-size: 24px; text-shadow: 0 1px 2px rgba(0,0,0,.25); animation: hotpulse 1.8s ease-in-out infinite; }
+.mt.hot { animation: hotblink 1.1s steps(1, end) infinite; }
+.mt.hot b { color: #fff; font-size: 24px; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
 .mt.hot span { color: rgba(255,255,255,.9); font-weight: 600; }
 .mt.hot em { display: block; font-style: normal; font-size: 11px; margin-top: 4px; color: #ffd9d4; font-weight: 600; letter-spacing: .02em; }
 .mt.hot:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -14px rgba(192, 57, 43, 1); }
-@keyframes hotpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-@media (prefers-reduced-motion: reduce) { .mt.hot b { animation: none; } }
+@keyframes hotblink { 0%, 100% { background: linear-gradient(135deg, #c0392b, #8e1f16); box-shadow: 0 10px 24px -14px rgba(192, 57, 43, .9), inset 0 0 0 1px rgba(255,255,255,.12); } 50% { background: linear-gradient(135deg, #ff5a4a, #d6281a); box-shadow: 0 0 0 4px rgba(255, 90, 74, .35), 0 10px 24px -10px rgba(214, 40, 26, 1); } }
+@media (prefers-reduced-motion: reduce) { .mt.hot { animation: none; } }
 .mt.click:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
 .dd { font-weight: 700; font-variant-numeric: tabular-nums; }
 .dd.over { color: var(--crit); } .dd.soon { color: #9a3f1b; }
