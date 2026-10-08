@@ -567,6 +567,8 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .cgh i { width: 10px; height: 10px; border-radius: 3px; }
 .cgh span { color: var(--muted); font-size: 12px; margin-left: auto; }
 .cbar { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 40px; gap: 8px; align-items: center; padding: 3px 0; font-size: 12.5px; }
+.cbar.click { border-radius: 8px; padding: 4px 6px; margin: 0 -6px; } .cbar.click:hover { background: var(--surface-2); } .cbar.click:hover .cl { color: var(--accent); text-decoration: underline; }
+.ltbl .cchip.hit { background: var(--accent); color: #fff; border-color: var(--accent); }
 .cbar .cl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cbar .ct { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
 .cbar .ct i { display: block; height: 100%; border-radius: 99px; opacity: .85; }
@@ -2136,8 +2138,9 @@ function cmpMgr(reps) {
     }).join('') + '</div></div></div>';
   const CAT = [['전기', /전기/, '#2f6db5'], ['소방', /소방|위험물/, '#c44b3c'], ['기계·설비', /기계|설비|냉동|공조|가스|보일러|에너지|승강기/, '#2e8b57'], ['건축·안전', /건축|토목|안전|산업/, '#b08a4a'], ['기타', /./, '#7a8794']];
   const catOf = lb => CAT.find(c => c[1].test(lb)) || CAT[CAT.length - 1];
+  cmpMgr._people = {}; cmpMgr._col = {}; reps.forEach(r => r.certs.forEach(c => { const all = String(c.certs || '').split(/[,·/]\s*/).map(x => normCert(x)).filter(Boolean); all.forEach(x => { cmpMgr._col[x] = catOf(x)[2]; (cmpMgr._people[x] = cmpMgr._people[x] || []).push({ key: r.siteKey, site: r.site, name: c.name, certs: all, date: c.date, issuer: c.issuer, etc: c.etc }); }); }));
   const groups = CAT.map(c => ({ name: c[0], col: c[2], list: certs.filter(x => catOf(x.label) === c) })).filter(g => g.list.length), maxC = Math.max(1, ...certs.map(x => x.value));
-  h += '<div class="grid2"><div class="card"><div class="hd"><h2>자격증 종류별 보유 인원</h2><span class="note">' + certs.length + '종 · ' + people + '명</span></div><div class="bd cgroups">' + (certs.length ? groups.map(g => '<div class="cgrp"><div class="cgh"><i style="background:' + g.col + '"></i><b>' + g.name + '</b><span>' + g.list.length + '종 · ' + g.list.reduce((a2, x) => a2 + x.value, 0) + '명</span></div>' + g.list.map(x => '<div class="cbar"><span class="cl">' + esc(x.label) + '</span><div class="ct"><i style="width:' + (100 * x.value / maxC).toFixed(1) + '%;background:' + g.col + '"></i></div><b>' + x.value + '명</b></div>').join('') + '</div>').join('') : '<span class="muted small">자격증 기록이 없습니다.</span>') + '</div></div>' +
+  h += '<div class="grid2"><div class="card"><div class="hd"><h2>자격증 종류별 보유 인원</h2><span class="note">' + certs.length + '종 · ' + people + '명</span></div><div class="bd cgroups">' + (certs.length ? groups.map(g => '<div class="cgrp"><div class="cgh"><i style="background:' + g.col + '"></i><b>' + g.name + '</b><span>' + g.list.length + '종 · ' + g.list.reduce((a2, x) => a2 + x.value, 0) + '명</span></div>' + g.list.map(x => '<div class="cbar click" data-cert="' + esc(x.label) + '" title="누르면 보유 인원을 봅니다"><span class="cl">' + esc(x.label) + '</span><div class="ct"><i style="width:' + (100 * x.value / maxC).toFixed(1) + '%;background:' + g.col + '"></i></div><b>' + x.value + '명</b></div>').join('') + '</div>').join('') : '<span class="muted small">자격증 기록이 없습니다.</span>') + '</div></div>' +
     '<div class="card"><div class="hd"><h2>사업소별 자격증</h2><span class="legend">' + CAT.slice(0, 4).map(c => '<span><i style="background:' + c[2] + ';border-color:' + c[2] + '"></i>' + c[0] + '</span>').join('') + '</span></div><div class="bd tight"><div class="plist">' +
     reps.slice().sort((x, y) => y.certs.length - x.certs.length).map(r => { const ppl = new Map(); r.certs.forEach(c => { if (!ppl.has(c.name)) ppl.set(c.name, []); String(c.certs || '').split(/[,·/]\s*/).map(x => normCert(x)).filter(Boolean).forEach(x => { if (!ppl.get(c.name).includes(x)) ppl.get(c.name).push(x); }); });
       return '<div class="psite click" data-go="site" data-key="' + r.siteKey + '"><div class="psh"><b>' + esc(r.site) + '</b><span class="lpill ' + (ppl.size ? 'g' : '') + '">' + ppl.size + '명</span></div>' + (ppl.size ? '<div class="ppl">' + Array.from(ppl.entries()).map(([nm, cs]) => '<div class="pp"><b>' + esc(nm) + '</b><span class="pcs">' + cs.map(x => '<span class="cchip" style="--cc:' + catOf(x)[2] + '">' + esc(x) + '</span>').join('') + '</span></div>').join('') + '</div>' : '<div class="muted small" style="padding:2px 0 4px">자격증 기록 없음</div>') + '</div>'; }).join('') + '</div></div></div></div>';
@@ -2935,6 +2938,13 @@ function openReportPdf(key, kind, pick) {
   else { const r = siteReports(key).find(x => x.period === cur); $('#pdfTitle').textContent = siteName(key) + ' · ' + monthLabel(cur) + ' 월간업무보고'; $('#pdfFrame').srcdoc = monthlyReportHtml(r); note.textContent = 'PDF 저장을 누르면 인쇄 창에서 "PDF로 저장"을 고를 수 있습니다'; }
   $('#pdfModal').hidden = false;
 }
+function openCertList(label) {
+  const seen = new Set(), list = ((cmpMgr._people || {})[label] || []).filter(x => { const k = x.key + '|' + x.name; if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => a.site.localeCompare(b.site, 'ko') || a.name.localeCompare(b.name, 'ko'));
+  $('#listTitle').textContent = label + ' 보유 인원'; $('#listSub').textContent = list.length + '명 · ' + new Set(list.map(x => x.key)).size + '개 사업소 · ' + monthLabel(state.month) + ' 월간보고 자격증 현황';
+  $('#listBody').innerHTML = list.length ? '<table class="ltbl"><thead><tr><th>#</th><th>사업소</th><th>성명</th><th>보유 자격증</th><th>취득일</th><th>발급기관</th><th>비고</th></tr></thead><tbody>' +
+    list.map((x, i) => '<tr class="click" data-go="site" data-key="' + x.key + '"><td class="muted">' + (i + 1) + '</td><td>' + esc(x.site) + '</td><td><b>' + esc(x.name) + '</b></td><td>' + x.certs.map(c => '<span class="cchip' + (c === label ? ' hit' : '') + '" style="--cc:' + ((cmpMgr._col || {})[c] || 'var(--muted)') + '">' + esc(c) + '</span>').join(' ') + '</td><td class="num small">' + esc(x.date || '–') + '</td><td class="small">' + esc(x.issuer || '–') + '</td><td class="small">' + esc(x.etc || '') + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">해당 자격증 보유자가 없습니다.</div>';
+  $('#listModal').hidden = false;
+}
 function openUnitList(kind) {
   const list = (cmpUnpaid._lists || {})[kind] || [], sol = cmpUnpaid._sol;
   $('#listTitle').textContent = kind === 'lt' ? '6개월 이상 미납 세대' : '소멸시효 경과·임박 세대';
@@ -3146,6 +3156,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('#listModal') && e.target.closest('[data-go]')) $('#listModal').hidden = true;
   const gl = e.target.closest('[data-go]'); const pl = e.target.closest('[data-pdf]'); if (pl && !(gl && pl.contains(gl))) { e.stopPropagation(); openDailyPdf(pl.dataset.pdf, pl.dataset.date); return; }
   const ul = e.target.closest('[data-ulist]'); if (ul) { openUnitList(ul.dataset.ulist); return; }
+  const cl = e.target.closest('[data-cert]'); if (cl) { openCertList(cl.dataset.cert); return; }
   if (e.target.id === 'listClose' || e.target.id === 'listModal') { $('#listModal').hidden = true; return; }
   if (e.target.id === 'pdfClose' || e.target.id === 'pdfModal') { $('#pdfModal').hidden = true; $('#pdfFrame').srcdoc = ''; return; }
   const pk = e.target.closest('[data-pk]'); if (pk) { openReportPdf(state.pdfKey, pk.dataset.pk, null); return; }
