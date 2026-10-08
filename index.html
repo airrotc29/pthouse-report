@@ -323,8 +323,8 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 .ring .rv { fill: none; stroke-width: 8; stroke-linecap: round; }
 .ring .rv.g { stroke: var(--hg); } .ring .rv.w { stroke: var(--hw); } .ring .rv.c { stroke: var(--hc); }
 .ring .rc { position: absolute; inset: 0; display: grid; place-content: center; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.ring .rl { font-size: 12px; color: var(--hero-mut); line-height: 1.3; }
-.ring .rs { font-size: 11.5px; color: var(--hero-fg); font-variant-numeric: tabular-nums; }
+.ring .rl { font-size: 14.5px; font-weight: 600; color: var(--hero-fg); line-height: 1.3; margin-top: 2px; }
+.ring .rs { font-size: 13px; color: var(--hero-mut); font-variant-numeric: tabular-nums; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .tile { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line-soft); box-shadow: var(--shadow); min-width: 0; }
 .tile .ic { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-content: center; background: var(--good-soft); color: var(--good); }
@@ -441,7 +441,7 @@ nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-colo
 .hero .big small { font-family: var(--font); }
 .hero .delta { background: rgba(230,201,135,.14); border: 1px solid rgba(230,201,135,.35); }
 .ring { background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)); border: 1px solid rgba(230,201,135,.22); backdrop-filter: blur(2px); }
-.ring .rc { font-family: var(--serif); font-size: 16px; letter-spacing: -.03em; }
+.ring .rc { font-family: var(--serif); font-size: 20px; letter-spacing: -.03em; }
 .ring .rt { stroke: rgba(255,255,255,.12); }
 .tile { border-radius: 14px; position: relative; overflow: hidden; }
 .tile::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, var(--gold), transparent 70%); opacity: .55; }
@@ -498,7 +498,7 @@ th { letter-spacing: .04em; }
 :root[data-theme="dark"] .mt.serious b, :root[data-theme="dark"] .mt.warn b { color: #ffd48a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mt.serious b, :root:not([data-theme="light"]) .mt.warn b { color: #ffd48a; } }
 .hero { padding: 20px 24px; } .hero .big { font-size: 46px; margin: 4px 0 6px; } .hero .spark svg { height: 56px; }
-.ring { padding: 10px 6px 8px; } .ring .rg { width: 72px; height: 72px; }
+.ring { padding: 12px 8px 10px; } .ring .rg { width: 92px; height: 92px; }
 section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { padding: 12px 16px; }
 .issue { padding: 7px 12px 7px 0; }
 /* site tab: status tiles, day strip, cert list */
@@ -622,7 +622,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .ringsA { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; align-content: center; }
 @media (max-width: 420px) { .ringsA { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ring .rtr { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 3px; min-height: 18px; }
-.ring .rd { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ring .rd { font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ring .rd.dim { color: var(--hero-mut); font-weight: 500; opacity: .8; }
 .ring .rtr .ms { width: 56px; height: 18px; overflow: visible; flex: none; transform: none; display: block; }
 /* daily form (structured) */
