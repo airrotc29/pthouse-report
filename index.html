@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>사업소 보고 현황판</title>
 <style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f2340">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="파트너스 보고">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>if("serviceWorker" in navigator && location.protocol==="https:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 </head>
@@ -66,7 +75,9 @@ a { color: var(--accent); }
 /* top bar */
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
 .top-in { max-width: 1180px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand .logo { width: 34px; height: 34px; flex: none; }
+.brand .bt { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex-wrap: wrap; }
 .brand h1 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
 .brand .sub { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .top-ctl { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -246,7 +257,9 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 16px; border-radius: 6px; font-size: 13px; z-index: 50; box-shadow: 0 4px 16px rgba(0,0,0,.25); opacity: 0; transition: opacity .2s; pointer-events: none; }
 .toast.show { opacity: 1; }
 @media (max-width: 640px) {
-  .brand .sub { display: none; }
+  .brand .sub { font-size: 11.5px; }
+  .brand .logo { width: 28px; height: 28px; }
+  .brand h1 { font-size: 16px; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .kpi { padding: 10px 12px; }
   .kpi .v { font-size: 19px; }
@@ -262,6 +275,28 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
   .dl { grid-template-columns: 1fr; gap: 2px 0; }
   .dl dt { margin-top: 6px; }
   .pcard .pr input[type="text"] { min-width: 0; width: 100%; }
+  .top-in { padding: 8px 12px 0; gap: 6px 10px; }
+  .top-ctl { margin-left: 0; width: 100%; gap: 6px; }
+  .top-ctl select { flex: 1 1 auto; min-width: 0; }
+  .mebox { width: 100%; }
+  .mebox b { margin-right: auto; }
+  nav.tabs { padding: 4px 8px 0; gap: 0; }
+  nav.tabs button { flex: 1 0 auto; padding: 9px 6px 10px; font-size: 13.5px; }
+  .sumtbl td.site { white-space: normal; min-width: 0; }
+  .sumtbl:not(.cmp) thead { display: none; }
+  .sumtbl:not(.cmp), .sumtbl:not(.cmp) tbody { display: block; width: 100%; }
+  .sumtbl:not(.cmp) tbody tr { display: grid; height: auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; padding: 11px 12px; border-bottom: 1px solid var(--line-soft); }
+  .sumtbl:not(.cmp) td { display: block; padding: 0; border: 0; min-width: 0; }
+  .sumtbl:not(.cmp) td.site { grid-column: 1 / -1; }
+  .sumtbl:not(.cmp) td.site .sn { font-size: 14px; }
+  .sumtbl:not(.cmp) td:nth-child(5) { display: none; }
+  .sumtbl:not(.cmp) td:nth-child(6) { text-align: left; }
+  .sumtbl:not(.cmp) td:nth-child(6)::before { content: '2개월↑ '; font-size: 11.5px; color: var(--muted); margin-right: 4px; }
+  .sumtbl:not(.cmp) td:nth-child(7), .sumtbl:not(.cmp) td:nth-child(8), .sumtbl:not(.cmp) td[colspan] { grid-column: 1 / -1; }
+  .sumtbl:not(.cmp) .cs .pbar, .sumtbl:not(.cmp) .cs .bar { max-width: none; }
+  .hm th:first-child, .hm td.nm, .utbl th:first-child, .utbl td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+  .hm td.nm { max-width: 150px; }
+  .gate { padding: 20px 18px 16px; }
 }
 /* visual layer: hero, rings, tiles, heatmap, donut */
 .top { box-shadow: 0 1px 0 var(--line), 0 8px 20px -14px rgba(22,33,44,.35); }
@@ -691,7 +726,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 #authGate { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: radial-gradient(90% 120% at 100% -10%, var(--hero-b) 0%, transparent 62%), linear-gradient(160deg, var(--hero-a), var(--hero-a)); }
 .gate { width: min(100%, 400px); background: var(--surface); border-radius: 16px; padding: 24px 24px 20px; box-shadow: 0 20px 60px -20px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: 14px; }
 .gbrand { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-.gbrand i { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); box-shadow: inset 0 0 0 1.5px var(--gold-hi); flex: none; }
+.gbrand .logo { width: 44px; height: 44px; flex: none; }
 .gbrand b { display: block; font-size: 17px; letter-spacing: -.01em; }
 .gbrand span { font-size: 12.5px; color: var(--muted); }
 .gate form { display: flex; flex-direction: column; gap: 12px; }
@@ -703,6 +738,11 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .mebox { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--fg-2); }
 .mebox b { color: var(--fg); }
 .mebox .btn.sm { padding: 3px 9px; }
+.sheet { position: fixed; inset: 0; z-index: 45; background: rgba(10, 20, 35, .45); display: grid; place-items: end center; padding: 12px; }
+.sheet-in { width: min(100%, 440px); background: var(--surface); border-radius: 16px; padding: 18px 18px 16px; box-shadow: 0 20px 60px -20px rgba(0,0,0,.6); display: flex; flex-direction: column; gap: 10px; }
+.sheet-in b { font-size: 16px; }
+.sheet-in ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--fg-2); }
+.sheet-in .btn { align-self: flex-end; }
 body.manager .hq-only { display: none !important; }
 /* filters, segmented control, issue triage */
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -727,12 +767,13 @@ body.manager .hq-only { display: none !important; }
 
 <header class="top">
   <div class="top-in">
-    <div class="brand"><h1>사업소 보고 현황판</h1><span class="sub">월간업무보고 · 일일업무보고 통합 관리</span></div>
+    <div class="brand"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"> <path d="M14 64 A 40 40 0 0 1 82 26" fill="none" stroke="#1e6fb8" stroke-width="15" stroke-linecap="round"/> <path d="M36 20 A 36 36 0 0 1 86 48" fill="none" stroke="#5aa9e6" stroke-width="7" stroke-linecap="round" opacity=".9"/> <path d="M24 82 A 42 42 0 0 0 88 62" fill="none" stroke="#5db431" stroke-width="13" stroke-linecap="round"/> </svg><div class="bt"><h1>사업소 보고 현황판</h1><span class="sub">(주)파트너스종합관리 · 월간·일일업무보고 통합 관리</span></div></div>
     <div class="top-ctl">
       <label class="small fg2" for="monthSel">보고 월</label>
       <select id="monthSel" aria-label="보고 월"></select>
       <span class="badge" id="storeBadge"><span class="dot"></span><span id="storeBadgeText">연결 중</span></span>
       <span id="meBox" class="mebox" hidden></span>
+      <button class="btn sm" id="installBtn" hidden title="홈 화면·바탕화면에 바로가기 추가">바로가기 추가</button>
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
@@ -783,7 +824,7 @@ body.manager .hq-only { display: none !important; }
 </main>
 <div id="authGate" hidden>
   <div class="gate">
-    <div class="gbrand"><i></i><div><b>사업소 보고 현황판</b><span>관리사무소 로그인</span></div></div>
+    <div class="gbrand"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"> <path d="M14 64 A 40 40 0 0 1 82 26" fill="none" stroke="#1e6fb8" stroke-width="15" stroke-linecap="round"/> <path d="M36 20 A 36 36 0 0 1 86 48" fill="none" stroke="#5aa9e6" stroke-width="7" stroke-linecap="round" opacity=".9"/> <path d="M24 82 A 42 42 0 0 0 88 62" fill="none" stroke="#5db431" stroke-width="13" stroke-linecap="round"/> </svg><div><b>사업소 보고 현황판</b><span>(주)파트너스종합관리 · 관리사무소 로그인</span></div></div>
     <form id="loginForm" autocomplete="on">
       <label>아이디 (사업소 코드)<input id="lgId" autocomplete="username" autocapitalize="off" spellcheck="false" required placeholder="예: garim"></label>
       <label>비밀번호<input id="lgPw" type="password" autocomplete="current-password" required></label>
@@ -792,6 +833,7 @@ body.manager .hq-only { display: none !important; }
     </form>
     <form id="pwForm" hidden autocomplete="on">
       <p id="pwLead">초기 비밀번호를 사용 중입니다. 새 비밀번호로 바꿔야 계속할 수 있습니다.</p>
+      <label id="pw0Wrap" hidden>현재 비밀번호<input id="pw0" type="password" autocomplete="current-password"></label>
       <label>새 비밀번호 <small>8자 이상 · 영문과 숫자 포함</small><input id="pw1" type="password" autocomplete="new-password" minlength="8" required></label>
       <label>새 비밀번호 확인<input id="pw2" type="password" autocomplete="new-password" required></label>
       <div class="row"><button type="submit" class="btn primary" id="pwBtn">변경하고 시작</button><button type="button" class="btn" id="pwCancel" hidden>취소</button><button type="button" class="btn link" id="pwLogout">로그아웃</button></div>
@@ -800,6 +842,7 @@ body.manager .hq-only { display: none !important; }
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="installHelp" class="sheet" hidden><div class="sheet-in"><b>홈 화면에 바로가기 추가</b><ol id="installSteps"></ol><button class="btn primary" id="installClose">닫기</button></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="parser.js"></script>
@@ -2006,7 +2049,7 @@ function showGate(kind, msg) {
   const g = $('#authGate'); g.hidden = false;
   $('#loginForm').hidden = kind !== 'login'; $('#pwForm').hidden = kind !== 'pw';
   if (kind === 'login') { $('#lgMsg').textContent = msg || '초기 비밀번호는 본사에서 안내받은 값입니다. 첫 로그인 때 새 비밀번호로 바꿉니다.'; $('#lgBtn').disabled = false; setTimeout(() => $('#lgId').focus(), 50); }
-  else { const forced = !!(state.me && state.me.must_change_pw); $('#pwLead').textContent = forced ? '초기 비밀번호를 사용 중입니다. 새 비밀번호로 바꿔야 계속할 수 있습니다.' : '새 비밀번호를 입력하세요.'; $('#pwCancel').hidden = forced; $('#pwBtn').textContent = forced ? '변경하고 시작' : '변경'; $('#pwMsg').textContent = msg || ''; $('#pw1').value = ''; $('#pw2').value = ''; setTimeout(() => $('#pw1').focus(), 50); }
+  else { const forced = !!(state.me && state.me.must_change_pw); $('#pwLead').textContent = forced ? '초기 비밀번호를 사용 중입니다. 새 비밀번호로 바꿔야 계속할 수 있습니다.' : '새 비밀번호를 입력하세요.'; $('#pwCancel').hidden = forced; $('#pw0Wrap').hidden = forced; $('#pw0').required = !forced; $('#pw0').value = ''; $('#pw1').value = ''; $('#pw2').value = ''; $('#pwMsg').textContent = ''; $('#pwBtn').textContent = forced ? '변경하고 시작' : '변경'; $('#pwMsg').textContent = msg || ''; $('#pw1').value = ''; $('#pw2').value = ''; setTimeout(() => $('#pw1').focus(), 50); }
 }
 function hideGate() { $('#authGate').hidden = true; }
 function applyRole() {
@@ -2043,6 +2086,11 @@ function bindAuth() {
     if (a !== b) { msg.textContent = '두 비밀번호가 서로 다릅니다.'; return; }
     if (a === '123456' || /^1234/.test(a)) { msg.textContent = '초기 비밀번호와 다른 값을 쓰세요.'; return; }
     $('#pwBtn').disabled = true; msg.textContent = '변경 중…';
+    if (!(state.me && state.me.must_change_pw)) {
+      const cur = $('#pw0').value, u = await sb.auth.getUser(), email = u.data.user && u.data.user.email;
+      const chk = await sb.auth.signInWithPassword({ email, password: cur });
+      if (chk.error) { $('#pwBtn').disabled = false; msg.textContent = '현재 비밀번호가 맞지 않습니다.'; return; }
+    }
     const { error } = await sb.auth.updateUser({ password: a });
     $('#pwBtn').disabled = false;
     if (error) { msg.textContent = '변경 실패: ' + error.message; return; }
@@ -2089,12 +2137,32 @@ document.addEventListener('change', e => {
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) setTab(b.dataset.tab); });
 $('#monthSel').addEventListener('change', e => { state.month = e.target.value; render(); });
 
+let deferredInstall = null;
+function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+function installEnv() { const ua = navigator.userAgent; return { ios: /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), android: /Android/i.test(ua) }; }
+function updateInstallBtn() {
+  const b = $('#installBtn'); if (!b) return;
+  const top = window.top === window, https = location.protocol === 'https:';
+  b.hidden = isStandalone() || !top || !https || !(deferredInstall || installEnv().ios);
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; updateInstallBtn(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; updateInstallBtn(); toast('바로가기를 추가했습니다'); });
+document.addEventListener('click', async e => {
+  if (e.target.id === 'installBtn') {
+    if (deferredInstall) { deferredInstall.prompt(); try { await deferredInstall.userChoice; } catch (err) {} deferredInstall = null; updateInstallBtn(); return; }
+    const env = installEnv(), steps = env.ios
+      ? ['Safari 로 이 페이지를 엽니다 (다른 앱 안에서는 안 됩니다).', '화면 아래 <b>공유</b> 버튼(네모에 화살표)을 누릅니다.', '목록에서 <b>홈 화면에 추가</b>를 누르고 <b>추가</b>를 누릅니다.']
+      : ['브라우저 메뉴(⋮)를 엽니다.', '<b>홈 화면에 추가</b> 또는 <b>앱 설치</b>를 누릅니다.'];
+    $('#installSteps').innerHTML = steps.map(x => '<li>' + x + '</li>').join(''); $('#installHelp').hidden = false;
+  }
+  if (e.target.id === 'installClose' || e.target.id === 'installHelp') $('#installHelp').hidden = true;
+});
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
   const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
-  renderMonthSel(); setTab(state.tab); store.init();
+  renderMonthSel(); setTab(state.tab); store.init(); updateInstallBtn();
 }
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
 })();
