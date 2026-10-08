@@ -492,7 +492,7 @@ th { letter-spacing: .04em; }
 .sumtbl th, .sumtbl td { padding-block: 6px; }
 .sumtbl td.site .sn { font-size: 13.5px; }
 .sring { width: 34px; height: 34px; } .sring b { font-size: 11px; }
-.cs { gap: 3px; min-width: 100px; } .pbar { height: 5px; }
+.cs { gap: 3px; min-width: 100px; } .pbar { height: 6px; }
 .spa { width: 88px; height: 26px; }
 .mini { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
 .mt { border-radius: 10px; padding: 8px 6px; text-align: center; background: var(--surface-2); }
@@ -1735,7 +1735,7 @@ function sumTable(month) {
     h += '<tr class="click" data-go="site" data-key="' + r.siteKey + '">' +
       '<td class="site"><div class="sn">' + esc(r.site) + '</div></td>' +
       '<td><div class="cs"><div class="cv"><b>' + (x.rt == null ? '–' : x.rt.toFixed(1) + '%') + '</b><span class="muted small">' + comma(arrearsUnits(r)) + '/' + comma(r.arrears.units) + '</span></div>' + (x.rt == null ? '' : pbar(x.rt / 40, rc)) + '</div></td>' +
-      '<td><div class="cs"><div class="cv"><b>' + (x.t == null ? '–' : comma(x.t) + '원') + '</b></div>' + (x.t == null ? '' : pbar(x.t / maxT, 'linear-gradient(90deg, var(--s1), var(--s1))')) + '</div></td>' +
+      '<td><div class="cs"><div class="cv"><b>' + (x.t == null ? '–' : comma(x.t) + '원') + '</b></div>' + (x.t == null ? '' : pbar(x.t / maxT, 'var(--s1)')) + '</div></td>' +
       '<td>' + (x.d == null ? '<span class="muted">–</span>' : '<span class="dchip ' + (x.d > 0 ? 'up' : x.d < 0 ? 'dn' : '') + '">' + (x.d > 0 ? '▲' : x.d < 0 ? '▼' : '–') + ' ' + (x.dp == null ? '' : Math.abs(x.dp).toFixed(1) + '%') + '</span><div class="muted small num">' + (x.d > 0 ? '+' : '') + krw(x.d) + '</div>') + '</td>' +
       '<td>' + sparkArea(siteSeries(r.siteKey)) + '</td>' +
       '<td class="c"><span class="lpill ' + (x.lt === 0 ? 'g' : x.lt < 3 ? 'w' : x.lt <= 5 ? 's' : 'c') + '">' + x.lt + '</span></td>' +
