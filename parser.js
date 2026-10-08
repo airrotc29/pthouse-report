@@ -159,7 +159,7 @@
     const out = {
       site: '', author: '', periodText: '',
       arrears: { units: null, arrearsUnits: null, prevBalance: null, monthChange: null, total: null, action: '' },
-      managers: [], managerGap: '', inspections: [], certs: [], complaints: '', etc: [],
+      managers: [], managerGap: '', inspections: [], certs: [], complaints: '', etc: [], staffing: null,
     };
     out.site = s(rightOf(grid, find(grid, /^건물명$/)));
     out.author = s(rightOf(grid, find(grid, /^성명$/)));
@@ -201,6 +201,25 @@
     }
 
     const cp = find(grid, /^자격(증)?종류$/);
+    /* 근무인원 표: 구분 | 소장 | 전기과장 | 미화 | 관리원 | 경리담당 | 계  /  근무인원 | 결원 */
+    const wp = find(grid, /^근무인원$/);
+    if (wp) {
+      let hr = -1; for (let r = wp.r - 1; r >= Math.max(0, wp.r - 3); r--) { if (/^구분$/.test(sq(cell(grid, r, wp.c))) || grid[r] && grid[r].some((v, c) => c > wp.c && /^(소장|관리소장|계)$/.test(sq(v)))) { hr = r; break; } }
+      if (hr < 0) hr = wp.r - 1;
+      let vr = -1; for (let r = wp.r + 1; r < Math.min(grid.length, wp.r + 3); r++) { if (/^결원$/.test(sq(cell(grid, r, wp.c)))) { vr = r; break; } }
+      const roles = []; let total = null, vacTotal = null;
+      for (let c = wp.c + 1; c < (grid[hr] || []).length + 6; c++) {
+        const h = s(cell(grid, hr, c)); if (!h) continue;
+        const cnt = num(cell(grid, wp.r, c)), vac = vr >= 0 ? num(cell(grid, vr, c)) : null;
+        if (/^(계|합계|총계)$/.test(sq(h))) { total = cnt; vacTotal = vac; break; }
+        roles.push({ role: h, count: cnt == null ? 0 : cnt, vacancy: vac == null ? 0 : vac });
+      }
+      if (roles.length) {
+        if (total == null) total = roles.reduce((a, x) => a + x.count, 0);
+        if (vacTotal == null) vacTotal = roles.reduce((a, x) => a + x.vacancy, 0);
+        out.staffing = { roles, total, vacancy: vacTotal };
+      }
+    }
     const complaintPos = find(grid, /^주요민원처리현황$/);
     const etcPos = find(grid, /^기타사항$/);
     if (cp) {
@@ -345,6 +364,7 @@
       managerGap: st ? st.managerGap : '',
       inspections: st ? st.inspections : [],
       certs: st ? st.certs : [],
+      staffing: st ? st.staffing : null,
       complaints: st ? st.complaints : '',
       etc: st ? st.etc : [],
       unpaid: un ? un.rows : [],
