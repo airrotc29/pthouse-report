@@ -301,7 +301,7 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 /* visual layer: hero, rings, tiles, heatmap, donut */
 .top { box-shadow: 0 1px 0 var(--line), 0 8px 20px -14px rgba(22,33,44,.35); }
 .brand h1 { display: flex; align-items: center; gap: 9px; }
-.brand h1::before { content: ""; width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); flex: none; }
+.brand h1::before { content: none; }
 .card { border-radius: 12px; }
 .card .hd h2 { font-size: 15.5px; letter-spacing: -.01em; }
 .hero { position: relative; overflow: hidden; border-radius: 16px; padding: 22px 24px; color: var(--hero-fg); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px 28px; background: radial-gradient(120% 140% at 100% 0%, var(--hero-b) 0%, transparent 60%), linear-gradient(160deg, var(--hero-a), var(--hero-a)); box-shadow: var(--shadow); }
@@ -377,7 +377,7 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 @media (max-width: 420px) { .rings { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .ring { padding: 10px 2px 8px; } .ring .rg { width: 60px; height: 60px; } .ring .rc { font-size: 13px; } }
 /* premium layer: serif numerals, gold hairlines, glass rings */
 .brand h1 { font-family: var(--serif); font-weight: 700; letter-spacing: -.02em; }
-.brand h1::before { background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); box-shadow: inset 0 0 0 1.5px var(--gold-hi); }
+
 nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--gold); }
 .hero { border-radius: 18px; padding: 26px 28px; background: radial-gradient(90% 120% at 100% -10%, var(--hero-b) 0%, transparent 62%), radial-gradient(60% 80% at 0% 110%, rgba(176,138,74,.22) 0%, transparent 60%), linear-gradient(160deg, var(--hero-a), var(--hero-a)); border: 1px solid rgba(230,201,135,.28); }
 .hero::before { content: ""; position: absolute; left: 28px; right: 28px; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold-hi), transparent); opacity: .85; }
@@ -762,6 +762,33 @@ body.manager .hq-only { display: none !important; }
 .todaybox { display: flex; flex-direction: column; gap: 12px; }
 .todaybox .lbl { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
 .xbox { width: 100%; min-height: 160px; font-family: var(--font); font-size: 12.5px; }
+.tabn { display: inline-grid; place-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 5px; border-radius: 99px; background: var(--crit); color: #fff; font-size: 11px; font-weight: 700; vertical-align: 1px; }
+.oform { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.oform .fi { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--fg-2); font-weight: 500; }
+.oform .fi.w { grid-column: 1 / -1; }
+.oform input, .oform textarea { width: 100%; font-size: 14px; }
+.oform textarea { min-height: 96px; }
+.tgt { display: flex; flex-wrap: wrap; gap: 6px; }
+.tgt button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; color: var(--fg-2); cursor: pointer; }
+.tgt button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tgt button.all { font-weight: 600; }
+.ocard { border: 1px solid var(--line-soft); border-left: 4px solid var(--accent); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.ocard.urgent { border-left-color: var(--crit); }
+.ocard.done { border-left-color: var(--good); opacity: .85; }
+.ocard .oh { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ocard .ot { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.ocard .om { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.ocard .ob { white-space: pre-wrap; font-size: 13.5px; color: var(--fg-2); line-height: 1.5; }
+.ocard .os { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; }
+.ocard .os .srow { display: contents; }
+.ocard .os .sn { font-weight: 600; font-size: 13px; }
+.ocard .os .sr { grid-column: 1 / -1; font-size: 12.5px; color: var(--fg-2); background: var(--surface-2); border-radius: 8px; padding: 6px 10px; white-space: pre-wrap; }
+.ocard .oa { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.ocard textarea { min-height: 64px; font-size: 13.5px; }
+.olist { display: flex; flex-direction: column; gap: 10px; }
+.dd { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dd.over { color: var(--crit); } .dd.soon { color: #9a3f1b; }
+@media (max-width: 640px) { .oform { grid-template-columns: 1fr; } .oform .fi.w { grid-column: auto; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -781,6 +808,7 @@ body.manager .hq-only { display: none !important; }
     <button role="tab" data-tab="site">사업소별</button>
     <button role="tab" data-tab="compare">항목 비교</button>
     <button role="tab" data-tab="daily">일일보고</button>
+    <button role="tab" data-tab="orders">지시사항<span class="tabn" id="tabOrdN" hidden></span></button>
     <button role="tab" data-tab="upload">업로드</button>
   </nav>
 </header>
@@ -789,6 +817,7 @@ body.manager .hq-only { display: none !important; }
   <section class="view" id="view-home"></section>
   <section class="view" id="view-site" hidden></section>
   <section class="view" id="view-compare" hidden></section>
+  <section class="view" id="view-orders" hidden></section>
   <section class="view" id="view-daily" hidden>
     <div class="card">
       <div class="hd"><h2>일일보고 요약</h2>
@@ -883,7 +912,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp }));
@@ -915,11 +944,15 @@ let store = {
       this.unsub.push(db.collection('acks').onSnapshot(snap => {
         state.acks = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
       }, err => { console.error('acks', err); }));
+      this.unsub.push(db.collection('orders').onSnapshot(snap => {
+        state.orders = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
+      }, err => { console.error('orders', err); }));
     } else {
       state.mode = 'local';
       state.reports = lsGet('mwr.reports', []);
       state.dailies = lsGet('mwr.dailies', []);
       state.acks = lsGet('mwr.acks', []);
+      state.orders = lsGet('mwr.orders', []);
       state.siteList = lsGet('mwr.sites', []);
       state.loaded = true;
       onData();
@@ -965,6 +998,18 @@ let store = {
   async clearAck(id) {
     if (this.db) await this.db.doc('acks/' + id).delete();
     else { state.acks = state.acks.filter(a => a.id !== id); lsSet('mwr.acks', state.acks); onData(); }
+  },
+  async addOrders(docs) {
+    if (this.db) { for (const d of docs) await this.db.doc('orders/' + d.id).set(d); }
+    else { const ids = new Set(docs.map(d => d.id)); state.orders = state.orders.filter(o => !ids.has(o.id)).concat(docs); lsSet('mwr.orders', state.orders); onData(); }
+  },
+  async updateOrder(id, patch) {
+    if (this.db) await this.db.doc('orders/' + id).update(patch);
+    else { state.orders = state.orders.map(o => o.id === id ? Object.assign({}, o, patch) : o); lsSet('mwr.orders', state.orders); onData(); }
+  },
+  async deleteOrders(ids) {
+    if (this.db) { for (const id of ids) await this.db.doc('orders/' + id).delete(); }
+    else { const set = new Set(ids); state.orders = state.orders.filter(o => !set.has(o.id)); lsSet('mwr.orders', state.orders); onData(); }
   },
   async saveDaily(siteKey, site, date, entry) {
     const period = date.slice(0, 7), dd = date.slice(8, 10), id = siteKey + '_' + period;
@@ -1171,7 +1216,8 @@ function setTab(t) { state.tab = t; $$('#tabs button').forEach(b => b.setAttribu
 function go(tab, key, extra) { if (key) state.site = key; if (extra && extra.date) { state.dailyDate = extra.date; state.dailyMonth = extra.date.slice(0, 7); } setTab(tab); }
 function render() {
   renderBadge();
-  ({ home: renderHome, site: renderSite, compare: renderCompare, daily: renderDaily, upload: renderUpload })[state.tab]();
+  ({ home: renderHome, site: renderSite, compare: renderCompare, daily: renderDaily, orders: renderOrders, upload: renderUpload })[state.tab]();
+  updateOrdBadge();
 }
 
 /* ---------- 종합 현황 ---------- */
@@ -2006,6 +2052,103 @@ let sb = null;
 const isMgr = () => !!(state.me && state.me.role === 'manager');
 const mySite = () => (state.me && state.me.site_key) || '';
 function mgrSites() { return isMgr() ? sites().filter(s => s.key === mySite()) : sites(); }
+/* ---------- 지시사항 (대표 → 소장) ---------- */
+const ordId = () => 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function ordDday(due) {
+  if (!due) return '';
+  const d = Math.round((new Date(due + 'T00:00:00') - new Date(todayStr() + 'T00:00:00')) / 86400000);
+  const cls = d < 0 ? 'over' : d <= 3 ? 'soon' : '';
+  return '<span class="dd ' + cls + '">' + (d < 0 ? '기한 경과 ' + (-d) + '일' : d === 0 ? '오늘 마감' : 'D-' + d) + '</span>';
+}
+function myOrders() { return isMgr() ? state.orders.filter(o => o.siteKey === mySite()) : state.orders.slice(); }
+function openOrders() { return myOrders().filter(o => o.status !== 'done'); }
+function updateOrdBadge() { const b = $('#tabOrdN'); if (!b) return; const n = openOrders().length; b.hidden = !n; b.textContent = n; }
+function fmtDT(v) { if (!v) return ''; const d = new Date(v); return isNaN(d) ? String(v).slice(0, 10) : d.toISOString().slice(0, 10); }
+function renderOrders() {
+  const el = $('#view-orders');
+  if (!state.loaded) { el.innerHTML = '<div class="empty"><p>불러오는 중입니다…</p></div>'; return; }
+  const mine = myOrders(), open = mine.filter(o => o.status !== 'done'), done = mine.filter(o => o.status === 'done');
+  const over = open.filter(o => o.due && o.due < todayStr()).length, urgent = open.filter(o => o.priority === 'urgent').length;
+  let h = '<div class="mini auto"><div class="mt"><b>' + open.length + '</b><span>진행 중</span></div><div class="mt ' + (over ? 'serious' : '') + '"><b>' + over + '</b><span>기한 경과</span></div><div class="mt ' + (urgent ? 'warn' : '') + '"><b>' + urgent + '</b><span>긴급</span></div><div class="mt good"><b>' + done.length + '</b><span>완료</span></div></div>';
+  const hq = !isMgr() && state.canWrite;
+  if (hq) {
+    const all = sites(), sel = state.ordSel || (state.ordSel = new Set());
+    h += '<div class="card"><div class="hd"><h2>새 지시사항</h2><span class="note">대상 사업소를 고르고 발송하면 각 소장 화면에 바로 표시됩니다</span></div><div class="bd"><form id="ordForm" class="oform">' +
+      '<label class="fi w">제목<input type="text" id="ordTitle" required maxlength="120" placeholder="예: 동절기 동파 예방 점검 결과 보고"></label>' +
+      '<label class="fi w">내용<textarea id="ordBody" placeholder="구체적인 지시 내용, 기준, 제출 방법 등을 적습니다"></textarea></label>' +
+      '<label class="fi">기한<input type="date" id="ordDue"></label>' +
+      '<label class="fi" style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:8px"><input type="checkbox" id="ordUrgent" style="width:auto"> 긴급 지시</label>' +
+      '<div class="fi w">대상 사업소 <span class="muted">(' + sel.size + '/' + all.length + ')</span><div class="tgt" id="ordTgt"><button type="button" class="all" data-tgt="__all">전체 선택</button><button type="button" class="all" data-tgt="__none">해제</button>' +
+      all.map(x => '<button type="button" data-tgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '">' + esc(x.name) + '</button>').join('') + '</div></div>' +
+      '<div class="fi w" style="flex-direction:row;justify-content:flex-end"><button type="submit" class="btn primary" id="ordSend">지시 발송</button></div></form></div></div>';
+  }
+  const f = state.ordFilter, list = f === 'open' ? open : f === 'done' ? done : mine;
+  const seg = '<div class="seg">' + [['open', '진행 중'], ['done', '완료'], ['all', '전체']].map(x => '<button data-ordf="' + x[0] + '" aria-pressed="' + (f === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>').join('') + '</div>';
+  h += '<div class="card"><div class="hd"><h2>' + (isMgr() ? '우리 사업소 지시사항' : '지시사항 현황') + ' <span class="muted small">' + list.length + '건</span></h2>' + seg + '</div><div class="bd olist">';
+  if (!list.length) h += '<div class="empty"><p>' + (f === 'open' ? '진행 중인 지시사항이 없습니다.' : '해당하는 지시사항이 없습니다.') + '</p></div>';
+  else if (isMgr()) {
+    list.sort((a, b) => (a.status === 'done') - (b.status === 'done') || (b.priority === 'urgent') - (a.priority === 'urgent') || (a.due || '9999').localeCompare(b.due || '9999') || (b.createdAt || '').localeCompare(a.createdAt || ''));
+    list.forEach(o => {
+      const done = o.status === 'done';
+      h += '<div class="ocard ' + (done ? 'done' : o.priority === 'urgent' ? 'urgent' : '') + '" data-oid="' + o.id + '"><div class="oh"><div><div class="ot">' + esc(o.title) + '</div><div class="om">' + (o.priority === 'urgent' ? '<span class="chip crit">긴급</span>' : '') + (o.due ? '<span>기한 ' + esc(o.due) + '</span>' + (done ? '' : ordDday(o.due)) : '<span>기한 없음</span>') + '<span>지시일 ' + fmtDT(o.createdAt) + '</span>' + (done ? '<span class="chip good">완료 ' + fmtDT(o.doneAt) + '</span>' : '<span class="chip warn">진행 중</span>') + '</div></div></div>' +
+        (o.body ? '<div class="ob">' + esc(o.body) + '</div>' : '') +
+        (done ? (o.reply ? '<div class="os"><div class="sr">' + esc(o.reply) + '</div></div>' : '') + '<div class="oa"><button class="btn sm" data-oact="reopen">다시 열기</button></div>'
+              : '<textarea data-oreply placeholder="조치 내용·결과를 적고 완료 보고를 누르세요">' + esc(o.reply || '') + '</textarea><div class="oa"><button class="btn sm" data-oact="save">조치 내용만 저장</button><button class="btn sm primary" data-oact="done">완료 보고</button></div>') +
+        '</div>';
+    });
+  } else {
+    const groups = new Map();
+    list.forEach(o => { if (!groups.has(o.groupId)) groups.set(o.groupId, []); groups.get(o.groupId).push(o); });
+    const gs = Array.from(groups.values()).sort((a, b) => (b[0].createdAt || '').localeCompare(a[0].createdAt || ''));
+    gs.forEach(g => {
+      const o = g[0], allRows = state.orders.filter(x => x.groupId === o.groupId), dn = allRows.filter(x => x.status === 'done').length, allDone = dn === allRows.length;
+      h += '<div class="ocard ' + (allDone ? 'done' : o.priority === 'urgent' ? 'urgent' : '') + '"><div class="oh"><div><div class="ot">' + esc(o.title) + '</div><div class="om">' + (o.priority === 'urgent' ? '<span class="chip crit">긴급</span>' : '') + (o.due ? '<span>기한 ' + esc(o.due) + '</span>' + (allDone ? '' : ordDday(o.due)) : '<span>기한 없음</span>') + '<span>지시일 ' + fmtDT(o.createdAt) + '</span><span class="chip ' + (allDone ? 'good' : 'info') + '">완료 ' + dn + '/' + allRows.length + '</span></div></div>' +
+        '<div class="oa"><button class="btn sm danger" data-odel="' + esc(o.groupId) + '">삭제</button></div></div>' +
+        (o.body ? '<div class="ob">' + esc(o.body) + '</div>' : '') + '<div class="os">' +
+        allRows.sort((a, b) => siteName(a.siteKey).localeCompare(siteName(b.siteKey), 'ko')).map(x => '<div class="srow"><span class="sn">' + esc(siteName(x.siteKey)) + '</span>' + (x.status === 'done' ? '<span class="chip good">완료 ' + fmtDT(x.doneAt) + '</span>' : '<span class="chip warn">대기</span>') + (x.reply ? '<div class="sr">' + esc(x.reply) + '</div>' : '') + '</div>').join('') +
+        '</div></div>';
+    });
+  }
+  h += '</div></div>';
+  el.innerHTML = h;
+}
+function bindOrders() {
+  const el = $('#view-orders');
+  el.addEventListener('click', async e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.ordf) { state.ordFilter = t.dataset.ordf; renderOrders(); return; }
+    if (t.dataset.tgt) {
+      const sel = state.ordSel || (state.ordSel = new Set());
+      if (t.dataset.tgt === '__all') sites().forEach(x => sel.add(x.key)); else if (t.dataset.tgt === '__none') sel.clear(); else sel.has(t.dataset.tgt) ? sel.delete(t.dataset.tgt) : sel.add(t.dataset.tgt);
+      const title = $('#ordTitle').value, body = $('#ordBody').value, due = $('#ordDue').value, ur = $('#ordUrgent').checked;
+      renderOrders(); $('#ordTitle').value = title; $('#ordBody').value = body; $('#ordDue').value = due; $('#ordUrgent').checked = ur; return;
+    }
+    if (t.dataset.odel) {
+      const ids = state.orders.filter(o => o.groupId === t.dataset.odel).map(o => o.id);
+      if (!confirm('이 지시사항을 모든 대상 사업소에서 삭제할까요? (' + ids.length + '건)')) return;
+      try { await store.deleteOrders(ids); toast('삭제했습니다'); } catch (err) { toast('삭제 실패: ' + (err.message || err)); } return;
+    }
+    if (t.dataset.oact) {
+      const card = t.closest('.ocard'), id = card.dataset.oid, ta = card.querySelector('[data-oreply]'), reply = ta ? ta.value.trim() : undefined;
+      const patch = t.dataset.oact === 'done' ? { status: 'done', reply: reply || '' } : t.dataset.oact === 'reopen' ? { status: 'open' } : { reply: reply || '' };
+      if (t.dataset.oact === 'done' && !reply && !confirm('조치 내용 없이 완료 보고할까요?')) return;
+      t.disabled = true;
+      try { await store.updateOrder(id, patch); toast(t.dataset.oact === 'done' ? '완료 보고했습니다' : t.dataset.oact === 'reopen' ? '다시 열었습니다' : '저장했습니다'); }
+      catch (err) { toast('저장 실패: ' + (err.message || err)); t.disabled = false; }
+    }
+  });
+  el.addEventListener('submit', async e => {
+    if (e.target.id !== 'ordForm') return; e.preventDefault();
+    const sel = state.ordSel || new Set(), title = $('#ordTitle').value.trim(), body = $('#ordBody').value.trim(), due = $('#ordDue').value, priority = $('#ordUrgent').checked ? 'urgent' : 'normal';
+    if (!title) { toast('제목을 입력하세요'); return; }
+    if (!sel.size) { toast('대상 사업소를 선택하세요'); return; }
+    const groupId = 'g' + Date.now().toString(36), now = new Date().toISOString();
+    const docs = Array.from(sel).map(k => ({ id: ordId(), groupId, siteKey: k, title, body, due, priority, status: 'open', reply: '', doneAt: '', createdAt: now }));
+    $('#ordSend').disabled = true;
+    try { await store.addOrders(docs); state.ordSel = new Set(); state.ordFilter = 'open'; toast(docs.length + '개 사업소에 지시사항을 보냈습니다'); renderOrders(); }
+    catch (err) { toast('발송 실패: ' + (err.message || err)); $('#ordSend').disabled = false; }
+  });
+}
 function makeSupabaseStore(client) {
   const rowToReport = r => Object.assign({}, r.data, { id: r.id, siteKey: r.site_key, period: r.period, author: r.author, fileName: r.file_name, uploadedAt: r.uploaded_at });
   const rowsToDailies = rows => {
@@ -2017,12 +2160,13 @@ function makeSupabaseStore(client) {
   };
   let loading = null, timer = null;
   async function loadAll() {
-    const [sRes, rRes, dRes, aRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*')]);
-    const err = sRes.error || rRes.error || dRes.error || aRes.error; if (err) throw err;
+    const [sRes, rRes, dRes, aRes, oRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*')]);
+    const err = sRes.error || rRes.error || dRes.error || aRes.error || oRes.error; if (err) throw err;
     state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code }));
     state.reports = (rRes.data || []).map(rowToReport);
     state.dailies = rowsToDailies(dRes.data || []);
     state.acks = (aRes.data || []).map(x => ({ id: x.id, month: x.month, memo: x.memo, at: x.acked_at }));
+    state.orders = (oRes.data || []).map(x => ({ id: x.id, groupId: x.group_id, siteKey: x.site_key, title: x.title, body: x.body || '', due: x.due || '', priority: x.priority, status: x.status, reply: x.reply || '', doneAt: x.done_at || '', createdAt: x.created_at }));
     state.canWrite = true; state.loaded = true; onData();
   }
   const reload = () => { clearTimeout(timer); timer = setTimeout(() => { loading = loadAll().catch(e => console.error(e)); }, 400); };
@@ -2043,6 +2187,9 @@ function makeSupabaseStore(client) {
     async renameSite(oldKey, newName) { await q(client.from('sites').update({ name: newName }).eq('key', oldKey)); },
     async setAck(doc) { await q(client.from('acks').upsert({ id: doc.id, month: doc.month, memo: doc.memo || '' })); },
     async clearAck(id) { await q(client.from('acks').delete().eq('id', id)); },
+    async addOrders(docs) { await q(client.from('directives').insert(docs.map(d => ({ id: d.id, group_id: d.groupId, site_key: d.siteKey, title: d.title, body: d.body || '', due: d.due || null, priority: d.priority || 'normal' })))); },
+    async updateOrder(id, patch) { const row = {}; if (patch.status) row.status = patch.status; if (patch.reply != null) row.reply = patch.reply; await q(client.from('directives').update(row).eq('id', id)); },
+    async deleteOrders(ids) { await q(client.from('directives').delete().in('id', ids)); },
   };
 }
 function showGate(kind, msg) {
@@ -2057,7 +2204,7 @@ function applyRole() {
   document.body.classList.toggle('manager', isMgr());
   if (me) { box.hidden = false; box.innerHTML = '<b>' + esc(me.name || (isMgr() ? '소장' : '본사')) + '</b><span class="muted">' + (isMgr() ? esc(siteName(me.site_key)) + ' · 소장' : '본사') + '</span><button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
-  const allowed = isMgr() ? ['daily', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'upload'];
+  const allowed = isMgr() ? ['orders', 'daily', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
   if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
   setTab(state.tab);
@@ -2159,10 +2306,11 @@ document.addEventListener('click', async e => {
 });
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
-  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'upload'].includes(hash)) state.tab = hash;
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
+  bindOrders(); updateInstallBtn();
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
-  renderMonthSel(); setTab(state.tab); store.init(); updateInstallBtn();
+  renderMonthSel(); setTab(state.tab); store.init();
 }
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
 })();
