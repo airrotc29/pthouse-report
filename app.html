@@ -2108,7 +2108,7 @@ function renderDailyForm(force) {
   const Ln = t => String(t || '').split(/\r?\n/).filter(x => x.trim()).length;
   h += fsec(9, '익일 예정 · 본사 요청 · 업무 메모', '한 줄에 한 건씩 적습니다', '',
     '<div class="memos">' + [['plans', '익일 예정', '내일 할 일', 'M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'], ['requests', '본사 요청', '예산 · 인력 · 업체 지원', 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'], ['memo', '업무 메모', '그 밖에 수행한 업무', 'M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z']].map(m => '<div class="memo"><div class="mh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + m[3] + '"/></svg><div><b>' + m[1] + '</b><div class="small muted">' + m[2] + '</div></div><span class="chip" data-cnt="' + m[0] + '">' + Ln(d[m[0]]) + '건</span></div><textarea data-f="' + m[0] + '" placeholder="' + m[2] + ' · 한 줄에 한 건">' + esc(d[m[0]]) + '</textarea></div>').join('') + '</div>');
-  h += '<div class="savebar"><button type="submit" class="btn primary" id="dSave">저장</button><button type="button" class="btn" id="dReset">새로 작성</button>' + (ed ? '<button type="button" class="btn danger" id="dDelete">이 보고 삭제</button>' : '') + '<span class="note" id="dMsg"></span></div></form>';
+  h += '<div class="savebar"><button type="submit" class="btn primary" id="dSave">저장</button><button type="button" class="btn" id="dReset">새로 작성</button>' + '' + '<span class="note" id="dMsg"></span></div></form>';
   wrap.innerHTML = h;
 }
 function bindDaily() {
