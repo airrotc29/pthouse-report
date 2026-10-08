@@ -78,3 +78,9 @@
 
 - `supabase/meetings.sql` : 화상회의(Jitsi Meet) 방 공유용 `meetings` 표. 본사가 열고 대상 사업소 소장 화면 상단에 입장 알림이 뜹니다 (이미 적용됨).
 - `sites.staff_quota` : 사업소 근무 정원. 업로드 탭의 사업소 목록에서 입력하며, 종합 현황의 **인원 충원율** 링(최근 일일보고 현원 ÷ 정원)에 쓰입니다.
+
+## 건축물대장 원본 PDF (storage.sql)
+
+- `supabase/storage.sql`을 SQL Editor에서 실행하면 비공개 버킷 `buildings`가 생깁니다. 경로는 `buildings/<site_key>/register.pdf`입니다.
+- 업로드 탭에서 건축물대장 PDF를 저장하면 추출값은 `sites.building`에, 원본 PDF는 이 버킷에 함께 저장됩니다.
+- 사업소별 탭 건축물대장 카드의 "원본 PDF 보기" 버튼은 1시간짜리 서명 URL로 원본을 띄웁니다. 본사는 전부, 소장은 자기 사업소 파일만 읽을 수 있고 올리기는 본사만 가능합니다.

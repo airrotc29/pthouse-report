@@ -1133,6 +1133,7 @@ body.manager .hq-only { display: none !important; }
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="listModal" class="pdfmodal" hidden><div class="pdfbox lbox"><div class="pdfbar"><b id="listTitle"></b><span class="note" id="listSub"></span><button class="btn sm" id="listClose">닫기</button></div><div class="lbody" id="listBody"></div></div></div>
 <div id="pdfModal" class="pdfmodal" hidden><div class="pdfbox"><div class="pdfbar"><b id="pdfTitle">보고서</b><div class="seg" id="pdfKind"><button data-pk="daily">일일보고</button><button data-pk="monthly">월간보고</button></div><select id="pdfPick" aria-label="보고 선택"></select><span class="note" id="pdfNote">PDF 저장을 누르면 인쇄 창에서 "PDF로 저장"을 고를 수 있습니다</span><button class="btn primary sm" id="pdfPrint">PDF 저장 · 인쇄</button><button class="btn sm" id="pdfClose">닫기</button></div><iframe id="pdfFrame" title="일일업무보고 미리보기"></iframe></div></div>
+<div id="fileModal" class="pdfmodal" hidden><div class="pdfbox"><div class="pdfbar"><b id="fileTitle">원본 파일</b><span class="note" id="fileNote"></span><a class="btn sm" id="fileOpen" target="_blank" rel="noopener">새 창에서 열기</a><button class="btn sm" id="fileClose">닫기</button></div><iframe id="fileFrame" title="원본 파일 미리보기"></iframe></div></div>
 <div id="installHelp" class="sheet" hidden><div class="sheet-in"><b>홈 화면에 바로가기 추가</b><ol id="installSteps"></ol><button class="btn primary" id="installClose">닫기</button></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1241,6 +1242,9 @@ let store = {
   },
   async setSiteQuota(key, n) { const cur = state.siteList.find(x => x.id === key) || { id: key, name: siteName(key) }; await this.setSite(Object.assign({}, cur, { quota: n })); },
   async setSiteBuilding(key, b) { const cur = state.siteList.find(x => x.id === key) || { id: key, name: siteName(key) }; await this.setSite(Object.assign({}, cur, { building: b })); },
+  /* 원본 PDF: 로컬 모드는 3MB까지 data URL로 함께 저장 */
+  async saveBuildingFile(key, file) { if (file.size > 3 * 1024 * 1024) return { name: file.name, size: file.size, tooBig: true }; const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); return { name: file.name, size: file.size, dataUrl }; },
+  async buildingFileUrl(f) { return f && f.dataUrl ? f.dataUrl : null; },
   async deleteSite(id) {
     if (this.db) await this.db.doc('sites/' + id).delete();
     else { state.siteList = state.siteList.filter(x => x.id !== id); lsSet('mwr.sites', state.siteList); onData(); }
@@ -2635,7 +2639,7 @@ function bldCard(key, forSite) {
   const rr = siteReports(key).slice(-1)[0], ru = rr && rr.arrears ? rr.arrears.units : null, diff = (ru != null && b.units != null) ? ru - b.units : null;
   const tile = (lb, v, sub, lv) => '<div class="bt' + (lv ? ' ' + lv : '') + '"><span>' + lb + '</span><b>' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
   const kv = (lb, v) => v ? '<div class="bkv"><span>' + lb + '</span><b>' + v + '</b></div>' : '';
-  return '<div class="card bldc"><div class="hd"><h2>건축물대장 <span class="muted small">' + esc(b.kind || '집합건축물대장') + '</span></h2><span class="note">발급 ' + esc(b.issued || '–') + (b.uid ? ' · 고유번호 ' + esc(b.uid) : '') + '</span></div><div class="bd">' +
+  return '<div class="card bldc"><div class="hd"><h2>건축물대장 <span class="muted small">' + esc(b.kind || '집합건축물대장') + '</span></h2><span class="row" style="gap:8px"><span class="note">발급 ' + esc(b.issued || '–') + (b.uid ? ' · 고유번호 ' + esc(b.uid) : '') + '</span>' + (b.file && !b.file.tooBig ? '<button class="btn sm primary" data-bldfile="' + esc(key) + '" title="업로드한 건축물대장 PDF 원본을 봅니다">원본 PDF 보기</button>' : '') + '</span></div><div class="bd">' +
     '<div class="bhead"><div><b>' + esc(b.name || siteName(key)) + '</b><span>' + esc(b.roadAddr || b.lotAddr) + (b.jibun ? ' · 지번 ' + esc(b.jibun) : '') + '</span></div>' + (b.violation ? '<span class="chip crit">위반건축물 표기</span>' : '<span class="chip good">위반 표기 없음</span>') + '</div>' +
     '<div class="bgrid">' + tile('호수 · 세대', (b.units != null ? comma(b.units) + '호' : '–') + (b.hh ? ' / ' + comma(b.hh) + '세대' : ''), diff == null ? '대장 기준' : diff === 0 ? '보고서 세대수와 일치' : '보고서 ' + comma(ru) + '세대 (' + (diff > 0 ? '+' : '') + diff + ')', diff ? 'warn' : '') +
       tile('사용승인일', esc(b.approvalDate || '–'), b.approvalDate ? '준공 ' + yearsSince(b.approvalDate) + ' 경과' : '') +
@@ -2645,14 +2649,14 @@ function bldCard(key, forSite) {
       kv('내진설계', (b.seismic ? '<em class="' + (/적용/.test(b.seismic) ? 'ok' : '') + '">' + esc(b.seismic) + '</em>' : '') + (b.seismicCap ? ' ' + esc(b.seismicCap) : '')) + kv('허가 · 착공', [b.permitDate, b.startDate].filter(Boolean).map(esc).join(' · ')) + kv('사용승인', esc(b.approvalDate || '')) + '</div>' +
     (b.parkMech ? '<div class="note" style="margin-top:10px">기계식주차장은 주차장법 제19조의9에 따른 정기검사 대상입니다.</div>' : '') + '</div></div>';
 }
-let bldDraft = null;
+let bldDraft = null, bldFile = null;
 async function handleBuildingFile(file) {
   const box = $('#bldResult'); if (!file) return;
   box.innerHTML = '<div class="note">PDF를 읽는 중입니다…</div>';
   try {
     const pages = await pdfPagesItems(file), b = parseBuildingRegister(pages);
     if (!b.name && b.units == null && !b.approvalDate) { box.innerHTML = '<div class="note" style="color:var(--crit)">건축물대장 양식을 찾지 못했습니다. 세움터에서 발급한 집합건축물대장(표제부) PDF인지 확인하세요. 스캔 이미지 PDF는 읽을 수 없습니다.</div>'; return; }
-    b.fileName = file.name; bldDraft = b;
+    b.fileName = file.name; bldDraft = b; bldFile = file;
     const keyGuess = bldMatchSite(b.name), opts = sites().map(s2 => '<option value="' + s2.key + '"' + (s2.key === keyGuess ? ' selected' : '') + '>' + esc(s2.name) + '</option>').join('');
     const row = (k, v) => '<tr><th>' + k + '</th><td>' + (v == null || v === '' ? '<span class="muted">–</span>' : esc(v)) + '</td></tr>';
     box.innerHTML = '<div class="row" style="margin-bottom:10px"><label class="small fg2">연결할 사업소 <select id="bldSite">' + opts + '</select></label><button class="btn primary" id="bldSave">이 사업소에 저장</button><span class="note">' + esc(b.kind) + ' · ' + b.pages + '쪽 · ' + esc(file.name) + '</span></div>' +
@@ -2660,11 +2664,22 @@ async function handleBuildingFile(file) {
       '<div class="note" style="margin-top:8px">추출값이 틀린 항목이 있으면 알려 주세요. 저장 후 사업소별 탭에 "건축물대장" 카드로 표시됩니다.</div>';
   } catch (e) { console.error(e); box.innerHTML = '<div class="note" style="color:var(--crit)">읽기 실패: ' + esc(e.message || e) + '</div>'; }
 }
+async function openBuildingFile(key) {
+  const si = state.siteList.find(x => x.id === key) || {}, b = si.building || {}, f = b.file;
+  if (!f || f.tooBig || !(f.dataUrl || f.path)) { toast('저장된 원본 PDF가 없습니다. 업로드 탭에서 건축물대장 PDF를 다시 올리면 원본이 함께 저장됩니다.'); return; }
+  try {
+    const url = await store.buildingFileUrl(f); if (!url) throw new Error('파일 주소를 만들 수 없습니다');
+    $('#fileTitle').textContent = siteName(key) + ' · 건축물대장 원본'; $('#fileNote').textContent = (f.name || 'register.pdf') + (f.size ? ' · ' + (f.size / 1024 / 1024 >= 1 ? (f.size / 1024 / 1024).toFixed(1) + ' MB' : Math.round(f.size / 1024) + ' KB') : '');
+    const a = $('#fileOpen'); a.href = url; a.download = f.name || 'register.pdf'; $('#fileFrame').src = url; $('#fileModal').hidden = false;
+  } catch (err) { toast('파일 열기 실패: ' + (err.message || err)); }
+}
 function bindBuilding() {
   document.addEventListener('change', e => { if (e.target.id === 'bldIn') { handleBuildingFile(e.target.files[0]); e.target.value = ''; } });
   document.addEventListener('click', async e => {
     if (e.target.id === 'bldPick') { $('#bldIn').click(); return; }
-    if (e.target.id === 'bldSave') { if (!bldDraft) return; const key = $('#bldSite').value; e.target.disabled = true; try { await store.setSiteBuilding(key, bldDraft); toast(siteName(key) + ' 건축물대장을 저장했습니다'); $('#bldResult').innerHTML = '<div class="note">저장 완료 · 사업소별 탭에서 확인하세요.</div>'; bldDraft = null; } catch (err) { toast('저장 실패: ' + (err.message || err)); e.target.disabled = false; } }
+    if (e.target.id === 'bldSave') { if (!bldDraft) return; const key = $('#bldSite').value; e.target.disabled = true; try { if (bldFile) { e.target.textContent = '원본 PDF 올리는 중…'; bldDraft.file = await store.saveBuildingFile(key, bldFile); } await store.setSiteBuilding(key, bldDraft); toast(siteName(key) + ' 건축물대장을 저장했습니다' + (bldDraft.file && bldDraft.file.tooBig ? ' (3MB 초과로 원본 PDF는 저장하지 않았습니다)' : '')); $('#bldResult').innerHTML = '<div class="note">저장 완료 · 사업소별 탭에서 확인하세요.</div>'; bldDraft = null; bldFile = null; } catch (err) { toast('저장 실패: ' + (err.message || err)); e.target.disabled = false; e.target.textContent = '이 사업소에 저장'; } }
+    const fb = e.target.closest('[data-bldfile]'); if (fb) { openBuildingFile(fb.dataset.bldfile); return; }
+    if (e.target.id === 'fileClose' || e.target.id === 'fileModal') { $('#fileModal').hidden = true; $('#fileFrame').src = 'about:blank'; return; }
   });
   const dz = $('#bldDrop'); if (dz) { dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); }); dz.addEventListener('dragleave', () => dz.classList.remove('over')); dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) handleBuildingFile(f); }); }
 }
@@ -2922,6 +2937,8 @@ function makeSupabaseStore(client) {
     async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, staff_quota: doc.quota !== undefined ? doc.quota : (cur.quota == null ? null : cur.quota), active: true })); },
     async setSiteQuota(key, n) { await q(client.from('sites').update({ staff_quota: n }).eq('key', key)); },
     async setSiteBuilding(key, b) { await q(client.from('sites').update({ building: b }).eq('key', key)); },
+    async saveBuildingFile(key, file) { const path = key + '/register.pdf'; const { error } = await client.storage.from('buildings').upload(path, file, { upsert: true, contentType: 'application/pdf' }); if (error) throw new Error('원본 PDF 업로드 실패: ' + error.message); return { name: file.name, size: file.size, path }; },
+    async buildingFileUrl(f) { if (!f || !f.path) return null; const { data, error } = await client.storage.from('buildings').createSignedUrl(f.path, 3600); if (error) throw new Error(error.message); return data.signedUrl; },
     async deleteSite(id) { await q(client.from('sites').update({ active: false }).eq('key', id)); },
     async renameSite(oldKey, newName) { await q(client.from('sites').update({ name: newName }).eq('key', oldKey)); },
     async setAck(doc) { await q(client.from('acks').upsert({ id: doc.id, month: doc.month, memo: doc.memo || '' })); },
