@@ -2170,7 +2170,7 @@ function makeSupabaseStore(client) {
     state.canWrite = true; state.loaded = true; onData();
   }
   const reload = () => { clearTimeout(timer); timer = setTimeout(() => { loading = loadAll().catch(e => console.error(e)); }, 400); };
-  const q = async p => { const { error } = await p; if (error) throw new Error(error.message || error.code); };
+  const q = async p => { const { error } = await p; if (error) throw new Error(error.message || error.code); reload(); };
   return {
     kind: 'supabase', db: null,
     async init() {
@@ -2182,7 +2182,7 @@ function makeSupabaseStore(client) {
     async deleteReport(id) { await q(client.from('reports').delete().eq('id', id)); },
     async saveDaily(siteKey, site, date, entry) { await q(client.from('dailies').upsert({ site_key: siteKey, date, entry })); },
     async deleteDaily(siteKey, date) { await q(client.from('dailies').delete().match({ site_key: siteKey, date })); },
-    async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id })); },
+    async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, active: true })); },
     async deleteSite(id) { await q(client.from('sites').update({ active: false }).eq('key', id)); },
     async renameSite(oldKey, newName) { await q(client.from('sites').update({ name: newName }).eq('key', oldKey)); },
     async setAck(doc) { await q(client.from('acks').upsert({ id: doc.id, month: doc.month, memo: doc.memo || '' })); },
