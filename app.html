@@ -2525,7 +2525,7 @@ function hideGate() { $('#authGate').hidden = true; }
 function applyRole() {
   const me = state.me, box = $('#meBox');
   document.body.classList.toggle('manager', isMgr());
-  if (me) { box.hidden = false; box.innerHTML = '<b>' + esc(me.name || (isMgr() ? '소장' : '본사')) + '</b><span class="muted">' + (isMgr() ? esc(siteName(me.site_key)) + ' · 소장' : '본사') + '</span><button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
+  if (me) { box.hidden = false; box.innerHTML = (isMgr() ? '<b>' + esc(me.name || '소장') + '</b><span class="muted">' + esc(siteName(me.site_key)) + ' · 소장</span>' : (me.name ? '<b>' + esc(me.name) + '</b>' : '')) + '<button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
   const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
