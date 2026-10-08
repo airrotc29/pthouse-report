@@ -974,6 +974,8 @@ body.manager .hq-only { display: none !important; }
 .ocard { border: 1px solid var(--line-soft); border-left: 4px solid var(--accent); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
 .ocard.urgent { border-left-color: var(--crit); }
 .ocard.done { border-left-color: var(--good); opacity: .85; }
+.ocard.fold .otg { cursor: pointer; } .ocard.fold .otg:hover .ot { color: var(--accent); }
+.ocard .car { display: inline-block; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); margin: 0 10px 2px 2px; transition: transform .15s; } .ocard.open .car { transform: rotate(45deg); }
 .ocard .oh { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .ocard .ot { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
 .ocard .om { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
@@ -1513,17 +1515,17 @@ function render() {
 
 /* 인원 충원율: 사업소 정원(siteList.quota) 대비 가장 최근 일일보고 현원 */
 /* 사업소 인원 통합 조회: 일일보고 최근 현원 → 없으면 월간보고 근무인원 표. 정원은 사업소 설정값 → 없으면 월간보고(근무인원+결원) */
-function siteStaff(key, month) {
-  const si = state.siteList.find(x => x.id === key) || {}, e = latestStaffEntry(key, month);
+function siteStaff(key, month, strict) {
+  const si = state.siteList.find(x => x.id === key) || {}, e = latestStaffEntry(key, month, strict);
   const reps = siteReports(key).filter(r => r.staffing && (!month || r.period <= month)), mr = reps.length ? reps[reps.length - 1] : null, ms = mr ? mr.staffing : null;
   const quota = si.quota > 0 ? si.quota : (ms && ms.total != null ? ms.total + (ms.vacancy || 0) : null), quotaSrc = si.quota > 0 ? 'set' : ms ? 'monthly' : '';
   if (e) { const sd = e.staffDetail || {}; return { cur: +e.staff || 0, quota, quotaSrc, src: 'daily', date: e.date, sd, leave: +sd.leave || 0, vacancy: +sd.vacancy || 0, absent: sd.absent || '', roles: null }; }
   if (ms) return { cur: ms.total || 0, quota, quotaSrc, src: 'monthly', date: mr.period, sd: {}, leave: 0, vacancy: ms.vacancy || 0, absent: '', roles: ms.roles || [] };
   return { cur: null, quota, quotaSrc, src: '', date: '', sd: {}, leave: 0, vacancy: 0, absent: '', roles: null };
 }
-function staffStat(month) {
+function staffStat(month, strict) {
   let cur = 0, quota = 0, n = 0;
-  sites().forEach(sx => { const x = siteStaff(sx.key, month); if (!x.quota || x.cur == null) return; cur += x.cur; quota += x.quota; n++; });
+  sites().forEach(sx => { const x = siteStaff(sx.key, month, strict); if (!x.quota || x.cur == null) return; cur += x.cur; quota += x.quota; n++; });
   return { cur, quota, n };
 }
 /* ---------- 종합 현황 ---------- */
@@ -1556,7 +1558,7 @@ function renderHome() {
   const serLt = hms.map(m => { const rs = reportsFor(m), a = sum(rs, arrearsUnits), l = sum(rs, r => longTerm(r).length); return a ? 100 * l / a : null; });
   const serOk = hms.map(m => { const rs = reportsFor(m), n = sum(rs, r => r.inspections.length + r.managers.length), bad = sum(rs, r => inspAlerts(r).length + managerAlerts(r).length); return n ? 100 * (n - bad) / n : null; });
   const serSub = hms.map(m => all.length ? 100 * reportsFor(m).length / all.length : null);
-  const stf = staffStat(), serStf = hms.map(m => { const x = staffStat(m); return x.quota ? 100 * x.cur / x.quota : null; });
+  const stf = staffStat(), serStf = hms.map(m => { const x = staffStat(m, true); return x.quota ? 100 * x.cur / x.quota : null; });
   const rate = (v, a, b) => v == null ? 'w' : v < a ? 'g' : v < b ? 'w' : 'c';
   const trendMs = months().filter(m => m <= month && reportsFor(m).length).slice(-6), trendSer = trendMs.map(m => ({ m: shortMonth(m), v: reportsFor(m).reduce((a2, r) => a2 + (arrearsTotal(r) || 0), 0) || null }));
   let h = '<div class="hero"><div class="hl"><div class="htop"><div class="hleft"><div class="eyebrow">체납 총액 · ' + monthLabel(month) + '</div><div class="big">' + krw(tot) + '<small>원</small></div>' +
@@ -1823,7 +1825,7 @@ function renderSite() {
     ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) +
     ring(insN ? okN / insN : 1, (ia.length + ma.length) === 0 ? 'g' : (ia.some(i => i.st.lv === 'crit') || ma.some(m => m.lv === 'crit')) ? 'c' : 'w', insN ? Math.round(100 * okN / insN) + '%' : '–', '검사·선임 정상', (ia.length + ma.length) ? '주의 ' + (ia.length + ma.length) + '건 / ' + insN + '항목' : insN + '항목 모두 정상', { vals: sOk, fmt: pp, goodWhen: 'up' }) +
     (() => { const x = siteStaff(r.siteKey), q = x.quota, cur = x.cur, f = (q && cur != null) ? cur / q : null;
-      const ms6 = months().filter(m => m <= state.month).slice(-6), ser = ms6.map(m => { const y = siteStaff(r.siteKey, m); return (y.quota && y.cur != null) ? 100 * y.cur / y.quota : null; });
+      const ms6 = months().filter(m => m <= state.month).slice(-6), ser = ms6.map(m => { const y = siteStaff(r.siteKey, m, true); return (y.quota && y.cur != null) ? 100 * y.cur / y.quota : null; });
       return ring(f == null ? 0 : Math.min(1, f), f == null ? 'w' : f >= .95 ? 'g' : f >= .85 ? 'w' : 'c', f == null ? '–' : Math.round(100 * f) + '%', '인원 충원율', q ? (cur == null ? '인원 기록 없음' : '현원 ' + cur + ' / 정원 ' + q + '명' + (x.src === 'monthly' ? ' · 월간보고 기준' : (x.leave || x.vacancy) ? ' · 휴가 ' + x.leave + ' · 공석 ' + x.vacancy : '')) : '업로드 탭에서 정원 입력', { vals: ser, fmt: pp, goodWhen: 'up' }); })() +
     '</div></div>';
   const insT = r.inspections.map(i => { const st = inspStatus(i); return { lv: st.lv || 'na', name: i.item, sub: [i.due, i.done].filter(Boolean).join(' · ') || '기록 없음', label: st.label }; });
@@ -2053,10 +2055,11 @@ function cmpMgr(reps) {
 }
 /* 인원현황: 사업소 정원 대비 최근 일일보고 현원 (직종별) */
 const STAFF_ROLES = [['mgr', '소장·과장', '#2f5f93'], ['worker', '관리원', '#5b92cc'], ['clean', '미화', '#6f9f7a'], ['guard', '경비', '#b08a4a']];
-function latestStaffEntry(key, month) {
-  const docs = state.dailies.filter(d => d.siteKey === key && (!month || d.period <= month)).sort((a, b) => b.period.localeCompare(a.period));
-  for (const doc of docs) { const ds = Object.keys(doc.days || {}).filter(k => doc.days[k] && doc.days[k].staff != null).sort(); if (ds.length) return Object.assign({ date: doc.period + '-' + ds[ds.length - 1] }, doc.days[ds[ds.length - 1]]); }
-  return null;
+/* 가장 최근 일일보고의 근무 인원. strict=false면 선택한 보고 월 이후에 쓴 일일보고라도(예: 9월 화면에서 10월 8일 보고) 가장 최근 것을 쓴다 */
+function latestStaffEntry(key, month, strict) {
+  const pick = docs => { for (const doc of docs) { const ds = Object.keys(doc.days || {}).filter(k => doc.days[k] && doc.days[k].staff != null).sort(); if (ds.length) return Object.assign({ date: doc.period + '-' + ds[ds.length - 1] }, doc.days[ds[ds.length - 1]]); } return null; };
+  const mine = state.dailies.filter(d => d.siteKey === key).sort((a, b) => b.period.localeCompare(a.period));
+  return pick(mine.filter(d => !month || d.period <= month)) || (strict ? null : pick(mine));
 }
 function cmpStaff(reps, month) {
   const rows = sites().map(sx => { const x = siteStaff(sx.key, month); return Object.assign({ key: sx.key, name: sx.name, rate: (x.quota && x.cur != null) ? x.cur / x.quota : null }, x); });
@@ -2497,7 +2500,7 @@ function renderOrders() {
   }
   const f = state.ordFilter, list = isMgr() ? (f === 'open' ? open : f === 'done' ? done : mine) : (f === 'all' ? mine : ordGroups(mine).filter(g => (f === 'open') === g.some(o => o.status !== 'done')).flat());
   const seg = '<div class="seg">' + [['open', '진행 중'], ['done', '완료'], ['all', '전체']].map(x => '<button data-ordf="' + x[0] + '" aria-pressed="' + (f === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>').join('') + '</div>';
-  h += '<div class="card"><div class="hd"><h2>' + (isMgr() ? '우리 사업소 지시사항' : '지시사항 현황') + ' <span class="muted small">' + list.length + '건</span></h2>' + seg + '</div><div class="bd olist">';
+  h += '<div class="card"><div class="hd"><h2>' + (isMgr() ? '우리 사업소 지시사항' : '지시사항 현황') + ' <span class="muted small">' + (isMgr() ? list.length : new Set(list.map(o => o.groupId)).size) + '건</span></h2>' + seg + '</div><div class="bd olist">';
   if (!list.length) h += '<div class="empty"><p>' + (f === 'open' ? '진행 중인 지시사항이 없습니다.' : '해당하는 지시사항이 없습니다.') + '</p></div>';
   else if (isMgr()) {
     list.sort((a, b) => (a.status === 'done') - (b.status === 'done') || (b.priority === 'urgent') - (a.priority === 'urgent') || (a.due || '9999').localeCompare(b.due || '9999') || (b.createdAt || '').localeCompare(a.createdAt || ''));
@@ -2515,9 +2518,10 @@ function renderOrders() {
     const gs = Array.from(groups.values()).sort((a, b) => (b[0].createdAt || '').localeCompare(a[0].createdAt || ''));
     gs.forEach(g => {
       const o = g[0], allRows = state.orders.filter(x => x.groupId === o.groupId), dn = allRows.filter(x => x.status === 'done').length, allDone = dn === allRows.length;
-      h += '<div class="ocard ' + (allDone ? 'done' : o.priority === 'urgent' ? 'urgent' : '') + '"><div class="oh"><div><div class="ot">' + esc(o.title) + '</div><div class="om">' + (o.priority === 'urgent' ? '<span class="chip crit">긴급</span>' : '') + (o.due ? '<span>기한 ' + esc(o.due) + '</span>' + (allDone ? '' : ordDday(o.due)) : '<span>기한 없음</span>') + '<span>지시일 ' + fmtDT(o.createdAt) + '</span><span class="chip ' + (allDone ? 'good' : 'info') + '">완료 ' + dn + '/' + allRows.length + '</span></div></div>' +
+      const open = state.ordOpen === o.groupId;
+      h += '<div class="ocard fold' + (open ? ' open' : '') + ' ' + (allDone ? 'done' : o.priority === 'urgent' ? 'urgent' : '') + '" data-ogrp="' + esc(o.groupId) + '"><div class="oh otg" role="button" tabindex="0" aria-expanded="' + open + '" title="누르면 사업소별 진행 상황을 펼칩니다"><div><div class="ot"><i class="car"></i>' + esc(o.title) + '</div><div class="om">' + (o.priority === 'urgent' ? '<span class="chip crit">긴급</span>' : '') + (o.due ? '<span>기한 ' + esc(o.due) + '</span>' + (allDone ? '' : ordDday(o.due)) : '<span>기한 없음</span>') + '<span>지시일 ' + fmtDT(o.createdAt) + '</span><span class="chip ' + (allDone ? 'good' : 'info') + '">완료 ' + dn + '/' + allRows.length + '</span></div></div>' +
         '<div class="oa"><button class="btn sm danger" data-odel="' + esc(o.groupId) + '">삭제</button></div></div>' +
-        (o.body ? '<div class="ob">' + esc(o.body) + '</div>' : '') + '<div class="os">' +
+        (o.body ? '<div class="ob">' + esc(o.body) + '</div>' : '') + '<div class="os"' + (open ? '' : ' hidden') + '>' +
         allRows.sort((a, b) => siteName(a.siteKey).localeCompare(siteName(b.siteKey), 'ko')).map(x => '<div class="srow"><span class="sn">' + esc(siteName(x.siteKey)) + '</span>' + (x.status === 'done' ? '<span class="chip good">완료 ' + fmtDT(x.doneAt) + '</span>' : '<span class="chip warn">대기</span>') + (x.reply ? '<div class="sr">' + esc(x.reply) + '</div>' : '') + '</div>').join('') +
         '</div></div>';
     });
@@ -2527,7 +2531,9 @@ function renderOrders() {
 }
 function bindOrders() {
   const el = $('#view-orders');
+  el.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('otg')) { e.preventDefault(); e.target.click(); } });
   el.addEventListener('click', async e => {
+    const tg = e.target.closest('.otg'); if (tg && !e.target.closest('button')) { const card = tg.closest('.ocard'), g = card.dataset.ogrp; state.ordOpen = state.ordOpen === g ? null : g; el.querySelectorAll('.ocard.fold').forEach(c => { const on = c.dataset.ogrp === state.ordOpen; c.classList.toggle('open', on); c.querySelector('.os').hidden = !on; c.querySelector('.otg').setAttribute('aria-expanded', on); }); return; }
     const t = e.target.closest('button'); if (!t) return;
     if (t.dataset.ordf) { state.ordFilter = t.dataset.ordf; renderOrders(); return; }
     if (t.dataset.tgt) {
@@ -2767,11 +2773,15 @@ function monthlyReportHtml(r) {
     '<div class="kpis"><div class="kp"><span>체납 세대</span><b>' + (au == null ? '–' : comma(au)) + '<small>/ ' + comma(a.units) + '세대</small></b></div><div class="kp"><span>전월 체납 잔액</span><b>' + won(a.prevBalance) + '</b></div><div class="kp ' + (N(a.monthChange) > 0 ? 'up' : N(a.monthChange) < 0 ? 'dn' : '') + '"><span>당월 발생</span><b>' + (a.monthChange == null ? '–' : (a.monthChange > 0 ? '+' : '') + won(a.monthChange)) + '</b></div><div class="kp big"><span>현재 체납 총액</span><b>' + won(tot) + '</b>' + (dlt == null ? '' : '<em class="' + (dlt > 0 ? 'up' : dlt < 0 ? 'dn' : '') + '">' + (dlt > 0 ? '▲ ' : dlt < 0 ? '▼ ' : '') + won(Math.abs(dlt)) + ' 전월 대비</em>') + '</div></div></div>' +
     (units.length ? '<div class="cap">미납 개월별 구성 <small>세대 내역 ' + units.length + '세대 · ' + won(ageSum) + '</small></div><div class="sbar">' + ages.filter(x => x.amt > 0).map(x => '<i style="width:' + (100 * x.amt / ageSum).toFixed(1) + '%;background:' + x.col + '"></i>').join('') + '</div><div class="sleg">' + ages.map(x => '<span><i style="background:' + x.col + '"></i>' + x.lb + ' <b>' + x.n + '</b>세대 · ' + krw(x.amt) + '원</span>').join('') + '</div>' : '') +
     (isNothing(a.action) ? '' : '<div class="box"><b>대처 방안</b>' + esc(a.action) + '</div>');
-  /* 2. 근무 인원 (보고서 근무인원 표) */
-  const stf = r.staffing;
+  /* 2. 근무 인원 (보고서 근무인원 표 → 없으면 그 달 기준 가장 최근 일일보고의 인원) */
+  let stf = r.staffing, stfSrc = '월간업무보고 근무인원 표';
+  if (!(stf && stf.roles && stf.roles.length)) {
+    const x = siteStaff(r.siteKey, r.period);
+    if (x.src === 'daily') { const sd = x.sd || {}; stf = { roles: STAFF_ROLES.map(k => ({ role: k[1], count: +sd[k[0]] || 0, vacancy: 0 })).concat((sd.extra || []).map(z => ({ role: z.role, count: +z.count || 0, vacancy: 0 }))).filter(z => z.count), total: x.cur, vacancy: x.vacancy || 0, leave: x.leave || 0, quota: x.quota }; stfSrc = x.date + ' 일일업무보고 기준'; }
+  }
   if (stf && stf.roles && stf.roles.length) {
-    const q = stf.total + (stf.vacancy || 0), RP = ['#2f5f93', '#5b92cc', '#6f9f7a', '#b08a4a', '#8a6fb8', '#c97b57', '#9aa7b5'];
-    body += sec(2, '근무 인원', '근무 ' + stf.total + '명 · 결원 ' + (stf.vacancy || 0) + '명' + (q ? ' · 충원율 ' + Math.round(100 * stf.total / q) + '%' : '')) +
+    const q = stf.quota || (stf.total + (stf.vacancy || 0)), RP = ['#2f5f93', '#5b92cc', '#6f9f7a', '#b08a4a', '#8a6fb8', '#c97b57', '#9aa7b5'];
+    body += sec(2, '근무 인원', '근무 ' + stf.total + '명 · 결원 ' + (stf.vacancy || 0) + '명' + (stf.leave ? ' · 휴가 ' + stf.leave + '명' : '') + (q ? ' · 충원율 ' + Math.round(100 * stf.total / q) + '%' : '') + ' · ' + stfSrc) +
       '<div class="kpis" style="grid-template-columns:repeat(' + (stf.roles.length + 1) + ',minmax(0,1fr))">' + stf.roles.map((x, i) => '<div class="kp' + (x.vacancy ? ' vc' : '') + '"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:' + RP[i % RP.length] + ';margin-right:5px"></i>' + esc(x.role) + '</span><b>' + x.count + '<small>명</small></b>' + (x.vacancy ? '<em>결원 ' + x.vacancy + '명</em>' : '') + '</div>').join('') + '<div class="kp big"><span>근무 인원 계</span><b>' + stf.total + '<small>명</small></b><em>' + (stf.vacancy ? '결원 ' + stf.vacancy + '명 · 정원 ' + q + '명' : '결원 없음') + '</em></div></div>' +
       '<div class="stk">' + stf.roles.map((x, i) => x.count ? '<i style="flex:' + x.count + ';background:' + RP[i % RP.length] + '"><span>' + esc(x.role) + ' ' + x.count + '</span></i>' : '').join('') + (stf.vacancy ? '<i class="vac" style="flex:' + stf.vacancy + '"><span>결원 ' + stf.vacancy + '</span></i>' : '') + '</div>';
   }
