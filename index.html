@@ -927,6 +927,14 @@ body.manager .hq-only { display: none !important; }
 .pdfbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap; }
 .pdfbar b { font-size: 15px; } .pdfbar .note { flex: 1 1 200px; }
 .pdfbox iframe { flex: 1; width: 100%; border: 0; background: #f1f3f6; }
+.lbox { height: auto; max-height: 88vh; }
+.lbody { overflow: auto; padding: 6px 14px 14px; }
+.ltbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ltbl th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.ltbl td, .ltbl th { padding: 8px 8px; border-bottom: 1px solid var(--line-soft); }
+.ltbl .r { text-align: right; } .ltbl .c { text-align: center; }
+.mt.click { cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.mt.click:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
 .dd { font-weight: 700; font-variant-numeric: tabular-nums; }
 .dd.over { color: var(--crit); } .dd.soon { color: #9a3f1b; }
 @media (max-width: 640px) { .oform { grid-template-columns: 1fr; } .oform .fi.w { grid-column: auto; } }
@@ -1008,6 +1016,7 @@ body.manager .hq-only { display: none !important; }
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="listModal" class="pdfmodal" hidden><div class="pdfbox lbox"><div class="pdfbar"><b id="listTitle"></b><span class="note" id="listSub"></span><button class="btn sm" id="listClose">닫기</button></div><div class="lbody" id="listBody"></div></div></div>
 <div id="pdfModal" class="pdfmodal" hidden><div class="pdfbox"><div class="pdfbar"><b id="pdfTitle">일일업무보고</b><span class="note">PDF 저장을 누르면 인쇄 창에서 "PDF로 저장"을 고를 수 있습니다</span><button class="btn primary sm" id="pdfPrint">PDF 저장 · 인쇄</button><button class="btn sm" id="pdfClose">닫기</button></div><iframe id="pdfFrame" title="일일업무보고 미리보기"></iframe></div></div>
 <div id="installHelp" class="sheet" hidden><div class="sheet-in"><b>홈 화면에 바로가기 추가</b><ol id="installSteps"></ol><button class="btn primary" id="installClose">닫기</button></div></div>
 
@@ -1809,13 +1818,15 @@ function cmpUnpaid(reps, month) {
       if (expS <= today) { out.expAmt += it.total; out.expN++; } else if (!out.near || expS < out.near) { out.near = expS; out.days = Math.round((exp - new Date(today + 'T00:00:00')) / 86400000); } });
     return out; };
   const solChip = u => { const x = sol(u); if (x.expN) return '<span class="chip crit" title="부과월 기준 3년 경과분 (추정)">시효 경과 ' + x.expN + '개월분 · ' + krw(x.expAmt) + '원</span>'; if (x.near == null) return ''; if (x.days <= 180) return '<span class="chip serious" title="가장 오래된 미납분 시효 완성 예정일 ' + x.near + '">시효 D-' + x.days + ' · ' + x.near.slice(0, 7) + '분</span>'; return '<span class="chip na" title="가장 오래된 미납분 시효 완성 예정일">시효 ' + x.near.slice(0, 7) + '</span>'; };
-  const solRisk = topRows.filter(u => { const x = sol(u); return x.expN || (x.days != null && x.days <= 180); }).length;
+  const solRisk = allU.filter(u => { const x = sol(u); return x.expN || (x.days != null && x.days <= 180); }).length, ltAll = allU.filter(u => u.n >= 6).length;
+  cmpUnpaid._lists = { lt: allU.filter(u => u.n >= 6).sort((a, b) => b.n - a.n || b.total - a.total), sol: allU.filter(u => { const x = sol(u); return x.expN || (x.days != null && x.days <= 180); }).sort((a, b) => { const xa = sol(a), xb = sol(b); return (xb.expN - xa.expN) || ((xa.days == null ? 1e9 : xa.days) - (xb.days == null ? 1e9 : xb.days)); }) };
+  cmpUnpaid._sol = sol;
   const mdots = n => { const k = Math.min(n, 12); return '<span class="mdots ' + (n >= 6 ? 'c' : n >= 3 ? 's' : n >= 2 ? 'w' : 'g') + '" title="' + n + '개월 미납">' + Array.from({ length: 12 }, (_, i) => '<i' + (i < k ? ' class="on"' : '') + '></i>').join('') + '<b>' + n + '개월' + (n > 12 ? '+' : '') + '</b></span>'; };
   const shown = state.topuAll ? topRows : topRows.slice(0, 10);
   const mpill = n => '<span class="mpill ' + (n >= 6 ? 'c' : n >= 3 ? 's' : n >= 2 ? 'w' : 'g') + '">' + n + '개월' + (n > 12 ? '+' : '') + '</span>';
   const solCell = u => { const x = sol(u); if (x.expN) return '<span class="sol crit">시효 경과 ' + x.expN + '개월분<small>' + krw(x.expAmt) + '원</small></span>'; if (x.near == null) return '<span class="sol na">–</span>'; if (x.days <= 180) return '<span class="sol warn">시효 D-' + x.days + '<small>' + x.near.slice(0, 7) + '분</small></span>'; return '<span class="sol na">' + x.near.slice(0, 7) + '<small>시효 예정</small></span>'; };
   h += '<div class="card"><div class="hd"><h2>미납 상위 세대 <span class="muted small">사업소별 상위 5세대 · 전체 ' + topRows.length + '위</span></h2>' + (topRows.length > 10 ? '<button class="btn sm" id="topuMore">' + (state.topuAll ? '10위까지만' : '20위까지 보기') + '</button>' : '') + '</div>' +
-    (topRows.length ? minis([[krw(topSum) + '원', '상위 ' + topRows.length + '세대 합계', ''], [Math.round(100 * topSum / allSum) + '%', '전체 미납액 대비', topSum / allSum >= 0.5 ? 'warn' : ''], [topRows.filter(u => u.n >= 6).length, '6개월 이상 세대', topRows.filter(u => u.n >= 6).length ? 'crit' : 'good'], [solRisk, '시효 경과·임박(6개월 내)', solRisk ? 'crit' : 'good']]).replace('mini mini5', 'mini auto inpad') : '') +
+    (topRows.length ? minis([[krw(topSum) + '원', '상위 ' + topRows.length + '세대 합계', ''], [Math.round(100 * topSum / allSum) + '%', '전체 미납액 대비', topSum / allSum >= 0.5 ? 'warn' : ''], [ltAll, '6개월 이상 세대', ltAll ? 'crit' : 'good'], [solRisk, '시효 경과·임박(6개월 내)', solRisk ? 'crit' : 'good']]).replace('mini mini5', 'mini auto inpad').replace('<div class="mt crit"><b>' + ltAll + '</b><span>6개월', '<div class="mt crit click" data-ulist="lt" title="목록 보기"><b>' + ltAll + '</b><span>6개월').replace('<div class="mt crit"><b>' + solRisk + '</b><span>시효', '<div class="mt crit click" data-ulist="sol" title="목록 보기"><b>' + solRisk + '</b><span>시효') : '') +
     '<div class="bd tight"><div class="uu2"><div class="uh2"><span></span><span>세대 · 사업소</span><span>미납</span><span>소멸시효</span><span class="r">미납액</span></div>' + (topRows.length ? shown.map((u, i) => '<div class="ur2' + (i < 3 ? ' top' : '') + '"><div class="urk ' + (i === 0 ? 'g1' : i === 1 ? 'g2' : i === 2 ? 'g3' : '') + '">' + (i + 1) + '</div><div class="uinfo"><b>' + esc(u.unit) + '</b><span class="usub">' + esc(u.site) + ' · ' + esc(u.oldest) + '부터</span>' + (u.notes.length ? '<span class="unote" title="' + esc(u.notes.join(' ')) + '">' + esc(u.notes.join(' ')) + '</span>' : '') + '</div>' + mpill(u.n) + solCell(u) + '<div class="uamt2"><b>' + comma(u.total) + '<small>원</small></b>' + pbar(u.total / maxU, u.n >= 6 ? 'linear-gradient(90deg, var(--serious), var(--crit))' : u.n >= 2 ? 'var(--serious)' : 'var(--s1)') + '</div></div>').join('') : '<div class="empty small">미납 세대 내역이 없습니다.</div>') + '</div>' +
     (topRows.length ? '<div class="note" style="padding:9px 14px 11px;border-top:1px solid var(--line-soft)">관리비 채권 소멸시효 <b>3년</b> (민법 제163조 제1호) · 부과월 기준 추정 · 청구·압류·가압류·승인 시 중단 (민법 제168조)</div>' : '') + '</div></div>';
   cmpUnpaid._line = ms.length >= 2 ? { pts: ms.map(m => ({ x: shortMonth(m), y: agg(m), extra: reportsFor(m).length + '개소' })).filter(p => p.y != null), fmt: item.fmt, axis, title: item.name + ' 추이' } : null;
@@ -2382,6 +2393,16 @@ function dailyReportHtml(key, date, e) {
     '<h1>일일업무보고</h1><div class="meta"><span>사업소 <b>' + esc(site) + '</b></span><span>보고일 <b>' + esc(dateLabel(date)) + '</b></span><span>작성자 <b>' + T(e.author) + (e.role ? ' (' + esc(e.role) + ')' : '') + '</b></span>' + (e.updatedAt ? '<span>제출 <b>' + esc(String(e.updatedAt).replace('T', ' ').slice(0, 16)) + '</b></span>' : '') + '</div>' + body +
     '<div class="sign"><div>작성 ' + T(e.author) + '</div><div>확인 (본사)</div></div><div class="foot">(주)파트너스종합관리 · 사업소 보고 현황판에서 생성</div></div></body></html>';
 }
+function openUnitList(kind) {
+  const list = (cmpUnpaid._lists || {})[kind] || [], sol = cmpUnpaid._sol;
+  $('#listTitle').textContent = kind === 'lt' ? '6개월 이상 미납 세대' : '소멸시효 경과·임박 세대';
+  $('#listSub').textContent = list.length + '세대 · ' + (kind === 'lt' ? '미납 개월 많은 순' : '경과분 먼저, 이후 시효 임박 순') + ' · ' + monthLabel(state.month);
+  const solTxt = u => { const x = sol ? sol(u) : null; if (!x) return '–'; if (x.expN) return '<span class="sol crit">시효 경과 ' + x.expN + '개월분<small>' + krw(x.expAmt) + '원</small></span>'; if (x.near == null) return '–'; return '<span class="sol ' + (x.days <= 180 ? 'warn' : 'na') + '">' + (x.days <= 180 ? 'D-' + x.days : x.near.slice(0, 7)) + '<small>' + x.near.slice(0, 7) + '분 완성</small></span>'; };
+  $('#listBody').innerHTML = list.length ? '<table class="ltbl"><thead><tr><th>#</th><th>사업소</th><th>세대</th><th class="c">미납</th><th>최초 부과월</th><th class="r">미납액</th><th>소멸시효</th><th>비고</th></tr></thead><tbody>' +
+    list.map((u, i) => '<tr class="click" data-go="site" data-key="' + u.key + '"><td class="muted">' + (i + 1) + '</td><td>' + esc(u.site) + '</td><td><b>' + esc(u.unit) + '</b></td><td class="c"><span class="mpill ' + (u.n >= 6 ? 'c' : u.n >= 3 ? 's' : u.n >= 2 ? 'w' : 'g') + '">' + u.n + '개월</span></td><td class="num">' + esc(u.oldest) + '</td><td class="r num"><b>' + comma(u.total) + '</b>원</td><td>' + solTxt(u) + '</td><td class="small wrap" style="max-width:260px">' + esc(u.notes.join(' ')) + '</td></tr>').join('') +
+    '</tbody></table><div class="note" style="padding:8px 2px 0">행을 누르면 사업소 상세로 이동 · 합계 ' + comma(list.reduce((a, u) => a + u.total, 0)) + '원</div>' : '<div class="empty"><p>해당 세대가 없습니다.</p></div>';
+  $('#listModal').hidden = false;
+}
 function openDailyPdf(key, date) {
   const e = dailyEntry(key, date); if (!e) { toast('해당 날짜의 일일보고가 없습니다'); return; }
   $('#pdfTitle').textContent = siteName(key) + ' · ' + dateLabel(date) + ' 일일업무보고';
@@ -2586,7 +2607,10 @@ async function bootSupabase(cfg) {
 
 /* ===================== 전역 이벤트 ===================== */
 document.addEventListener('click', e => {
+  if (e.target.closest('#listModal') && e.target.closest('[data-go]')) $('#listModal').hidden = true;
   const pl = e.target.closest('[data-pdf]'); if (pl) { e.stopPropagation(); openDailyPdf(pl.dataset.pdf, pl.dataset.date); return; }
+  const ul = e.target.closest('[data-ulist]'); if (ul) { openUnitList(ul.dataset.ulist); return; }
+  if (e.target.id === 'listClose' || e.target.id === 'listModal') { $('#listModal').hidden = true; return; }
   if (e.target.id === 'pdfClose' || e.target.id === 'pdfModal') { $('#pdfModal').hidden = true; $('#pdfFrame').srcdoc = ''; return; }
   if (e.target.id === 'pdfPrint') { try { $('#pdfFrame').contentWindow.focus(); $('#pdfFrame').contentWindow.print(); } catch (err) { toast('인쇄 창을 열 수 없습니다'); } return; }
   if (e.target.id === 'topuMore') { state.topuAll = !state.topuAll; render(); return; }
