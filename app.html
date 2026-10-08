@@ -2430,7 +2430,6 @@ function openReportPdf(key, kind, pick) {
   state.pdfKey = key;
   const dl = allDaily().filter(x => x.siteKey === key).map(x => x.date).sort().reverse(), ml = siteReports(key).map(r => r.period).reverse();
   if (!kind) kind = (pick && dailyEntry(key, pick)) ? 'daily' : dl.length ? 'daily' : ml.length ? 'monthly' : 'daily';
-  if (kind === 'daily' && !dl.length && ml.length) kind = 'monthly';
   $$('#pdfKind button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pk === kind ? 'true' : 'false'));
   const sel = $('#pdfPick'), opts = kind === 'daily' ? dl : ml, cur = (pick && opts.includes(pick)) ? pick : (kind === 'daily' && pick && !opts.includes(pick) && opts.length ? opts[0] : opts[0]);
   sel.innerHTML = opts.slice(0, 60).map(v => '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + (kind === 'daily' ? dateLabel(v) : monthLabel(v)) + '</option>').join('');
