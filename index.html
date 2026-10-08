@@ -542,6 +542,10 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .mr.warn { border-left-color: var(--gold); background: var(--warn-soft); } .mr.warn .rn { color: #7a5300; }
 .mr.crit { border-left-color: var(--crit); background: var(--crit-soft); } .mr.crit .rn { color: var(--crit); }
 .mr.na .rn { color: var(--muted); font-weight: 500; }
+.maux { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: 11.5px; color: var(--muted); padding-top: 2px; }
+.maux > span { font-weight: 600; margin-right: 2px; }
+.maux em { font-style: normal; background: var(--surface-2); border-radius: 6px; padding: 2px 7px; color: var(--muted); }
+.maux em.on { color: var(--fg-2); }
 .mgap { font-size: 12.5px; color: var(--fg-2); background: var(--surface-2); border-radius: 8px; padding: 7px 10px; line-height: 1.45; }
 .mgap span { display: inline-block; font-size: 11px; color: var(--muted); margin-right: 6px; font-weight: 600; }
 .cgroups { display: flex; flex-direction: column; gap: 14px; }
@@ -1936,7 +1940,7 @@ function cmpInsp(reps) {
   return h;
 }
 /* 선임관리자 현황: 충족률 히어로(항목별 링) + 사업소 매트릭스 + 자격증 종류별 인원 */
-const isAuxItem = it => /보조|기타/.test(sq(it));
+const isAuxItem = it => /보조|기타|보$/.test(sq(it));
 function mgrStat(reps, it) {
   const rows = reps.map(r => r.managers.find(x => x.item === it)).filter(Boolean);
   const na = rows.filter(m => m.name && isNA(m.name)).length, ok = rows.filter(m => m.name && !isNA(m.name)).length, gap = rows.filter(m => !m.name).length;
@@ -1955,12 +1959,16 @@ function cmpMgr(reps) {
   let h = minis([[critN, '전기·소방 공란', critN ? 'crit' : 'good'], [gaps.length - critN, '기타 공란', gaps.length - critN ? 'warn' : 'good'], [tot.ok + '/' + tot.need, '선임 완료 / 필요', tot.need && tot.ok >= tot.need ? 'good' : 'warn'], [tot.na, '해당 없음', ''], [people, '자격 보유 인원', '']]);
   const order = items.slice().sort((x, y) => (isAuxItem(x) ? 1 : 0) - (isAuxItem(y) ? 1 : 0));
   const mring = (ok, need) => { const R = 15, C = 2 * Math.PI * R, f = need ? ok / need : 1, col = !need ? 'var(--muted)' : f >= 1 ? 'var(--good)' : f >= .5 ? 'var(--gold)' : 'var(--crit)'; return '<svg class="mrg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="5"/><circle cx="20" cy="20" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (C * f).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="var(--fg)">' + ok + '</text></svg>'; };
-  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황</h2><span class="legend"><span><i style="background:var(--good)"></i>선임</span><span><i style="background:var(--gold)"></i>확인 필요</span><span><i style="background:var(--crit)"></i>전기·소방 공란</span><span class="muted">카드를 누르면 사업소 상세</span></span></div><div class="bd"><div class="mgrid">' +
+  h += '<div class="card"><div class="hd"><h2>사업소별 선임 현황 <span class="muted small">법정 필수 선임(전기 · 기계설비 · 소방) 기준</span></h2><span class="legend"><span><i style="background:var(--good)"></i>선임됨</span><span><i style="background:var(--crit)"></i>공란 (전기·소방)</span><span><i style="background:var(--gold)"></i>공란 (기타)</span><span><i style="background:var(--line)"></i>해당 없음</span><span class="muted">카드를 누르면 사업소 상세</span></span></div><div class="bd"><div class="mgrid">' +
     reps.slice().sort((x, y) => { const gx = managerAlerts(x), gy = managerAlerts(y); return gy.filter(g => g.lv === 'crit').length - gx.filter(g => g.lv === 'crit').length || gy.length - gx.length || x.site.localeCompare(y.site, 'ko'); }).map(r => {
-      const ga = managerAlerts(r), crit = ga.filter(g => g.lv === 'crit').length, need = r.managers.filter(m => !isAuxItem(m.item) && !(m.name && isNA(m.name))).length, ok = r.managers.filter(m => !isAuxItem(m.item) && m.name && !isNA(m.name)).length;
-      const lv = crit ? 'crit' : ga.length ? 'warn' : 'good';
-      return '<div class="mcard ' + lv + ' click" data-go="site" data-key="' + r.siteKey + '"><div class="mh">' + mring(ok, need) + '<div class="mtt"><b>' + esc(r.site) + '</b><span>선임 ' + ok + ' / 필요 ' + need + (r.managers.length ? '' : ' · 기록 없음') + '</span></div><span class="chip ' + lv + '">' + (crit ? '전기·소방 공란 ' + crit : ga.length ? '공란 ' + ga.length : need ? '선임 완비' : '기록 없음') + '</span></div>' +
-        (r.managers.length ? '<div class="mroles">' + order.map(it => { const m = r.managers.find(x => x.item === it); const st = !m ? 'na' : !m.name ? (isAuxItem(it) ? 'na' : (/전기|소방/.test(it) ? 'crit' : 'warn')) : isNA(m.name) ? 'na' : 'good'; const txt = !m ? '–' : !m.name ? (isAuxItem(it) ? '공란' : '확인 필요') : isNA(m.name) ? '해당 없음' : esc(m.name); return '<div class="mr ' + st + '"><span class="rl">' + esc(it) + '</span><span class="rn">' + txt + '</span>' + (m && m.date && st === 'good' ? '<small class="num">' + esc(m.date) + '</small>' : '') + '</div>'; }).join('') + '</div>' : '') +
+      const req = r.managers.filter(m => !isAuxItem(m.item)), aux = r.managers.filter(m => isAuxItem(m.item));
+      const stOf = m => !m.name ? (/전기|소방/.test(m.item) ? 'crit' : 'warn') : isNA(m.name) ? 'na' : 'good';
+      const need = req.filter(m => stOf(m) !== 'na').length, ok = req.filter(m => stOf(m) === 'good').length, gaps = req.filter(m => stOf(m) === 'crit' || stOf(m) === 'warn'), crit = gaps.filter(m => stOf(m) === 'crit').length;
+      const lv = crit ? 'crit' : gaps.length ? 'warn' : 'good';
+      const chip = !r.managers.length ? '<span class="chip na">기록 없음</span>' : crit ? '<span class="chip crit">전기·소방 공란 ' + crit + '</span>' : gaps.length ? '<span class="chip warn">공란 ' + gaps.length + '</span>' : '<span class="chip good">필수 선임 완료</span>';
+      return '<div class="mcard ' + lv + ' click" data-go="site" data-key="' + r.siteKey + '"><div class="mh">' + mring(ok, need) + '<div class="mtt"><b>' + esc(r.site) + '</b><span>' + (r.managers.length ? '필수 ' + need + '개 중 <b>' + ok + '</b> 선임' + (gaps.length ? ' · 공란 ' + gaps.map(m => m.item).join(', ') : '') : '보고서에 선임 기록 없음') + '</span></div>' + chip + '</div>' +
+        (req.length ? '<div class="mroles">' + req.map(m => { const st = stOf(m); return '<div class="mr ' + st + '"><span class="rl">' + esc(m.item) + '</span><span class="rn">' + (st === 'good' ? esc(m.name) : st === 'na' ? '해당 없음' : '공란 · 확인 필요') + '</span>' + (st === 'good' && m.date ? '<small class="num">선임 ' + esc(m.date) + '</small>' : '') + '</div>'; }).join('') + '</div>' : '') +
+        (aux.length ? '<div class="maux"><span>보조·기타</span>' + aux.map(m => '<em class="' + (m.name && !isNA(m.name) ? 'on' : '') + '">' + esc(m.item) + ' ' + (m.name && !isNA(m.name) ? esc(m.name) : m.name && isNA(m.name) ? '해당 없음' : '공란') + '</em>').join('') + '</div>' : '') +
         (r.managerGap ? '<div class="mgap"><span>미선임 대처</span>' + esc(r.managerGap) + '</div>' : '') + '</div>';
     }).join('') + '</div></div></div>';
   const CAT = [['전기', /전기/, '#2f6db5'], ['소방', /소방|위험물/, '#c44b3c'], ['기계·설비', /기계|설비|냉동|공조|가스|보일러|에너지|승강기/, '#2e8b57'], ['건축·안전', /건축|토목|안전|산업/, '#b08a4a'], ['기타', /./, '#7a8794']];
