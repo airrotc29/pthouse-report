@@ -150,3 +150,5 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 -- 인원 충원율용 근무 정원
 alter table public.sites add column if not exists staff_quota int;
+-- 건축물대장 요약 (PDF 업로드로 추출)
+alter table public.sites add column if not exists building jsonb;

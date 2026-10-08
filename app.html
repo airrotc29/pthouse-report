@@ -366,6 +366,15 @@ details pre { font-size: 11.5px; overflow-x: auto; background: var(--surface-2);
 .stbar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: var(--surface-2); min-width: 0; }
 .stbar i { display: grid; place-content: center; color: #fff; font-size: 11px; font-weight: 700; min-width: 14px; }
 .stbw { min-width: 0; }
+.bhead { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.bhead b { font-size: 16px; display: block; } .bhead span { font-size: 12.5px; color: var(--muted); }
+.bgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.bt { background: var(--surface-2); border-radius: 12px; padding: 11px 13px; min-width: 0; border-left: 3px solid var(--line); }
+.bt span { display: block; font-size: 11.5px; color: var(--muted); } .bt b { display: block; font-size: 15px; margin-top: 3px; line-height: 1.3; word-break: keep-all; } .bt small { display: block; font-size: 11.5px; color: var(--fg-2); margin-top: 3px; }
+.bt.warn { border-left-color: var(--gold); background: var(--warn-soft); } .bt.good { border-left-color: var(--good); }
+.bldprev th { width: 160px; text-align: left; color: var(--muted); font-weight: 500; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+@media (max-width: 760px) { .bgrid { grid-template-columns: 1fr 1fr; } }
 .stbar.empty { opacity: .5; }
 .stsrc { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 760px) { .sth { display: none; } .strow { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 6px 10px; } .strow .mrg { grid-row: 1 / span 2; } .strow .stbw { grid-column: 2 / span 2; } .strow .note { display: none; } }
@@ -1062,6 +1071,17 @@ body.manager .hq-only { display: none !important; }
         <div id="pendWrap" class="pend" style="margin-top:14px"></div>
       </div>
     </div>
+    <div class="card" id="bldCard">
+      <div class="hd"><h2>건축물대장 업로드 <span class="muted small">세움터 발급 PDF</span></h2><span class="note">건축법 제38조의 건축물대장(표제부)에서 세대수·승강기·주차·사용승인일·내진·위반 여부를 자동으로 읽어 사업소 기본정보로 씁니다</span></div>
+      <div class="bd">
+        <div class="drop" id="bldDrop">
+          <input type="file" id="bldIn" accept="application/pdf,.pdf" hidden>
+          <button class="btn" id="bldPick" type="button">건축물대장 PDF 선택</button>
+          <p>또는 이 영역에 PDF를 끌어다 놓으세요 · 스캔본(이미지)은 읽을 수 없습니다</p>
+        </div>
+        <div id="bldResult" style="margin-top:12px"></div>
+      </div>
+    </div>
     <div class="card">
       <div class="hd"><h2>사업소 × 월 제출 현황 <span class="muted small" id="siteCount"></span></h2><span class="note">셀을 누르면 그 달 보고서 상세 · ✕는 보고서 삭제 · 월간보고가 없는 사업소는 이름 칸에서 바로 수정</span></div>
       <div class="bd tight tw" id="siteMgr"></div>
@@ -1197,6 +1217,7 @@ let store = {
     else { state.siteList = state.siteList.filter(x => x.id !== doc.id).concat([doc]); lsSet('mwr.sites', state.siteList); onData(); }
   },
   async setSiteQuota(key, n) { const cur = state.siteList.find(x => x.id === key) || { id: key, name: siteName(key) }; await this.setSite(Object.assign({}, cur, { quota: n })); },
+  async setSiteBuilding(key, b) { const cur = state.siteList.find(x => x.id === key) || { id: key, name: siteName(key) }; await this.setSite(Object.assign({}, cur, { building: b })); },
   async deleteSite(id) {
     if (this.db) await this.db.doc('sites/' + id).delete();
     else { state.siteList = state.siteList.filter(x => x.id !== id); lsSet('mwr.sites', state.siteList); onData(); }
@@ -1741,6 +1762,7 @@ function renderSite() {
     '<div class="row"><span class="note">보유 보고서</span><span class="missing">' + monthChips + '</span>' + (r && state.canWrite ? '<button class="btn sm danger" id="delRep">이 보고서 삭제</button>' : '') + '</div></div></div>';
   if (!r) {
     h += '<div class="card"><div class="empty"><h2>' + esc(siteName(key)) + ' · ' + monthLabel(state.month) + ' 보고서 없음</h2><p>' + (list.length ? '위의 보유 보고서에서 다른 월을 고르거나 이 달 파일을 업로드하세요.' : '이 사업소의 월간보고가 아직 없습니다.') + '</p><button class="btn primary" data-go="upload">업로드</button></div></div>';
+    h += bldCard(key, true);
     el.innerHTML = h; bindSiteSel(); return;
   }
   const tot = arrearsTotal(r), pt0 = prevTotalOf(r), ptot = pt0.v, d = (tot != null && ptot != null) ? tot - ptot : null;
@@ -1769,6 +1791,7 @@ function renderSite() {
   const insT = r.inspections.map(i => { const st = inspStatus(i); return { lv: st.lv || 'na', name: i.item, sub: [i.due, i.done].filter(Boolean).join(' · ') || '기록 없음', label: st.label }; });
   const mgrT = r.managers.map(m => { const na = /보조|기타/.test(sq(m.item)); const lv = m.name ? (isNA(m.name) ? 'na' : 'good') : (na ? 'na' : (/전기|소방/.test(m.item) ? 'crit' : 'warn')); return { lv, name: m.item, sub: m.name ? (isNA(m.name) ? '해당 없음' : m.name + (m.date ? ' · ' + m.date : '')) : '공란', label: m.name ? (isNA(m.name) ? '' : '선임') : (na ? '' : '확인 필요') }; });
   h += '<div class="grid2">';
+  h += bldCard(r.siteKey, true);
   h += '<div class="card"><div class="hd"><h2>법정검사 · 선임관리자</h2><span class="note">' + (ia.length + ma.length ? '주의 ' + (ia.length + ma.length) + '건' : '모두 정상') + (r.managerGap ? ' · 미선임 대처: ' + esc(r.managerGap) : '') + '</span></div><div class="bd">' +
     '<div class="eyebrow" style="margin-bottom:6px">법정 정기검사</div>' + (insT.length ? statusTiles(insT) : '<span class="muted small">기록 없음</span>') +
     '<div class="eyebrow" style="margin:12px 0 6px">선임관리자</div>' + (mgrT.length ? statusTiles(mgrT) : '<span class="muted small">기록 없음</span>') + '</div></div>';
@@ -2501,6 +2524,129 @@ function bindOrders() {
     catch (err) { toast('발송 실패: ' + (err.message || err)); $('#ordSend').disabled = false; }
   });
 }
+/* ---------- 건축물대장 PDF (건축법 제38조 · 건축물대장의 기재 및 관리 등에 관한 규칙 별지 제3·4호서식) ---------- */
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'; sc.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'; } catch (e) {} res(window.pdfjsLib); }; sc.onerror = () => rej(new Error('PDF 라이브러리를 불러오지 못했습니다')); document.head.appendChild(sc); });
+}
+async function pdfPagesItems(file) {
+  const lib = await loadPdfJs(), buf = await file.arrayBuffer(), doc = await lib.getDocument({ data: buf }).promise, pages = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const pg = await doc.getPage(i), vp = pg.getViewport({ scale: 1 }), tc = await pg.getTextContent();
+    const raw = tc.items.filter(it => it.str != null && it.str !== '').map(it => ({ s: it.str, x: it.transform[4], y: vp.height - it.transform[5], w: it.width || 0, h: it.height || 10 }));
+    pages.push({ items: mergeGlyphs(raw), w: vp.width, h: vp.height });
+  }
+  return pages;
+}
+/* PDFium 등은 글자 단위로 쪼개서 주므로 같은 줄에서 붙어 있는 글자를 단어로 합친다 */
+function mergeGlyphs(items) {
+  const sorted = items.slice().sort((a, b) => (Math.round(a.y / 3) - Math.round(b.y / 3)) || (a.x - b.x));
+  const words = []; let cur = null;
+  const flush = () => { if (cur && cur.s.trim()) words.push({ s: cur.s.trim(), x: cur.x, y: cur.y, w: cur.w, h: cur.h }); cur = null; };
+  sorted.forEach(it => {
+    if (it.s.trim() === '') { flush(); return; }
+    if (cur && Math.abs(it.y - cur.y) <= 2.5 && (it.x - (cur.x + cur.w)) <= 2.5 && it.x >= cur.x) { cur.s += it.s; cur.w = Math.max(cur.w, (it.x + it.w) - cur.x); }
+    else { flush(); cur = { s: it.s, x: it.x, y: it.y, w: it.w, h: it.h }; }
+  });
+  flush(); return words;
+}
+function parseBuildingRegister(pages) {
+  const all = pages.flatMap((p, pi) => p.items.map(it => Object.assign({ pi }, it)));
+  const norm = s => String(s || '').replace(/\s+/g, '');
+  const find = (re, pi) => all.find(it => (pi == null || it.pi === pi) && re.test(norm(it.s)));
+  const rowOf = (it) => all.filter(o => o.pi === it.pi && Math.abs(o.y - it.y) <= 3).sort((a, b) => a.x - b.x);
+  const LABEL_RE = /^※?(대지위치|지번|도로명주소|대지면적|연면적|지역|지구|구역|건축면적|용적률산정용연면적|주구조|주용도|층수|건폐율|용적률|높이|지붕|부속건축물|조경면적|공개공지\/공간면적|건축선후퇴면적|건축선후퇴거리|건물ID|고유번호|명칭|호수\/가구수\/세대수|구분|성명또는명칭|면허\(등록\)번호|주차장|승강기|인허가시기|급수설비\(저수조\)|하수처리시설|건축주|설계자|공사감리자|공사시공자|변동사항|변동일|변동내용및원인|그밖의기재사항|건축물현황|건축물인증현황|건축물구조현황|건축물관리현황|허가일|착공일|사용승인일|지번관련주소|도로명주소관련주소)$/;
+  const nextLabelY = (pi, y) => { const ys = all.filter(o => o.pi === pi && o.y > y + 4 && LABEL_RE.test(norm(o.s))).map(o => o.y); return ys.length ? Math.min(...ys) : 1e9; };
+  /* 라벨 바로 아래(같은 열)의 값 */
+  const below = (re, opt = {}) => {
+    const lab = find(re, opt.pi); if (!lab) return '';
+    const row = rowOf(lab), nx = row.find(o => o.x > lab.x + 2), x0 = lab.x - 6, x1 = nx ? nx.x - 4 : lab.x + (opt.span || 180);
+    const stopY = opt.noStop ? 1e9 : nextLabelY(lab.pi, lab.y);
+    const vals = all.filter(o => o.pi === lab.pi && o.y > lab.y + 3 && o.y <= lab.y + (opt.dy || 36) && o.y < stopY - 1 && (o.x + Math.min(o.w, 30) / 2) >= x0 && o.x < x1 && !/^※/.test(o.s))
+      .sort((a, b) => (Math.abs(a.y - b.y) <= 3 ? a.x - b.x : a.y - b.y));
+    return vals.map(v => v.s).join(' ').replace(/\s+/g, ' ').trim();
+  };
+  const num = s => { const m = String(s || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : null; };
+  const date = s => { const m = String(s || '').match(/(\d{4})\s*[.년]\s*(\d{1,2})\s*[.월]\s*(\d{1,2})/); return m ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : ''; };
+  const out = { kind: '', name: '', units: null, households: null, hh: null, lotAddr: '', jibun: '', roadAddr: '', landArea: null, floorArea: null, structure: '', mainUse: '', floors: '', height: '', elevPass: null, elevEmerg: null, parkSelf: null, parkMech: null, parkEv: null, parkTotal: null, permitDate: '', startDate: '', approvalDate: '', seismic: '', seismicCap: '', violation: false, issued: '', uid: '', bldId: '', pages: pages.length, parsedAt: new Date().toISOString() };
+  const title = all.find(it => /건축물대장\(/.test(norm(it.s))); if (title) { const line = rowOf(title).map(o => o.s).join(' '), mm = line.match(/(집합|일반)?\s*건축물대장\s*\([^)]*\)/); out.kind = (mm ? mm[0] : title.s).replace(/\s+/g, ' ').replace(/\(\s*/, '(').replace(/\s*,\s*/, ', '); }
+  const uc = all.find(it => /\d+호\/\d+가구\/\d+세대/.test(norm(it.s)));
+  if (uc) { const m = norm(uc.s).match(/(\d+)호\/(\d+)가구\/(\d+)세대/); out.units = +m[1]; out.households = +m[2]; out.hh = +m[3]; }
+  const nm = below(/^명칭$/, { pi: 0, dy: 40 }); out.name = nm.replace(/\d+호\/\d+가구\/\d+세대/, '').trim();
+  const addrRow = find(/^대지위치$/, 0);
+  if (addrRow) { const stopY = nextLabelY(0, addrRow.y); const vals = all.filter(o => o.pi === 0 && o.y > addrRow.y + 3 && o.y <= addrRow.y + 36 && o.y < stopY - 1).sort((a, b) => a.x - b.x); const road = find(/^도로명주소$/, 0);
+    out.lotAddr = vals.filter(o => !road || o.x < road.x - 20).filter(o => !/^\d+(-\d+)?$/.test(o.s)).map(o => o.s).join(' ');
+    out.roadAddr = road ? vals.filter(o => o.x >= road.x - 20).map(o => o.s).join(' ') : '';
+    const jb = vals.find(o => /^\d+(-\d+)?$/.test(o.s)); out.jibun = jb ? jb.s : ''; }
+  out.landArea = num(below(/대지면적$/, { pi: 0 })); out.floorArea = num(below(/^연면적$/, { pi: 0 }));
+  out.structure = below(/^주구조$/, { pi: 0 }); out.mainUse = below(/^주용도$/, { pi: 0, dy: 40 }); out.floors = below(/^층수$/, { pi: 0 }); out.height = below(/^높이$/, { pi: 0 });
+  out.elevPass = num(below(/^승용$/, { dy: 30, span: 60, noStop: true })); out.elevEmerg = num(below(/^비상용$/, { dy: 30, span: 60, noStop: true }));
+  out.permitDate = date(below(/^허가일$/, { dy: 60, noStop: true })); out.startDate = date(below(/^착공일$/, { dy: 60, noStop: true })); out.approvalDate = date(below(/^사용승인일$/, { dy: 60, noStop: true }));
+  const sz = find(/^내진설계/), sc = find(/^내진능력$/), sk = find(/^관리계획수립여부$/);
+  if (sz) { const v = all.filter(o => o.pi === sz.pi && o.y > sz.y + 3 && o.y <= sz.y + 24 && o.x >= sz.x - 10 && o.x < (sc && sc.pi === sz.pi ? sc.x - 4 : sz.x + 220)).map(o => o.s).join(' '); out.seismic = v.trim(); }
+  if (sc) { const v = all.filter(o => o.pi === sc.pi && o.y > sc.y + 3 && o.y <= sc.y + 24 && o.x >= sc.x - 10 && o.x < (sk && sk.pi === sc.pi ? sk.x - 4 : sc.x + 220)).map(o => o.s).join(' '); out.seismicCap = v.trim(); }
+  /* 주차장: ※주차장 ~ 승강기 열 사이의 'N 대' 를 자주식/기계식/전기차 행에 배정 */
+  const pk = find(/주차장$/), el = find(/^승강기$/), elp = find(/^승용$/);
+  if (pk) { const x0 = pk.x - 80, xe = Math.min(el ? el.x : 1e9, elp ? elp.x : 1e9), x1 = xe === 1e9 ? pk.x + 260 : xe - 6; const cnts = all.filter(o => o.pi === pk.pi && o.y > pk.y && o.y < pk.y + 120 && o.x >= x0 && o.x < x1 && /^\d{1,4}\s*대?$/.test(o.s));
+    const labs = ['자주식', '기계식', '전기차'].map(l => ({ l, it: all.find(o => o.pi === pk.pi && norm(o.s) === l) })).filter(x => x.it);
+    const got = { 자주식: 0, 기계식: 0, 전기차: 0 }, used = new Set();
+    cnts.forEach(c => { let best = null, bd = 1e9; labs.forEach(L => { const d = Math.abs(L.it.y - c.y); if (d < bd) { bd = d; best = L; } }); if (best && bd <= 22) { got[best.l] += num(c.s) || 0; used.add(c); } });
+    out.parkSelf = got['자주식'] || null; out.parkMech = got['기계식'] || null; out.parkEv = got['전기차'] || null; out.parkTotal = (got['자주식'] || 0) + (got['기계식'] || 0) || null; }
+  out.violation = all.some(it => /위반건축물/.test(norm(it.s)));
+  const iss = all.find(it => /발급일/.test(norm(it.s))); if (iss) { const r = rowOf(iss).map(o => o.s).join(' '); out.issued = date(r) || date(below(/발급일/, { dy: 20 })); }
+  const uid = all.find(it => /^\d{10}-\d-\d{8}$/.test(norm(it.s))); out.uid = uid ? norm(uid.s) : '';
+  const bid = all.find(it => /^\d{16}$/.test(norm(it.s))); out.bldId = bid ? norm(bid.s) : '';
+  return out;
+}
+function bldMatchSite(name) {
+  const toks = String(name || '').replace(/오피스텔|아파트|빌딩|타워|센트럴|시티|주상복합|\s/g, ' ').split(/\s+/).filter(t => t.length >= 2);
+  let best = null, bs = 0;
+  sites().forEach(s2 => { const n = s2.name.replace(/\s/g, ''); let sc = 0; toks.forEach(t => { if (n.includes(t)) sc += t.length; }); if (String(name || '').replace(/\s/g, '').slice(0, 2) && n.startsWith(String(name).replace(/\s/g, '').slice(0, 2))) sc += 2; if (sc > bs) { bs = sc; best = s2; } });
+  return bs > 0 ? best.key : (sites()[0] || {}).key;
+}
+function fmtArea(v) { return v == null ? '–' : comma(Math.round(v * 10) / 10) + ' ㎡'; }
+function yearsSince(d) { if (!d) return ''; const a = new Date(d), b = new Date(); let m = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()); if (b.getDate() < a.getDate()) m--; return Math.floor(m / 12) + '년 ' + (m % 12) + '개월'; }
+function bldCard(key, forSite) {
+  const si = state.siteList.find(x => x.id === key) || {}, b = si.building;
+  if (!b) return forSite && !isMgr() && state.canWrite ? '<div class="card"><div class="hd"><h2>건축물대장</h2><span class="note">건축법 제38조 · 집합건축물대장 표제부</span></div><div class="bd"><div class="empty small">아직 등록된 건축물대장이 없습니다. 업로드 탭에서 세움터 발급 PDF를 올리면 세대수·승강기·주차·사용승인일 등이 여기에 표시됩니다.</div></div></div>' : '';
+  const rr = siteReports(key).slice(-1)[0], ru = rr && rr.arrears ? rr.arrears.units : null, diff = (ru != null && b.units != null) ? ru - b.units : null;
+  const tile = (lb, v, sub, lv) => '<div class="bt' + (lv ? ' ' + lv : '') + '"><span>' + lb + '</span><b>' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+  return '<div class="card"><div class="hd"><h2>건축물대장 <span class="muted small">' + esc(b.kind || '집합건축물대장') + '</span></h2><span class="row" style="gap:8px">' + (b.violation ? '<span class="chip crit">위반건축물 표기</span>' : '<span class="chip good">위반 표기 없음</span>') + '<span class="note">발급 ' + esc(b.issued || '–') + (b.uid ? ' · 고유번호 ' + esc(b.uid) : '') + '</span></span></div><div class="bd">' +
+    '<div class="bhead"><div><b>' + esc(b.name || siteName(key)) + '</b><span>' + esc(b.roadAddr || b.lotAddr) + (b.jibun ? ' (지번 ' + esc(b.jibun) + ')' : '') + '</span></div></div>' +
+    '<div class="bgrid">' + tile('호수 · 세대', (b.units != null ? comma(b.units) + '호' : '–') + (b.hh ? ' / ' + comma(b.hh) + '세대' : ''), diff == null ? '대장 기준' : diff === 0 ? '보고서 세대수와 일치' : '보고서 ' + comma(ru) + '세대 (' + (diff > 0 ? '+' : '') + diff + ')', diff ? 'warn' : '') +
+      tile('사용승인일', esc(b.approvalDate || '–'), b.approvalDate ? '준공 ' + yearsSince(b.approvalDate) + ' 경과' : '') +
+      tile('승강기', (b.elevPass != null ? '승용 ' + b.elevPass + '대' : '–') + (b.elevEmerg ? ' · 비상용 ' + b.elevEmerg + '대' : ''), '승강기 정기검사 대상') +
+      tile('주차장', b.parkTotal != null ? comma(b.parkTotal) + '대' : '–', [b.parkSelf ? '자주식 ' + comma(b.parkSelf) : '', b.parkMech ? '기계식 ' + comma(b.parkMech) : '', b.parkEv ? '전기차 ' + b.parkEv : ''].filter(Boolean).join(' · '), b.parkMech ? 'warn' : '') +
+      tile('연면적', fmtArea(b.floorArea), b.landArea ? '대지 ' + fmtArea(b.landArea) : '') +
+      tile('층수 · 구조', esc(b.floors || '–'), esc(b.structure || '') + (b.height ? ' · 높이 ' + esc(b.height) : '')) +
+      tile('주용도', esc(b.mainUse || '–'), '') +
+      tile('내진설계', esc(b.seismic || '–'), esc(b.seismicCap || ''), /적용/.test(b.seismic) ? 'good' : '') + '</div>' +
+    (b.permitDate || b.startDate ? '<div class="note" style="margin-top:10px">허가 ' + esc(b.permitDate || '–') + ' · 착공 ' + esc(b.startDate || '–') + ' · 사용승인 ' + esc(b.approvalDate || '–') + (b.parkMech ? ' · 기계식주차장은 주차장법 제19조의9에 따른 정기검사 대상' : '') + '</div>' : '') + '</div></div>';
+}
+let bldDraft = null;
+async function handleBuildingFile(file) {
+  const box = $('#bldResult'); if (!file) return;
+  box.innerHTML = '<div class="note">PDF를 읽는 중입니다…</div>';
+  try {
+    const pages = await pdfPagesItems(file), b = parseBuildingRegister(pages);
+    if (!b.name && b.units == null && !b.approvalDate) { box.innerHTML = '<div class="note" style="color:var(--crit)">건축물대장 양식을 찾지 못했습니다. 세움터에서 발급한 집합건축물대장(표제부) PDF인지 확인하세요. 스캔 이미지 PDF는 읽을 수 없습니다.</div>'; return; }
+    b.fileName = file.name; bldDraft = b;
+    const keyGuess = bldMatchSite(b.name), opts = sites().map(s2 => '<option value="' + s2.key + '"' + (s2.key === keyGuess ? ' selected' : '') + '>' + esc(s2.name) + '</option>').join('');
+    const row = (k, v) => '<tr><th>' + k + '</th><td>' + (v == null || v === '' ? '<span class="muted">–</span>' : esc(v)) + '</td></tr>';
+    box.innerHTML = '<div class="row" style="margin-bottom:10px"><label class="small fg2">연결할 사업소 <select id="bldSite">' + opts + '</select></label><button class="btn primary" id="bldSave">이 사업소에 저장</button><span class="note">' + esc(b.kind) + ' · ' + b.pages + '쪽 · ' + esc(file.name) + '</span></div>' +
+      '<div class="tw"><table class="ltbl bldprev"><tbody>' + row('명칭', b.name) + row('호수 / 가구 / 세대', b.units == null ? '' : b.units + '호 / ' + b.households + '가구 / ' + b.hh + '세대') + row('대지위치 · 지번', (b.lotAddr || '') + (b.jibun ? ' ' + b.jibun : '')) + row('도로명주소', b.roadAddr) + row('연면적 / 대지면적', (b.floorArea != null ? fmtArea(b.floorArea) : '–') + ' / ' + (b.landArea != null ? fmtArea(b.landArea) : '–')) + row('주구조 · 층수', (b.structure || '') + (b.floors ? ' · ' + b.floors : '')) + row('주용도', b.mainUse) + row('승강기', (b.elevPass != null ? '승용 ' + b.elevPass + '대' : '') + (b.elevEmerg != null ? ' · 비상용 ' + b.elevEmerg + '대' : '')) + row('주차장', [b.parkSelf != null ? '자주식 ' + b.parkSelf + '대' : '', b.parkMech != null ? '기계식 ' + b.parkMech + '대' : '', b.parkEv != null ? '전기차 ' + b.parkEv + '대' : ''].filter(Boolean).join(' · ')) + row('허가 / 착공 / 사용승인', [b.permitDate, b.startDate, b.approvalDate].map(x => x || '–').join(' / ')) + row('내진설계', (b.seismic || '') + (b.seismicCap ? ' · ' + b.seismicCap : '')) + row('위반건축물 표기', b.violation ? '있음' : '없음') + row('발급일 · 고유번호', (b.issued || '–') + (b.uid ? ' · ' + b.uid : '')) + '</tbody></table></div>' +
+      '<div class="note" style="margin-top:8px">추출값이 틀린 항목이 있으면 알려 주세요. 저장 후 사업소별 탭에 "건축물대장" 카드로 표시됩니다.</div>';
+  } catch (e) { console.error(e); box.innerHTML = '<div class="note" style="color:var(--crit)">읽기 실패: ' + esc(e.message || e) + '</div>'; }
+}
+function bindBuilding() {
+  document.addEventListener('change', e => { if (e.target.id === 'bldIn') { handleBuildingFile(e.target.files[0]); e.target.value = ''; } });
+  document.addEventListener('click', async e => {
+    if (e.target.id === 'bldPick') { $('#bldIn').click(); return; }
+    if (e.target.id === 'bldSave') { if (!bldDraft) return; const key = $('#bldSite').value; e.target.disabled = true; try { await store.setSiteBuilding(key, bldDraft); toast(siteName(key) + ' 건축물대장을 저장했습니다'); $('#bldResult').innerHTML = '<div class="note">저장 완료 · 사업소별 탭에서 확인하세요.</div>'; bldDraft = null; } catch (err) { toast('저장 실패: ' + (err.message || err)); e.target.disabled = false; } }
+  });
+  const dz = $('#bldDrop'); if (dz) { dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); }); dz.addEventListener('dragleave', () => dz.classList.remove('over')); dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) handleBuildingFile(f); }); }
+}
+
 /* ---------- 일일보고 PDF(인쇄용) 미리보기 ---------- */
 function dailyReportHtml(key, date, e) {
   const site = siteName(key), T = t => esc(t == null || t === '' ? '–' : t), N = v => (v == null || v === '' || isNaN(+v)) ? null : +v;
@@ -2525,7 +2671,7 @@ function dailyReportHtml(key, date, e) {
       (sd.absent ? '<div class="box"><b>결원 · 대체 근무</b>' + esc(sd.absent) + '</div>' : '');
     /* 2 시설 점검 */
     const bad = CHECK_ITEMS.filter(c => chk[c[0]] === 'bad').length, fix = CHECK_ITEMS.filter(c => chk[c[0]] === 'fix').length;
-    body += sec(2, '시설 점검', (bad || fix) ? '이상 ' + bad + ' · 조치중 ' + fix + ' / ' + CHECK_ITEMS.length + '항목' : CHECK_ITEMS.length + '항목 모두 정상') + '<div class="tiles">' + CHECK_ITEMS.map(c => { const st = chk[c[0]] || 'ok', lv = st === 'bad' ? 'crit' : st === 'fix' ? 'warn' : st === 'na' ? 'na' : 'good'; return '<div class="tl ck2 ' + lv + '" style="border-top-color:' + lv2col[lv] + '"><div class="ich" style="background:' + (lv2bg[lv] || lv2bg.na) + ';color:' + (lv2col[lv] || lv2col.na) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="' + CK_ICON[c[0]] + '"/></svg></div><div class="ckt"><b>' + esc(c[1]) + '</b><span class="pl plx" style="background:' + (lv2col[lv] || lv2col.na) + ';color:#fff">' + (st === 'ok' ? '정상' : st === 'bad' ? '이상' : st === 'fix' ? '조치중' : '해당 없음') + '</span></div><span>' + (cn[c[0]] ? '<em>' + esc(cn[c[0]]) + '</em>' : esc(c[2])) + '</span><i class="stt" style="background:' + lv2col[lv] + '"></i></div>'; }).join('') + '</div>';
+    body += sec(2, '시설 점검', (bad || fix) ? '이상 ' + bad + ' · 조치중 ' + fix + ' / ' + CHECK_ITEMS.length + '항목' : CHECK_ITEMS.length + '항목 모두 정상') + '<div class="tiles">' + CHECK_ITEMS.map(c => { const st = chk[c[0]] || 'ok', lv = st === 'bad' ? 'crit' : st === 'fix' ? 'warn' : st === 'na' ? 'na' : 'good'; return '<div class="tl ck2 ' + lv + '" data-ck="' + c[0] + '" data-name="' + esc(c[1]) + '" data-st="' + (st === 'ok' ? '정상' : st === 'bad' ? '이상' : st === 'fix' ? '조치중' : '해당 없음') + '" data-note="' + esc(cn[c[0]] || '') + '" data-desc="' + esc(c[2]) + '" title="누르면 소장이 기입한 내용을 봅니다" style="border-top-color:' + lv2col[lv] + '"><div class="ich" style="background:' + (lv2bg[lv] || lv2bg.na) + ';color:' + (lv2col[lv] || lv2col.na) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="' + CK_ICON[c[0]] + '"/></svg></div><div class="ckt"><b>' + esc(c[1]) + '</b><span class="pl plx" style="background:' + (lv2col[lv] || lv2col.na) + ';color:#fff">' + (st === 'ok' ? '정상' : st === 'bad' ? '이상' : st === 'fix' ? '조치중' : '해당 없음') + '</span></div><span>' + (cn[c[0]] ? '<em>' + esc(cn[c[0]]) + '</em>' : esc(c[2])) + '</span><i class="stt" style="background:' + lv2col[lv] + '"></i></div>'; }).join('') + '</div><div id="ckDetail" class="ckd" hidden></div>';
     /* 3 공사 */
     const wk = e.works || [];
     body += sec(3, '공사 · 외부업체 출입', wk.length + '건') + (wk.length ? '<div class="cards">' + wk.map((w, i) => '<div class="cd"><div class="cdh"><b>' + (i + 1) + '. ' + T(w.vendor) + '</b>' + (w.time ? '<span>' + esc(w.time) + '</span>' : '') + '</div><div class="cdb">' + T(w.desc) + '</div>' + ((w.safety || []).length ? '<div class="cdf">안전조치 ' + w.safety.map(x => '<span class="cc">' + esc(x) + '</span>').join('') + '</div>' : '<div class="cdf muted">안전조치 기재 없음</div>') + '</div>').join('') + '</div>' : '<p class="none">없음</p>');
@@ -2548,10 +2694,11 @@ function dailyReportHtml(key, date, e) {
   } else {
     body += sec(1, '주요 업무') + lines(e.work) + sec(2, '민원') + lines(e.complaints) + sec(3, '특이사항 · 사고') + lines(e.issues) + sec(4, '예정 사항') + lines(e.plans) + (e.staff != null ? '<div class="box"><b>근무 인원</b>' + esc(e.staff) + '명</div>' : '');
   }
-  const css = PDF_CSS + '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.hdr{background:linear-gradient(135deg,#0f2340,#1f4a78);color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:16px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-end}.hdr h1{color:#fff;margin:0;font-size:22px}.hdr .sub{font-size:12.5px;opacity:.85;margin-top:3px}.hdr .co{font-size:11.5px;opacity:.7}.hdr .mt{text-align:right;font-size:12.5px}.hdr .mt b{display:block;font-size:18px}.hdr .ub{display:inline-block;background:#ff5a4a;color:#fff;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:700;margin-left:8px;vertical-align:middle}h2{display:flex;align-items:center;gap:8px;border-left:0;padding-left:0;margin:18px 0 8px;font-size:14.5px}h2 .no{width:22px;height:22px;border-radius:50%;background:#0f2340;color:#fff;font-size:12px;display:grid;place-content:center}h2 small{margin-left:auto;font-weight:400;color:#6b7785;font-size:11.5px}.kpis{display:grid;gap:8px}.k5{grid-template-columns:repeat(5,minmax(0,1fr))}.k4{grid-template-columns:repeat(4,minmax(0,1fr))}.k2{grid-template-columns:repeat(2,minmax(0,1fr))}.k7{grid-template-columns:repeat(7,minmax(0,1fr));margin-top:10px}.srow{margin-top:2px}.rg.big{width:112px;height:112px}.rg.big svg{width:112px;height:112px}.rg.big .rgt b{font-size:24px}.rbox{flex:1;border:1.5px solid #9aa7b5;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:#fbfcfd}.rbox b{font-size:30px;line-height:1;font-variant-numeric:tabular-nums}.rbox b small{font-size:14px;color:#6b7785;font-weight:500}.rbox span:last-child{font-size:12.5px;color:#4a5665}.k7 .kp{padding:8px 9px}.k7 .kp b{font-size:16px}.k7 .kp.big{grid-column:span 1}.kp.lv{background:#e3eaf3}.kp.lv b{color:#2f5f93}.kp.vc{background:#fde3e1}.kp.vc b{color:#b3261e}.kp.vc em{display:block;font-style:normal;font-size:11px;color:#b3261e;margin-top:2px}.k3{grid-template-columns:repeat(3,minmax(0,1fr));flex:1}.kp{background:#f4f6f9;border-radius:10px;padding:9px 11px}.kp span{display:block;font-size:11px;color:#6b7785}.kp b{display:block;font-size:17px;margin-top:2px;font-variant-numeric:tabular-nums}.kp b small{font-size:11px;color:#6b7785;font-weight:400;margin-left:3px}.kp.big{background:#0f2340;color:#fff}.kp.big span,.kp.big b small{color:#c9d4e3}.kp.big em{display:block;font-style:normal;font-size:11px;margin-top:3px;color:#ffd9d4}.row1{display:flex;gap:16px;align-items:center}.rg{position:relative;width:96px;height:96px;flex:none}.rg svg{width:96px;height:96px}.rgt{position:absolute;inset:0;display:grid;place-content:center;text-align:center}.rgt b{font-size:18px;display:block}.rgt span{font-size:10.5px;color:#6b7785}.box{background:#f4f6f9;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin-top:8px}.box b{display:block;font-size:11.5px;color:#4a5665;margin-bottom:3px}.box ul{margin:0 0 0 16px}.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.tl{border:1px solid #e1e6ee;border-top:3px solid #9aa7b5;border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start}.tl b{font-size:12.5px}.tl span{font-size:11px;color:#6b7785;line-height:1.4}.tl.ck2{position:relative;padding:10px 10px 12px;gap:6px;border-top-width:0;border-radius:12px;overflow:hidden}.tl.ck2 .ich{width:38px;height:38px;border-radius:11px;display:grid;place-content:center}.tl.ck2 .ich svg{width:22px;height:22px}.tl.ck2 .ckt{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%}.tl.ck2 .ckt b{font-size:13.5px}.plx{font-size:13px!important;padding:4px 13px!important;letter-spacing:.02em;box-shadow:0 2px 6px rgba(0,0,0,.12)}.tl.ck2 span em{font-style:normal;color:#1b2430;font-weight:600}.tl.ck2 .stt{position:absolute;left:0;right:0;bottom:0;height:4px}.tl.ck2.crit{background:#fff7f6}.tl.ck2.warn{background:#fffaf0}.pl{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}.cards{display:flex;flex-direction:column;gap:8px}.cd{border:1px solid #e1e6ee;border-left:4px solid #5b92cc;border-radius:10px;padding:9px 12px;font-size:12.5px}.cdh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cdh b{font-size:13px}.cdh span{font-size:11.5px;color:#6b7785}.cdb{margin-top:4px;line-height:1.5}.cdf{margin-top:4px;font-size:11.5px;color:#4a5665}.cdf.muted{color:#9aa7b5}.cc{display:inline-block;background:#e3eaf3;color:#1f4a78;border-radius:999px;padding:1px 8px;font-size:11px;margin:0 3px 0 0}.grid3p{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.grid3p .box{margin-top:0}@media print{.tiles,.cd,.box,.kp,.row1{break-inside:avoid}}';
+  const css = PDF_CSS + '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.hdr{background:linear-gradient(135deg,#0f2340,#1f4a78);color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:16px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-end}.hdr h1{color:#fff;margin:0;font-size:22px}.hdr .sub{font-size:12.5px;opacity:.85;margin-top:3px}.hdr .co{font-size:11.5px;opacity:.7}.hdr .mt{text-align:right;font-size:12.5px}.hdr .mt b{display:block;font-size:18px}.hdr .ub{display:inline-block;background:#ff5a4a;color:#fff;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:700;margin-left:8px;vertical-align:middle}h2{display:flex;align-items:center;gap:8px;border-left:0;padding-left:0;margin:18px 0 8px;font-size:14.5px}h2 .no{width:22px;height:22px;border-radius:50%;background:#0f2340;color:#fff;font-size:12px;display:grid;place-content:center}h2 small{margin-left:auto;font-weight:400;color:#6b7785;font-size:11.5px}.kpis{display:grid;gap:8px}.k5{grid-template-columns:repeat(5,minmax(0,1fr))}.k4{grid-template-columns:repeat(4,minmax(0,1fr))}.k2{grid-template-columns:repeat(2,minmax(0,1fr))}.k7{grid-template-columns:repeat(7,minmax(0,1fr));margin-top:10px}.srow{margin-top:2px}.rg.big{width:112px;height:112px}.rg.big svg{width:112px;height:112px}.rg.big .rgt b{font-size:24px}.rbox{flex:1;border:1.5px solid #9aa7b5;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:#fbfcfd}.rbox b{font-size:30px;line-height:1;font-variant-numeric:tabular-nums}.rbox b small{font-size:14px;color:#6b7785;font-weight:500}.rbox span:last-child{font-size:12.5px;color:#4a5665}.k7 .kp{padding:8px 9px}.k7 .kp b{font-size:16px}.k7 .kp.big{grid-column:span 1}.kp.lv{background:#e3eaf3}.kp.lv b{color:#2f5f93}.kp.vc{background:#fde3e1}.kp.vc b{color:#b3261e}.kp.vc em{display:block;font-style:normal;font-size:11px;color:#b3261e;margin-top:2px}.k3{grid-template-columns:repeat(3,minmax(0,1fr));flex:1}.kp{background:#f4f6f9;border-radius:10px;padding:9px 11px}.kp span{display:block;font-size:11px;color:#6b7785}.kp b{display:block;font-size:17px;margin-top:2px;font-variant-numeric:tabular-nums}.kp b small{font-size:11px;color:#6b7785;font-weight:400;margin-left:3px}.kp.big{background:#0f2340;color:#fff}.kp.big span,.kp.big b small{color:#c9d4e3}.kp.big em{display:block;font-style:normal;font-size:11px;margin-top:3px;color:#ffd9d4}.row1{display:flex;gap:16px;align-items:center}.rg{position:relative;width:96px;height:96px;flex:none}.rg svg{width:96px;height:96px}.rgt{position:absolute;inset:0;display:grid;place-content:center;text-align:center}.rgt b{font-size:18px;display:block}.rgt span{font-size:10.5px;color:#6b7785}.box{background:#f4f6f9;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin-top:8px}.box b{display:block;font-size:11.5px;color:#4a5665;margin-bottom:3px}.box ul{margin:0 0 0 16px}.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.tl{border:1px solid #e1e6ee;border-top:3px solid #9aa7b5;border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start}.tl b{font-size:12.5px}.tl span{font-size:11px;color:#6b7785;line-height:1.4}.tl.ck2{position:relative;padding:10px 10px 12px;gap:6px;border-top-width:0;border-radius:12px;overflow:hidden}.tl.ck2 .ich{width:38px;height:38px;border-radius:11px;display:grid;place-content:center}.tl.ck2 .ich svg{width:22px;height:22px}.tl.ck2 .ckt{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%}.tl.ck2 .ckt b{font-size:13.5px}.plx{font-size:13px!important;padding:4px 13px!important;letter-spacing:.02em;box-shadow:0 2px 6px rgba(0,0,0,.12)}.tl.ck2 span em{font-style:normal;color:#1b2430;font-weight:600}.tl.ck2 .stt{position:absolute;left:0;right:0;bottom:0;height:4px}.tl.ck2.crit{background:#fff7f6}.tl.ck2.warn{background:#fffaf0}.tl.ck2{cursor:pointer}.tl.ck2:hover{box-shadow:0 4px 14px -6px rgba(0,0,0,.25)}.ckd{margin-top:10px;border:1.5px solid #9aa7b5;border-radius:12px;padding:12px 14px;background:#fbfcfd}.ckdh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ckdh b{font-size:14px}.ckdh em{font-style:normal;font-size:11.5px;color:#6b7785;margin-left:auto}.ckdb{margin-top:8px;font-size:13.5px;line-height:1.6;white-space:pre-wrap}.ckdb b{display:block;font-size:11.5px;color:#4a5665;margin-bottom:2px}@media print{.ckd{display:none}}.pl{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}.cards{display:flex;flex-direction:column;gap:8px}.cd{border:1px solid #e1e6ee;border-left:4px solid #5b92cc;border-radius:10px;padding:9px 12px;font-size:12.5px}.cdh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cdh b{font-size:13px}.cdh span{font-size:11.5px;color:#6b7785}.cdb{margin-top:4px;line-height:1.5}.cdf{margin-top:4px;font-size:11.5px;color:#4a5665}.cdf.muted{color:#9aa7b5}.cc{display:inline-block;background:#e3eaf3;color:#1f4a78;border-radius:999px;padding:1px 8px;font-size:11px;margin:0 3px 0 0}.grid3p{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.grid3p .box{margin-top:0}@media print{.tiles,.cd,.box,.kp,.row1{break-inside:avoid}}';
+  const ckScript = '<script>document.addEventListener("click",function(e){var t=e.target.closest(".tl.ck2");var d=document.getElementById("ckDetail");if(!t||!d)return;if(d.dataset.k===t.dataset.ck&&!d.hidden){d.hidden=true;d.dataset.k="";return;}d.dataset.k=t.dataset.ck;var col=getComputedStyle(t).borderTopColor;d.style.borderColor=col;d.innerHTML="<div class=ckdh><b>"+t.dataset.name+"</b><span class=pl style=\'background:"+col+";color:#fff\'>"+t.dataset.st+"</span><em>점검 범위 · "+t.dataset.desc+"</em></div><div class=ckdb>"+(t.dataset.note?"<b>소장 기입 내용</b>"+t.dataset.note.replace(/</g,"&lt;"):"<span class=none>소장이 기입한 비고가 없습니다"+(t.dataset.st==="정상"?" (정상 점검)":"")+"</span>")+"</div>";d.hidden=false;d.scrollIntoView({block:"nearest",behavior:"smooth"});});<\/script>';
   return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>' + esc(site) + ' 일일업무보고 ' + esc(date) + '</title><style>' + css + '</style></head><body><div class="page">' +
     '<div class="hdr"><div><h1>일일업무보고' + (e.urgent ? '<span class="ub">긴급</span>' : '') + '</h1><div class="sub">' + esc(site) + ' · 작성 ' + T(e.author) + (e.role ? ' (' + esc(e.role) + ')' : '') + '</div><div class="co">(주)파트너스종합관리</div></div><div class="mt"><span>보고일</span><b>' + esc(dateLabel(date)) + '</b>' + (e.updatedAt ? '<span>제출 ' + esc(String(e.updatedAt).replace('T', ' ').slice(0, 16)) + '</span>' : '') + '</div></div>' + body +
-    '<div class="sign"><div>작성 ' + T(e.author) + '</div><div>확인 (본사)</div></div><div class="foot">(주)파트너스종합관리 · 사업소 보고 현황판에서 생성</div></div></body></html>';
+    '<div class="sign"><div>작성 ' + T(e.author) + '</div><div>확인 (본사)</div></div><div class="foot">(주)파트너스종합관리 · 사업소 보고 현황판에서 생성</div></div>' + ckScript + '</body></html>';
 }
 const PDF_CSS = 'body{font-family:"Noto Sans KR","Malgun Gothic",sans-serif;color:#1b2430;margin:0;background:#f1f3f6}.page{max-width:820px;margin:16px auto;background:#fff;padding:28px 32px 36px;box-shadow:0 2px 12px rgba(0,0,0,.08)}h1{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:#4a5665;border-bottom:2px solid #0f2340;padding-bottom:10px;margin-bottom:14px}.meta b{color:#1b2430}h2{font-size:14px;margin:16px 0 6px;padding-left:9px;border-left:4px solid #1f4a78}h3{font-size:12.5px;margin:8px 0 3px;color:#4a5665}table{width:100%;border-collapse:collapse;font-size:12.5px;margin:4px 0}th,td{border:1px solid #d7dde6;padding:5px 8px;text-align:left;vertical-align:top}th{background:#eef2f7;font-weight:600;white-space:nowrap}.kv th{width:9%}.kv td{width:11%}td.bad,td.crit{color:#b3261e;font-weight:700}td.fix,td.serious,td.warn{color:#9a5b00;font-weight:600}td.ok,td.good{color:#1b7f3b}td.r{text-align:right;font-variant-numeric:tabular-nums}small{color:#7a8794;font-weight:400;margin-left:4px}ul{margin:4px 0 0 18px;font-size:12.5px;line-height:1.55}.none{font-size:12px;color:#8a94a0;margin:2px 0 0 4px}.urgent{display:inline-block;background:#fde8e6;color:#b3261e;font-weight:700;padding:2px 10px;border-radius:999px;font-size:12px}.big{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 2px}.big div{flex:1 1 120px;background:#f4f6f9;border-radius:8px;padding:8px 10px}.big b{display:block;font-size:17px;font-variant-numeric:tabular-nums}.big span{font-size:11px;color:#6b7785}.sign{margin-top:26px;display:flex;justify-content:flex-end;gap:30px;font-size:12.5px}.sign div{border-top:1px solid #1b2430;padding-top:6px;min-width:150px;text-align:center}.foot{margin-top:18px;font-size:11px;color:#8a94a0;text-align:right}@media print{body{background:#fff}.page{box-shadow:none;margin:0;max-width:none;padding:0}@page{size:A4;margin:14mm}}';
 function monthlyReportHtml(r) {
@@ -2729,7 +2876,7 @@ function makeSupabaseStore(client) {
   async function loadAll() {
     const [sRes, rRes, dRes, aRes, oRes, mRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50)]);
     const err = sRes.error || rRes.error || dRes.error || aRes.error || oRes.error || mRes.error; if (err) throw err;
-    state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code, quota: x.staff_quota == null ? null : x.staff_quota }));
+    state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code, quota: x.staff_quota == null ? null : x.staff_quota, building: x.building || null }));
     state.reports = (rRes.data || []).map(rowToReport);
     state.dailies = rowsToDailies(dRes.data || []);
     state.acks = (aRes.data || []).map(x => ({ id: x.id, month: x.month, memo: x.memo, at: x.acked_at }));
@@ -2752,6 +2899,7 @@ function makeSupabaseStore(client) {
     async deleteDaily(siteKey, date) { await q(client.from('dailies').delete().match({ site_key: siteKey, date })); },
     async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, staff_quota: doc.quota !== undefined ? doc.quota : (cur.quota == null ? null : cur.quota), active: true })); },
     async setSiteQuota(key, n) { await q(client.from('sites').update({ staff_quota: n }).eq('key', key)); },
+    async setSiteBuilding(key, b) { await q(client.from('sites').update({ building: b }).eq('key', key)); },
     async deleteSite(id) { await q(client.from('sites').update({ active: false }).eq('key', id)); },
     async renameSite(oldKey, newName) { await q(client.from('sites').update({ name: newName }).eq('key', oldKey)); },
     async setAck(doc) { await q(client.from('acks').upsert({ id: doc.id, month: doc.month, memo: doc.memo || '' })); },
@@ -2887,7 +3035,7 @@ function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
   const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
-  bindOrders(); bindMeet(); updateInstallBtn();
+  bindOrders(); bindMeet(); bindBuilding(); updateInstallBtn();
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
   renderMonthSel(); setTab(state.tab); store.init();
 }
