@@ -571,7 +571,7 @@ section.view { gap: 14px; } .card .hd { padding: 11px 16px; } .card .bd { paddin
 .akp { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; border-left: 3px solid var(--line); min-width: 0; }
 .akp span { display: block; font-size: 11.5px; color: var(--muted); } .akp b { display: block; font-size: 20px; margin-top: 4px; letter-spacing: -.01em; } .akp small { display: block; font-size: 11.5px; color: var(--fg-2); margin-top: 3px; } .akp em { font-style: normal; font-weight: 600; } .akp em.crit { color: var(--crit); } .akp em.good { color: var(--good); }
 .akp.crit { border-left-color: var(--crit); } .akp.warn { border-left-color: var(--gold); background: var(--warn-soft); } .akp.good { border-left-color: var(--good); }
-.abars { display: grid; gap: 6px; align-items: end; } .ab { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; } .ab b { font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; } .ab.na b { color: var(--muted); }
+.abars { display: grid; gap: 6px; align-items: end; } .abars.ld { gap: 3px; } .abars.ld .ab b { font-size: 10px; } .abars.ld .ab span { font-size: 10px; } .ab { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; } .ab b { font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; } .ab.na b { color: var(--muted); }
 .ab .abt { width: 100%; height: 110px; display: flex; align-items: flex-end; background: var(--surface-2); border-radius: 6px; overflow: hidden; } .ab .abt i { display: block; width: 100%; border-radius: 6px 6px 0 0; opacity: .9; } .ab span { font-size: 11px; color: var(--muted); }
 table.ana td.crit { color: var(--crit); font-weight: 700; } table.ana td.good { color: var(--good); } table.ana td.warn { color: var(--gold); font-weight: 600; }
 @media (max-width: 760px) { .akpis { grid-template-columns: 1fr 1fr; } .abars { gap: 3px; } .ab b { font-size: 10px; } }
@@ -630,6 +630,7 @@ table.ana td.crit { color: var(--crit); font-weight: 700; } table.ana td.good { 
 .ucell:hover .x, .ucell .x:focus-visible { opacity: 1; }
 .ucell .x:hover { color: var(--crit); background: var(--crit-soft); }
 .drop { padding: 20px 16px; }
+tr.tot td { background: var(--surface-2); border-top: 2px solid var(--line); }
 .ringsA { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; align-content: center; }
 @media (max-width: 420px) { .ringsA { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ring .rtr { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 3px; min-height: 18px; }
@@ -1057,6 +1058,7 @@ body.manager .hq-only { display: none !important; }
     <button role="tab" data-tab="daily">일일보고</button>
     <button role="tab" data-tab="orders">지시사항<span class="tabn" id="tabOrdN" hidden></span></button>
     <button role="tab" data-tab="meet">화상회의<span class="tabn live" id="tabMeetN" hidden></span></button>
+    <button role="tab" data-tab="ledger">도급비 관리</button>
     <button role="tab" data-tab="upload">업로드</button>
   </nav>
 </header>
@@ -1067,6 +1069,7 @@ body.manager .hq-only { display: none !important; }
   <section class="view" id="view-site" hidden></section>
   <section class="view" id="view-compare" hidden></section>
   <section class="view" id="view-analysis" hidden></section>
+  <section class="view" id="view-ledger" hidden></section>
   <section class="view" id="view-orders" hidden></section>
   <section class="view" id="view-meet" hidden></section>
   <section class="view" id="view-daily" hidden>
@@ -1133,6 +1136,7 @@ body.manager .hq-only { display: none !important; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="parser.js"></script>
+<script src="ledger.js"></script>
 <script>
 (function () {
 'use strict';
@@ -1170,7 +1174,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], ledger: null, ldMonth: '', joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp }));
@@ -1208,6 +1212,9 @@ let store = {
       this.unsub.push(db.collection('meetings').onSnapshot(snap => {
         state.meetings = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
       }, err => { console.error('meetings', err); }));
+      this.unsub.push(db.collection('ledger').onSnapshot(snap => {
+        const d = snap.docs.find(x => x.exists); state.ledger = d ? d.data() : null; onData();
+      }, err => { console.error('ledger', err); }));
     } else {
       state.mode = 'local';
       state.reports = lsGet('mwr.reports', []);
@@ -1215,6 +1222,7 @@ let store = {
       state.acks = lsGet('mwr.acks', []);
       state.orders = lsGet('mwr.orders', []);
       state.meetings = lsGet('mwr.meetings', []);
+      state.ledger = lsGet('mwr.ledger', null);
       state.siteList = lsGet('mwr.sites', []);
       state.loaded = true;
       onData();
@@ -1234,6 +1242,14 @@ let store = {
   async setSite(doc) {
     if (this.db) await this.db.doc('sites/' + doc.id).set(doc);
     else { state.siteList = state.siteList.filter(x => x.id !== doc.id).concat([doc]); lsSet('mwr.sites', state.siteList); onData(); }
+  },
+  async saveLedger(doc) {
+    if (this.db) { await this.db.doc('ledger/main').set(doc); }
+    else { state.ledger = doc; lsSet('mwr.ledger', doc); onData(); }
+  },
+  async deleteLedger() {
+    if (this.db) { await this.db.doc('ledger/main').delete(); }
+    else { state.ledger = null; try { localStorage.removeItem('mwr.ledger'); } catch (e) {} onData(); }
   },
   async setSiteQuota(key, n) { const cur = state.siteList.find(x => x.id === key) || { id: key, name: siteName(key) }; await this.setSite(Object.assign({}, cur, { quota: n })); },
   async setSiteBuilding(key, b) { const cur = state.siteList.find(x => x.id === key) || { id: key, name: siteName(key) }; await this.setSite(Object.assign({}, cur, { building: b })); },
@@ -1502,7 +1518,7 @@ function setTab(t) { state.tab = t; $$('#tabs button').forEach(b => b.setAttribu
 function go(tab, key, extra) { if (key) state.site = key; if (extra && extra.date) { state.dailyDate = extra.date; state.dailyMonth = extra.date.slice(0, 7); } setTab(tab); }
 function render() {
   renderBadge();
-  ({ home: renderHome, site: renderSite, compare: renderCompare, analysis: renderAnalysis, daily: renderDaily, orders: renderOrders, meet: renderMeet, upload: renderUpload })[state.tab]();
+  ({ home: renderHome, site: renderSite, compare: renderCompare, analysis: renderAnalysis, ledger: renderLedger, daily: renderDaily, orders: renderOrders, meet: renderMeet, upload: renderUpload })[state.tab]();
   updateOrdBadge(); updateLiveBar();
 }
 
@@ -1912,6 +1928,104 @@ const ITEMS = [
 ];
 const CMP = [['unpaid', '미납관리'], ['insp', '법정검사'], ['mgr', '선임관리자 현황'], ['staff', '인원현황'], ['notes', '특이사항'], ['complaints', '민원'], ['tasks', '금월 주요업무']];
 const METRICS = ITEMS.filter(i => i.num && i.id !== 'tasks');
+/* ---------- 도급비 관리: 도급용역비·관리수수료 미수 장부 (본사 전용) ---------- */
+let ldDraft = null;
+const ldNorm = x => String(x || '').replace(/\s+/g, '');
+const LD_ALIAS = { '평택퍼스트시티': '퍼스트스티', '휴로스302': '휴로스센트럴302오피스텔' };
+function ldSiteKey(name) {
+  const n = ldNorm(LD_ALIAS[ldNorm(name)] || name); if (!n) return null;
+  const hit = sites().find(s => { const m = ldNorm(s.name); return m === n || m.includes(n) || n.includes(m); });
+  return hit ? hit.key : null;
+}
+const ldOf = r => ({ cu: (r.c || {}).u || 0, fu: (r.f || {}).u || 0 });
+const ldUnpaid = r => { const o = ldOf(r); return o.cu + o.fu; };
+const ldBill = r => ((r.c || {}).t || 0) + ((r.f || {}).t || 0);
+const ldPct = v => v == null ? '–' : Math.round(100 * v) + '%';
+function ldRateCol(v) { return v == null ? 'var(--muted)' : v >= .95 ? 'var(--good)' : v >= .7 ? 'var(--gold)' : 'var(--crit)'; }
+
+function ldUploadCard() {
+  const L = state.ledger;
+  return '<div class="card" id="ldCard"><div class="hd"><h2>도급용역비 · 관리수수료 장부 <span class="muted small">미수 도급비 관리</span></h2><span class="note">' + (L ? esc(L.fileName || '장부') + ' · 등록 ' + esc(fmtDT(L.uploadedAt)) : '아직 등록된 장부가 없습니다') + '</span></div><div class="bd">' +
+    '<div class="drop" id="ldDrop"><button class="btn ' + (L ? '' : 'primary') + '" id="ldPick">' + (L ? '장부 파일 다시 올리기' : '장부 엑셀 선택') + '</button><div class="note">또는 이 영역에 .xlsx 파일을 끌어다 놓으세요 · 총괄표·월별(2026.09 등)·연도별합계 시트를 읽습니다' + (L ? ' · 다시 올리면 전체를 새 파일로 바꿉니다' : '') + '</div><input type="file" id="ldIn" accept=".xlsx,.xls" hidden></div>' +
+    '<div id="ldResult" style="margin-top:10px"></div>' +
+    (L && state.canWrite ? '<div class="row" style="margin-top:8px"><button class="btn sm danger" id="ldDel">장부 삭제</button><span class="note">삭제하면 이 탭의 자료가 사라집니다. 사업소 보고 자료에는 영향이 없습니다</span></div>' : '') + '</div></div>';
+}
+function ldBars(rows, key, color, title, note) {
+  const max = Math.max(1, ...rows.map(r => r[key] || 0)), top = rows.reduce((a, r, i) => (r[key] || 0) > (rows[a][key] || 0) ? i : a, 0);
+  return '<div class="card"><div class="hd"><h2>' + title + '</h2><span class="note">' + note + '</span></div><div class="bd"><div class="abars ld" style="grid-template-columns:repeat(' + rows.length + ',minmax(0,1fr))">' +
+    rows.map((r, i) => { const v = r[key] || 0, show = i === top || i === rows.length - 1 || (i % 4 === 0 && Math.abs(i - top) > 2 && rows.length - 1 - i > 2), lab = r.m.slice(5) === '01' ? '’' + r.m.slice(2, 4) + '.1' : (+r.m.slice(5)) + '';
+      return '<div class="ab" title="' + r.m + ' · ' + comma(v) + '원"><b>' + (show ? krw(v) : '&nbsp;') + '</b><div class="abt"><i style="height:' + Math.max(2, 100 * v / max).toFixed(0) + '%;background:' + color + '"></i></div><span>' + lab + '</span></div>'; }).join('') + '</div></div></div>';
+}
+function renderLedger() {
+  const el = $('#view-ledger'), L = state.ledger;
+  if (!L || !L.data) { el.innerHTML = ldUploadCard() + '<div class="card"><div class="bd"><div class="empty small">도급용역비와 관리수수료의 청구·인출·미인출 잔액을 사업소별로 관리하는 탭입니다. 장부 엑셀을 올리면 총괄표(누적 미수채권)와 월별 현황이 여기에 표시됩니다.</div></div></div>'; return; }
+  const D = L.data, cum = D.cumulative, months = Object.keys(D.months || {}).sort(), sel = (state.ldMonth && D.months[state.ldMonth]) ? state.ldMonth : (D.latest || months[months.length - 1]);
+  const ct = cum && cum.total ? cum.total : { c: {}, f: {} }, cu = (ct.c || {}).u || 0, fu = (ct.f || {}).u || 0;
+  let h = ldUploadCard();
+  if (cum) {
+    const rows = cum.rows.map(r => Object.assign({ key: ldSiteKey(r.n), un: ldUnpaid(r) }, r)).sort((a, b) => b.un - a.un), maxU = Math.max(1, ...rows.map(r => r.un));
+    h += '<div class="card"><div class="hd"><h2>누적 미수채권 <span class="muted small">총괄표</span></h2><span class="note">기준일 ' + esc(D.updated || cum.updated || '–') + ' (엑셀 총괄표의 "업데이트" 표기) · 현장을 누르면 월별 이력</span></div><div class="bd">' +
+      minis([[krw(cu + fu) + '원', '총 미수채권', cu + fu ? 'crit' : 'good'], [krw(cu) + '원', '도급용역비 미수', cu ? 'serious' : 'good'], [krw(fu) + '원', '관리수수료 미수', fu ? 'serious' : 'good'], [ldPct((ct.c || {}).r), '도급용역비 회수율', ''], [ldPct((ct.f || {}).r), '관리수수료 회수율', '']]) +
+      '<div class="tw" style="margin-top:12px"><table class="ltbl ana"><thead><tr><th>#</th><th>현장</th><th class="r">도급 청구액</th><th class="r">도급 인출</th><th class="r">도급 미수</th><th>도급 회수율</th><th class="r">수수료 미수</th><th>총 미수</th></tr></thead><tbody>' +
+      rows.map((r, i) => { const c = r.c || {}, f = r.f || {}; return '<tr class="click" data-ldsite="' + esc(r.n) + '"><td class="muted">' + (i + 1) + '</td><td><b>' + esc(r.n) + '</b>' + (r.key ? ' <span class="chip good" title="현황판 사업소와 연결됨">연동</span>' : '') + '</td><td class="r num">' + comma(c.t) + '</td><td class="r num">' + comma(c.d) + '</td><td class="r num' + (c.u ? ' crit' : '') + '">' + comma(c.u || 0) + '</td><td style="min-width:90px">' + (c.r == null ? '<span class="muted small">–</span>' : '<div class="cs"><div class="cv"><b>' + ldPct(c.r) + '</b></div>' + pbar(Math.min(1, c.r), ldRateCol(c.r)) + '</div>') + '</td><td class="r num' + ((f.u) ? ' crit' : '') + '">' + comma(f.u || 0) + '</td><td style="min-width:140px"><div class="cs"><div class="cv"><b>' + comma(r.un) + '</b></div>' + pbar(r.un / maxU, r.un ? 'var(--crit)' : 'var(--good)') + '</div></td></tr>'; }).join('') +
+      '<tr class="tot"><td></td><td><b>합계</b></td><td class="r num"><b>' + comma((ct.c || {}).t) + '</b></td><td class="r num"><b>' + comma((ct.c || {}).d) + '</b></td><td class="r num"><b>' + comma(cu) + '</b></td><td></td><td class="r num"><b>' + comma(fu) + '</b></td><td class="num"><b>' + comma(cu + fu) + '</b></td></tr></tbody></table></div></div></div>';
+  }
+  if (months.length) {
+    const M = D.months[sel], mt = M.total || { c: {}, f: {} }, rows = M.rows.map(r => Object.assign({ key: ldSiteKey(r.n), bill: ldBill(r), un: ldUnpaid(r) }, r)), act = rows.filter(r => r.bill || r.un || (r.c || {}).d || (r.f || {}).d || (r.c || {}).a), idle = rows.length - act.length;
+    const bill = ((mt.c || {}).t || 0) + ((mt.f || {}).t || 0), drawn = ((mt.c || {}).d || 0) + ((mt.f || {}).d || 0), unp = ((mt.c || {}).u || 0) + ((mt.f || {}).u || 0);
+    h += '<div class="card"><div class="hd"><div class="row" style="gap:10px"><h2>월별 현황</h2><select id="ldMonth" aria-label="월">' + months.slice().reverse().map(m => '<option value="' + m + '"' + (m === sel ? ' selected' : '') + '>' + m.slice(0, 4) + '년 ' + (+m.slice(5)) + '월</option>').join('') + '</select></div><span class="note">청구액 = 도급용역비(부가세·기업이윤 포함) + 관리수수료(부가세 포함)</span></div><div class="bd">' +
+      minis([[krw(bill) + '원', '청구 합계', ''], [krw(drawn) + '원', '인출 합계', 'good'], [krw(unp) + '원', '미인출 잔액', unp ? 'serious' : 'good'], [ldPct(bill ? drawn / bill : null), '회수율', ''], [act.length + '곳', '청구·인출 현장', '']]) +
+      '<div class="tw" style="margin-top:12px"><table class="ltbl ana"><thead><tr><th>현장</th><th class="r">도급 청구</th><th class="r">도급 인출</th><th class="r">도급 미인출</th><th class="r">수수료 청구</th><th class="r">수수료 인출</th><th class="r">수수료 미인출</th><th class="r">선인출</th></tr></thead><tbody>' +
+      act.map(r => { const c = r.c || {}, f = r.f || {}; return '<tr class="click" data-ldsite="' + esc(r.n) + '"><td><b>' + esc(r.n) + '</b></td><td class="r num">' + comma(c.t || 0) + '</td><td class="r num">' + comma(c.d || 0) + '</td><td class="r num' + (c.u ? ' crit' : '') + '">' + comma(c.u || 0) + '</td><td class="r num">' + comma(f.t || 0) + '</td><td class="r num">' + comma(f.d || 0) + '</td><td class="r num' + (f.u ? ' crit' : '') + '">' + comma(f.u || 0) + '</td><td class="r num">' + comma((c.a || 0) + (f.a || 0)) + '</td></tr>'; }).join('') +
+      '<tr class="tot"><td><b>합계</b></td><td class="r num"><b>' + comma((mt.c || {}).t) + '</b></td><td class="r num"><b>' + comma((mt.c || {}).d) + '</b></td><td class="r num"><b>' + comma((mt.c || {}).u) + '</b></td><td class="r num"><b>' + comma((mt.f || {}).t) + '</b></td><td class="r num"><b>' + comma((mt.f || {}).d) + '</b></td><td class="r num"><b>' + comma((mt.f || {}).u) + '</b></td><td class="r num"><b>' + comma(((mt.c || {}).a || 0) + ((mt.f || {}).a || 0)) + '</b></td></tr></tbody></table></div>' +
+      (idle ? '<div class="note" style="margin-top:8px">이 달 청구·인출이 없는 현장 ' + idle + '곳은 표에서 뺐습니다.</div>' : '') + '</div></div>';
+    const ser = months.map(m => { const t = D.months[m].total || { c: {}, f: {} }; return { m, bill: ((t.c || {}).t || 0) + ((t.f || {}).t || 0), unp: ((t.c || {}).u || 0) + ((t.f || {}).u || 0) }; });
+    h += '<div class="grid2">' + ldBars(ser, 'bill', 'var(--accent)', '월별 청구 합계', '도급용역비 + 관리수수료 · 막대에 마우스를 올리면 금액') + ldBars(ser, 'unp', 'var(--crit)', '월별 미인출 잔액', '해당 월 청구분 중 미인출') + '</div>';
+  }
+  const Y = D.summary && D.summary.years ? D.summary.years : null;
+  if (Y && Object.keys(Y).length) {
+    const ys = Object.keys(Y).sort();
+    h += '<div class="card"><div class="hd"><h2>연도별 합계</h2><span class="note">장부 "연도별합계" 시트</span></div><div class="bd tw"><table class="ltbl ana"><thead><tr><th></th>' + ys.map(y => '<th class="r">' + y + '년</th>').join('') + '</tr></thead><tbody>' +
+      [['도급용역비', 'contract'], ['관리수수료', 'fee'], ['합계', 'total']].map(x => '<tr><td>' + (x[1] === 'total' ? '<b>' + x[0] + '</b>' : x[0]) + '</td>' + ys.map(y => '<td class="r num">' + (Y[y][x[1]] == null ? '–' : (x[1] === 'total' ? '<b>' + comma(Y[y][x[1]]) + '</b>' : comma(Y[y][x[1]]))) + '</td>').join('') + '</tr>').join('') +
+      '<tr><td>전년대비</td>' + ys.map(y => { const v = Y[y].yoy; return '<td class="r num ' + (v == null ? 'muted' : v < 0 ? 'crit' : 'good') + '">' + (v == null ? '–' : (v > 0 ? '+' : '') + (100 * v).toFixed(1) + '%') + '</td>'; }).join('') + '</tr></tbody></table></div><div class="note" style="padding:0 16px 12px">2026년은 장부에 입력된 달까지의 합계입니다.</div></div>';
+  }
+  el.innerHTML = h;
+}
+function openLedgerSite(name) {
+  const L = state.ledger && state.ledger.data; if (!L) return;
+  const key = ldSiteKey(name), cum = L.cumulative && L.cumulative.rows.find(r => r.n === name), months = Object.keys(L.months || {}).sort().reverse();
+  const hist = months.map(m => { const r = L.months[m].rows.find(x => x.n === name); return r ? { m, r } : null; }).filter(Boolean);
+  $('#listTitle').textContent = name + ' · 도급용역비·관리수수료 이력';
+  $('#listSub').textContent = (cum ? '누적 미수 ' + comma(ldUnpaid(cum)) + '원 · ' : '') + (key ? '현황판 사업소 연결됨' : '현황판 사업소와 연결되지 않음');
+  const row = x => { const c = x.r.c || {}, f = x.r.f || {}, bill = ldBill(x.r), dr = (c.d || 0) + (f.d || 0), un = ldUnpaid(x.r); return '<tr><td class="num">' + x.m + '</td><td class="r num">' + comma(c.t || 0) + '</td><td class="r num">' + comma(f.t || 0) + '</td><td class="r num">' + comma(dr) + '</td><td class="r num' + (un ? ' crit' : '') + '">' + comma(un) + '</td><td class="r">' + (bill ? ldPct(dr / bill) : '–') + '</td></tr>'; };
+  $('#listBody').innerHTML = (cum ? '<div class="mini" style="margin:0 0 12px;grid-template-columns:repeat(4,minmax(0,1fr))">' + [[comma((cum.c || {}).t) + '원', '도급 누적 청구액', ''], [comma((cum.c || {}).u || 0) + '원', '도급 미수', (cum.c || {}).u ? 'serious' : 'good'], [comma((cum.f || {}).u || 0) + '원', '수수료 미수', (cum.f || {}).u ? 'serious' : 'good'], [ldPct((cum.c || {}).r), '도급 회수율', '']].map(x => '<div class="mt ' + x[2] + '"><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>' : '') +
+    (hist.length ? '<table class="ltbl"><thead><tr><th>월</th><th class="r">도급 청구</th><th class="r">수수료 청구</th><th class="r">인출 합계</th><th class="r">미인출</th><th class="r">회수율</th></tr></thead><tbody>' + hist.map(row).join('') + '</tbody></table>' : '<div class="empty small">월별 시트에 이 현장 기록이 없습니다.</div>');
+  $('#listModal').hidden = false;
+}
+async function handleLedgerFile(file) {
+  const box = $('#ldResult'); if (!file) return;
+  box.innerHTML = '<div class="note">엑셀을 읽는 중입니다…</div>';
+  try {
+    if (!window.XLSX) throw new Error('엑셀 라이브러리를 불러오지 못했습니다. 네트워크를 확인하고 새로고침하세요');
+    const data = parseLedgerBuffer(await file.arrayBuffer()), cum = data.cumulative, tot = cum && cum.total ? ((cum.total.c || {}).u || 0) + ((cum.total.f || {}).u || 0) : null;
+    ldDraft = { data, fileName: file.name };
+    box.innerHTML = '<div class="row"><button class="btn primary" id="ldSave">이 장부로 저장</button><span class="note">' + esc(file.name) + '</span></div>' +
+      '<div class="mini" style="grid-template-columns:repeat(4,minmax(0,1fr))">' + [[Object.keys(data.months).length + '개월', '월별 시트' + (data.latest ? ' · 최신 ' + data.latest : ''), ''], [cum ? cum.rows.length + '곳' : '–', '총괄표 현장', ''], [data.updated || '–', '총괄표 기준일', ''], [tot == null ? '–' : krw(tot) + '원', '총 미수채권', tot ? 'serious' : '']].map(x => '<div class="mt ' + x[2] + '"><b>' + x[0] + '</b><span>' + x[1] + '</span></div>').join('') + '</div>' +
+      '<div class="note" style="margin-top:6px">저장하면 기존 장부를 이 파일로 바꿉니다.</div>';
+  } catch (e) { console.error(e); ldDraft = null; box.innerHTML = '<div class="note" style="color:var(--crit)">읽기 실패: ' + esc(e.message || e) + '</div>'; }
+}
+function bindLedger() {
+  document.addEventListener('change', e => { if (e.target.id === 'ldIn') { handleLedgerFile(e.target.files[0]); e.target.value = ''; } if (e.target.id === 'ldMonth') { state.ldMonth = e.target.value; renderLedger(); } });
+  document.addEventListener('click', async e => {
+    if (e.target.id === 'ldPick') { $('#ldIn').click(); return; }
+    if (e.target.id === 'ldSave') { if (!ldDraft) return; e.target.disabled = true; try { await store.saveLedger({ data: ldDraft.data, fileName: ldDraft.fileName, uploadedAt: new Date().toISOString() }); ldDraft = null; toast('도급비 장부를 저장했습니다'); } catch (err) { toast('저장 실패: ' + (err.message || err)); e.target.disabled = false; } return; }
+    if (e.target.id === 'ldDel') { const b = e.target; if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = '정말 삭제'; setTimeout(() => { delete b.dataset.arm; b.textContent = '장부 삭제'; }, 3500); return; } try { await store.deleteLedger(); toast('장부를 삭제했습니다'); } catch (err) { toast('삭제 실패: ' + (err.message || err)); } return; }
+    const ls = e.target.closest('[data-ldsite]'); if (ls) { openLedgerSite(ls.dataset.ldsite); return; }
+  });
+  document.addEventListener('dragover', e => { const dz = e.target.closest && e.target.closest('#ldDrop'); if (dz) { e.preventDefault(); dz.classList.add('over'); } });
+  document.addEventListener('dragleave', e => { const dz = e.target.closest && e.target.closest('#ldDrop'); if (dz) dz.classList.remove('over'); });
+  document.addEventListener('drop', e => { const dz = e.target.closest && e.target.closest('#ldDrop'); if (dz) { e.preventDefault(); dz.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) handleLedgerFile(f); } });
+}
 /* ---------- 업무 분석: 분기·반기·연간 (월간·일일보고 누적 데이터) ---------- */
 function anaRange() {
   const ms = months(), latest = ms.length ? ms[ms.length - 1] : todayStr().slice(0, 7);
@@ -3022,7 +3136,7 @@ function makeSupabaseStore(client) {
   };
   let loading = null, timer = null;
   async function loadAll() {
-    const [sRes, rRes, dRes, aRes, oRes, mRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50)]);
+    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), isMgr() ? Promise.resolve({ data: [] }) : client.from('ledger').select('*').eq('id', 'main')]);
     const err = sRes.error || rRes.error || dRes.error || aRes.error || oRes.error || mRes.error; if (err) throw err;
     state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code, quota: x.staff_quota == null ? null : x.staff_quota, building: x.building || null }));
     state.reports = (rRes.data || []).map(rowToReport);
@@ -3030,6 +3144,7 @@ function makeSupabaseStore(client) {
     state.acks = (aRes.data || []).map(x => ({ id: x.id, month: x.month, memo: x.memo, at: x.acked_at }));
     state.orders = (oRes.data || []).map(x => ({ id: x.id, groupId: x.group_id, siteKey: x.site_key, title: x.title, body: x.body || '', due: x.due || '', priority: x.priority, status: x.status, reply: x.reply || '', doneAt: x.done_at || '', createdAt: x.created_at }));
     state.meetings = (mRes.data || []).map(x => ({ id: x.id, room: x.room, title: x.title, siteKeys: x.site_keys || null, status: x.status, createdAt: x.created_at, endedAt: x.ended_at || '' }));
+    state.ledger = (lRes && !lRes.error && lRes.data && lRes.data[0]) ? { data: lRes.data[0].data, fileName: lRes.data[0].file_name || '', uploadedAt: lRes.data[0].uploaded_at } : null;
     state.canWrite = true; state.loaded = true; onData();
   }
   const reload = () => { clearTimeout(timer); timer = setTimeout(() => { loading = loadAll().catch(e => console.error(e)); }, 400); };
@@ -3047,6 +3162,8 @@ function makeSupabaseStore(client) {
     async deleteDaily(siteKey, date) { await q(client.from('dailies').delete().match({ site_key: siteKey, date })); },
     async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, staff_quota: doc.quota !== undefined ? doc.quota : (cur.quota == null ? null : cur.quota), active: true })); },
     async setSiteQuota(key, n) { await q(client.from('sites').update({ staff_quota: n }).eq('key', key)); },
+    async saveLedger(doc) { await q(client.from('ledger').upsert({ id: 'main', data: doc.data, file_name: doc.fileName, uploaded_at: doc.uploadedAt })); },
+    async deleteLedger() { await q(client.from('ledger').delete().eq('id', 'main')); },
     async setSiteBuilding(key, b) { await q(client.from('sites').update({ building: b }).eq('key', key)); },
     async saveBuildingFile(key, file) { const path = key + '/register.pdf'; const { error } = await client.storage.from('buildings').upload(path, file, { upsert: true, contentType: 'application/pdf' }); if (error) throw new Error('원본 PDF 업로드 실패: ' + error.message); return { name: file.name, size: file.size, path }; },
     async buildingFileUrl(f) { if (!f || !f.path) return null; const { data, error } = await client.storage.from('buildings').createSignedUrl(f.path, 3600); if (error) throw new Error(error.message); return data.signedUrl; },
@@ -3073,7 +3190,7 @@ function applyRole() {
   document.body.classList.toggle('manager', isMgr());
   if (me) { box.hidden = false; box.innerHTML = (isMgr() ? '<b>' + esc(me.name || '소장') + '</b><span class="muted">' + esc(siteName(me.site_key)) + ' · 소장</span>' : (me.name ? '<b>' + esc(me.name) + '</b>' : '')) + '<button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
-  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'];
+  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'meet', 'ledger', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
   if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
   setTab(state.tab);
@@ -3184,9 +3301,9 @@ document.addEventListener('click', async e => {
 });
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
-  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'upload'].includes(hash)) state.tab = hash;
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'ledger', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
-  bindOrders(); bindMeet(); bindBuilding(); updateInstallBtn();
+  bindOrders(); bindMeet(); bindBuilding(); bindLedger(); updateInstallBtn();
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
   renderMonthSel(); setTab(state.tab); store.init();
 }
