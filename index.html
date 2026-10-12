@@ -650,6 +650,7 @@ table.ana td.crit { color: var(--crit); font-weight: 700; } table.ana td.good { 
 .ucell:hover .x, .ucell .x:focus-visible { opacity: 1; }
 .ucell .x:hover { color: var(--crit); background: var(--crit-soft); }
 .drop { padding: 20px 16px; }
+.ring.click { cursor: pointer; } .ring.click:hover { border-color: rgba(230,201,135,.6); }
 tr.tot td { background: var(--surface-2); border-top: 2px solid var(--line); }
 .ringsA { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; align-content: center; }
 @media (max-width: 420px) { .ringsA { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -1594,8 +1595,8 @@ function renderHome() {
     (delta == null ? '<span class="delta">전월 비교 자료 없음</span>' : '<span class="delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + krw(Math.abs(delta)) + '원 전월 대비' + (pairs.reduce((a, p) => a + p.prev, 0) ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(100 * delta / pairs.reduce((a, p) => a + p.prev, 0)).toFixed(1) + '%)' : '') + '</span>') +
     '<div class="hchips"><span>오늘 일일보고 <b>' + dToday + '/' + all.length + '</b> ' + (wkd ? '휴일' : (dMiss ? '미제출 ' + dMiss : '전원 제출')) + '</span></div></div>' + heroTrend(trendSer, '월별 체납 총액 추세') + '</div>' + heroFlow(reps, tot) + '<div class="hbot">' + siteShareBar(reps, true) + '</div></div>' +
     '<div class="rings">' +
-      ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
-      ring(au ? Math.min(1, ltN / au) : 0, !au || ltN === 0 ? 'g' : (ltN / au < 0.2 ? 'w' : 'c'), au ? Math.round(100 * ltN / au) + '%' : '–', '장기 미납 비중', '2개월↑ ' + comma(ltN) + ' / 체납 ' + comma(au) + '세대', { vals: serLt, fmt: pp, goodWhen: 'down' }) +
+      ring(rateV == null ? 0 : Math.min(1, rateV / 30), rate(rateV, 10, 20), rateV == null ? '–' : rateV.toFixed(1) + '%', '관리비 체납률', comma(au) + ' / ' + comma(un) + '세대', { vals: serRate, fmt: pp, goodWhen: 'down' }) +
+      ldHeroRing() +
       ring(itemsN ? okItems / itemsN : 1, (inspN + mgrN) === 0 ? 'g' : (reps.some(r => managerAlerts(r).some(m => m.lv === 'crit') || inspAlerts(r).some(i => i.st.lv === 'crit')) ? 'c' : 'w'), itemsN ? Math.round(100 * okItems / itemsN) + '%' : '–', '검사·선임 정상', (inspN + mgrN) ? '주의 ' + (inspN + mgrN) + '건 / ' + itemsN + '항목' : itemsN + '항목 모두 정상', { vals: serOk, fmt: pp, goodWhen: 'up' }) +
       ring(stf.quota ? Math.min(1, stf.cur / stf.quota) : 0, !stf.quota ? 'g' : (stf.cur / stf.quota >= 0.95 ? 'g' : stf.cur / stf.quota >= 0.85 ? 'w' : 'c'), stf.quota ? Math.round(100 * stf.cur / stf.quota) + '%' : '–', '인원 충원율', stf.quota ? '현원 ' + comma(stf.cur) + ' / 정원 ' + comma(stf.quota) + '명 · ' + stf.n + '개소' : '업로드 탭에서 사업소 정원을 입력하세요', { vals: serStf, fmt: pp, goodWhen: 'up' }) +
     '</div></div>';
@@ -1663,7 +1664,7 @@ function bigRing(frac, tone, big) {
 /* ---- 월별 추이 (전 사업소 합산) ---- */
 const TRENDS = {
   total: { name: '체납 총액', fmt: won, axis: krw, val: reps => { const v = reps.map(arrearsTotal).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; } },
-  rate: { name: '체납률', fmt: v => v == null ? '–' : v.toFixed(1) + '%', axis: v => v.toFixed(0) + '%', val: reps => { const a = reps.reduce((s, r) => s + (arrearsUnits(r) || 0), 0), u = reps.reduce((s, r) => s + ((r.arrears && r.arrears.units) || 0), 0); return u ? 100 * a / u : null; } },
+  rate: { name: '관리비 체납률', fmt: v => v == null ? '–' : v.toFixed(1) + '%', axis: v => v.toFixed(0) + '%', val: reps => { const a = reps.reduce((s, r) => s + (arrearsUnits(r) || 0), 0), u = reps.reduce((s, r) => s + ((r.arrears && r.arrears.units) || 0), 0); return u ? 100 * a / u : null; } },
   units: { name: '체납 세대', fmt: v => comma(v) + '세대', axis: v => comma(v), val: reps => reps.reduce((s, r) => s + (arrearsUnits(r) || 0), 0) },
 };
 function trendPoints() {
@@ -1849,7 +1850,7 @@ function renderSite() {
     heroFlow([r], tot, true) +
     '<div class="hbot">' + ageBar(us, tot) + '</div></div>' +
     '<div class="rings">' +
-    ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대', { vals: sRate, fmt: pp, goodWhen: 'down' }) +
+    ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '관리비 체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대', { vals: sRate, fmt: pp, goodWhen: 'down' }) +
     ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) +
     ring(insN ? okN / insN : 1, (ia.length + ma.length) === 0 ? 'g' : (ia.some(i => i.st.lv === 'crit') || ma.some(m => m.lv === 'crit')) ? 'c' : 'w', insN ? Math.round(100 * okN / insN) + '%' : '–', '검사·선임 정상', (ia.length + ma.length) ? '주의 ' + (ia.length + ma.length) + '건 / ' + insN + '항목' : insN + '항목 모두 정상', { vals: sOk, fmt: pp, goodWhen: 'up' }) +
     (() => { const x = siteStaff(r.siteKey), q = x.quota, cur = x.cur, f = (q && cur != null) ? cur / q : null;
@@ -1963,6 +1964,18 @@ const ldBill = r => ((r.c || {}).t || 0) + ((r.f || {}).t || 0);
 const ldPct = v => v == null ? '–' : Math.round(100 * v) + '%';
 function ldRateCol(v) { return v == null ? 'var(--muted)' : v >= .95 ? 'var(--good)' : v >= .7 ? 'var(--gold)' : 'var(--crit)'; }
 
+/* 종합 현황 히어로: 도급비 미수 링 (장부 총괄표 기준, 추이는 월별 시트의 미인출 잔액) */
+function ldHeroRing() {
+  const L = state.ledger && state.ledger.data, cum = L && L.cumulative, t = cum && cum.total;
+  let h;
+  if (!t) h = ring(0, 'w', '–', '도급비 미수', L ? '총괄표가 없습니다' : '장부를 등록하세요');
+  else {
+    const un = ((t.c || {}).u || 0) + ((t.f || {}).u || 0), bill = ((t.c || {}).t || 0) + ((t.f || {}).t || 0), rate = bill ? 1 - un / bill : null;
+    const ms = Object.keys(L.months || {}).sort().slice(-6), vals = ms.map(m => { const x = L.months[m].total || {}; return ((x.c || {}).u || 0) + ((x.f || {}).u || 0); });
+    h = ring(rate == null ? 0 : rate, rate == null ? 'w' : rate >= .95 ? 'g' : rate >= .85 ? 'w' : 'c', krw(un), '도급비 미수', '회수율 ' + (rate == null ? '–' : (100 * rate).toFixed(1) + '%') + (L.updated ? ' · 기준 ' + L.updated.slice(5) : ''), { vals, fmt: v => krw(v), goodWhen: 'down' });
+  }
+  return h.replace('<div class="ring">', '<div class="ring click" data-go="ledger" title="도급비 관리로 이동 (월별 추이는 월별 미인출 잔액)">');
+}
 function ldUploadCard() {
   const L = state.ledger;
   return '<div class="card" id="ldCard"><div class="hd"><h2>도급용역비 · 관리수수료 장부 <span class="muted small">미수 도급비 관리</span></h2><span class="note">' + (L ? esc(L.fileName || '장부') + ' · 등록 ' + esc(fmtDT(L.uploadedAt)) : '아직 등록된 장부가 없습니다') + '</span></div><div class="bd">' +
@@ -2986,7 +2999,7 @@ function monthlyReportHtml(r) {
   const ages = B.map(b => { const g = units.filter(b[1]); return { lb: b[0], col: b[2], n: g.length, amt: g.reduce((s2, u) => s2 + u.total, 0) }; }), ageSum = ages.reduce((s2, x) => s2 + x.amt, 0) || 1;
   const dlt = (tot != null && ptot != null) ? tot - ptot : null;
   let body = sec(1, '체납 현황', prev ? '전월(' + monthLabel(prev.period) + ') 대비' : '') +
-    '<div class="row1">' + ring(rate == null ? 0 : rate / 40, rateCol, rate == null ? '–' : rate.toFixed(1) + '%', '체납률') +
+    '<div class="row1">' + ring(rate == null ? 0 : rate / 40, rateCol, rate == null ? '–' : rate.toFixed(1) + '%', '관리비 체납률') +
     '<div class="kpis"><div class="kp"><span>체납 세대</span><b>' + (au == null ? '–' : comma(au)) + '<small>/ ' + comma(a.units) + '세대</small></b></div><div class="kp"><span>전월 체납 잔액</span><b>' + won(a.prevBalance) + '</b></div><div class="kp ' + (N(a.monthChange) > 0 ? 'up' : N(a.monthChange) < 0 ? 'dn' : '') + '"><span>당월 발생</span><b>' + (a.monthChange == null ? '–' : (a.monthChange > 0 ? '+' : '') + won(a.monthChange)) + '</b></div><div class="kp big"><span>현재 체납 총액</span><b>' + won(tot) + '</b>' + (dlt == null ? '' : '<em class="' + (dlt > 0 ? 'up' : dlt < 0 ? 'dn' : '') + '">' + (dlt > 0 ? '▲ ' : dlt < 0 ? '▼ ' : '') + won(Math.abs(dlt)) + ' 전월 대비</em>') + '</div></div></div>' +
     (units.length ? '<div class="cap">미납 개월별 구성 <small>세대 내역 ' + units.length + '세대 · ' + won(ageSum) + '</small></div><div class="sbar">' + ages.filter(x => x.amt > 0).map(x => '<i style="width:' + (100 * x.amt / ageSum).toFixed(1) + '%;background:' + x.col + '"></i>').join('') + '</div><div class="sleg">' + ages.map(x => '<span><i style="background:' + x.col + '"></i>' + x.lb + ' <b>' + x.n + '</b>세대 · ' + krw(x.amt) + '원</span>').join('') + '</div>' : '') +
     (isNothing(a.action) ? '' : '<div class="box"><b>대처 방안</b>' + esc(a.action) + '</div>');
