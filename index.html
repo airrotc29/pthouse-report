@@ -1851,7 +1851,7 @@ function renderSite() {
     '<div class="hbot">' + ageBar(us, tot) + '</div></div>' +
     '<div class="rings">' +
     ring(rateV == null ? 0 : Math.min(1, rateV / 30), rateV == null ? 'w' : rateV < 10 ? 'g' : rateV < 20 ? 'w' : 'c', rateV == null ? '–' : rateV.toFixed(1) + '%', '관리비 체납률', comma(arrearsUnits(r)) + ' / ' + comma(r.arrears.units) + '세대', { vals: sRate, fmt: pp, goodWhen: 'down' }) +
-    ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) +
+    (isMgr() ? ring(us.length ? lt.length / us.length : 0, lt.length === 0 ? 'g' : lt.length < 3 ? 'w' : 'c', us.length ? Math.round(100 * lt.length / us.length) + '%' : '–', '장기 미납 비중', '2개월↑ ' + lt.length + ' / 미납 ' + us.length + '세대', { vals: sLt, fmt: pp, goodWhen: 'down' }) : ldSiteRing(r.siteKey)) +
     ring(insN ? okN / insN : 1, (ia.length + ma.length) === 0 ? 'g' : (ia.some(i => i.st.lv === 'crit') || ma.some(m => m.lv === 'crit')) ? 'c' : 'w', insN ? Math.round(100 * okN / insN) + '%' : '–', '검사·선임 정상', (ia.length + ma.length) ? '주의 ' + (ia.length + ma.length) + '건 / ' + insN + '항목' : insN + '항목 모두 정상', { vals: sOk, fmt: pp, goodWhen: 'up' }) +
     (() => { const x = siteStaff(r.siteKey), q = x.quota, cur = x.cur, f = (q && cur != null) ? cur / q : null;
       const ms6 = months().filter(m => m <= state.month).slice(-6), ser = ms6.map(m => { const y = siteStaff(r.siteKey, m, true); return (y.quota && y.cur != null) ? 100 * y.cur / y.quota : null; });
@@ -1965,6 +1965,17 @@ const ldPct = v => v == null ? '–' : Math.round(100 * v) + '%';
 function ldRateCol(v) { return v == null ? 'var(--muted)' : v >= .95 ? 'var(--good)' : v >= .7 ? 'var(--gold)' : 'var(--crit)'; }
 
 /* 종합 현황 히어로: 도급비 미수 링 (장부 총괄표 기준, 추이는 월별 시트의 미인출 잔액) */
+/* 사업소별 화면 히어로: 이 사업소의 도급비 미수 링 (장부의 현장 이름과 사업소 이름을 연결) */
+function ldSiteRing(key) {
+  const L = state.ledger && state.ledger.data;
+  if (!L) return ring(0, 'w', '–', '도급비 미수', '장부를 등록하세요');
+  const hit = (L.cumulative ? L.cumulative.rows : []).find(x => ldSiteKey(x.n) === key) || Object.values(L.months || {}).map(m => m.rows.find(x => ldSiteKey(x.n) === key)).find(Boolean);
+  if (!hit) return ring(0, 'w', '–', '도급비 미수', '장부에 이 현장이 없습니다');
+  const cr = L.cumulative && L.cumulative.rows.find(x => x.n === hit.n), un = cr ? ldUnpaid(cr) : null, bill = cr ? ldBill(cr) : 0, rate = cr && bill ? 1 - un / bill : null;
+  const ms = Object.keys(L.months || {}).sort().slice(-6), vals = ms.map(m => { const x = L.months[m].rows.find(y => y.n === hit.n); return x ? ldUnpaid(x) : null; });
+  const h = ring(rate == null ? 0 : rate, rate == null ? 'w' : rate >= .95 ? 'g' : rate >= .85 ? 'w' : 'c', un == null ? '–' : krw(un), '도급비 미수', cr ? '회수율 ' + (rate == null ? '–' : (100 * rate).toFixed(1) + '%') + (L.updated ? ' · 기준 ' + L.updated.slice(5) : '') : '총괄표에 없음', { vals, fmt: v => krw(v), goodWhen: 'down' });
+  return h.replace('<div class="ring">', '<div class="ring click" data-ldsite="' + esc(hit.n) + '" title="누르면 월별 이력 (월별 추이는 월별 미인출 잔액)">');
+}
 function ldHeroRing() {
   const L = state.ledger && state.ledger.data, cum = L && L.cumulative, t = cum && cum.total;
   let h;
