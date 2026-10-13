@@ -957,6 +957,11 @@ body.manager .hq-only { display: none !important; }
 .tcard .av { width: 34px; height: 34px; border-radius: 10px; display: grid; place-content: center; font-style: normal; font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 65%, #000 10%)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
 .tcard .tn { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tcard .tn b { font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tcard .tm { display: flex; flex-wrap: wrap; gap: 4px; }
+.tcard .tm em { font-style: normal; font-size: 10.5px; line-height: 1.5; padding: 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--fg-2); white-space: nowrap; }
+.tcard .tm em.un { font-variant-numeric: tabular-nums; } .tcard .tm em.none { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+.tcard .tm em.op { background: var(--warn-soft); color: #8a5a00; font-weight: 600; } .tcard .tm u { text-decoration: none; font-size: 9.5px; color: var(--accent); font-weight: 700; margin-left: 2px; }
+.tcard[aria-pressed="true"] .tm em.un { background: color-mix(in srgb, var(--c) 14%, var(--surface)); color: var(--c); }
 .tcard .tn small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tcard .ck { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); transition: all .15s; }
 .tcard[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 9%, var(--surface)); box-shadow: 0 0 0 1px var(--c) inset; }
@@ -1347,6 +1352,13 @@ function months() {
   state.reports.forEach(r => r.period && set.add(r.period));
   state.dailies.forEach(d => d.period && set.add(d.period));
   return Array.from(set).sort();
+}
+/* 세대수: 최신 월간보고의 총 세대수 → 없으면 건축물대장의 호수(세대수)로 대신한다 */
+function siteUnits(key) {
+  const rr = siteReports(key).slice(-1)[0], ru = rr && rr.arrears ? rr.arrears.units : null;
+  if (ru) return { n: ru, src: 'report' };
+  const b = (state.siteList.find(x => x.id === key) || {}).building, bu = b && (b.hh || b.units);
+  return bu ? { n: bu, src: 'register' } : { n: null, src: '' };
 }
 function sites() {
   const m = new Map();
@@ -2736,8 +2748,8 @@ function renderOrders() {
       '<label class="fi">내용<textarea id="ordBody" placeholder="구체적인 지시 내용, 기준, 제출 방법 등을 적습니다"></textarea></label>' +
       '<div class="ocopts"><label class="fi">기한<input type="date" id="ordDue"></label><label class="sw"><input type="checkbox" id="ordUrgent"><i></i><span>긴급 지시</span><small>소장 화면에 빨간 표시</small></label></div></div>' +
       '<div class="ocr"><div class="och"><b>대상 사업소</b><span class="cnt' + (sel.size ? ' on' : '') + '">' + sel.size + ' / ' + all.length + '</span></div><div class="selbar"><i style="width:' + (all.length ? 100 * sel.size / all.length : 0).toFixed(1) + '%"></i></div><div class="tgt"><button type="button" class="all" data-tgt="__all">전체 선택</button><button type="button" class="all" data-tgt="__none">해제</button></div><div class="tgrid">' +
-      all.map((x, i) => { const col = ['#2f5f93', '#b08a4a', '#5b92cc', '#c97b57', '#6f9f7a', '#8a6fb8', '#9aa7b5', '#d6ae66'][i % 8], rr = siteReports(x.key).slice(-1)[0], un = rr && rr.arrears ? rr.arrears.units : null, op = state.orders.filter(o => o.siteKey === x.key && o.status !== 'done').length;
-        return '<button type="button" class="tcard" data-tgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '" style="--c:' + col + '"><i class="av">' + esc(x.name.replace(/\s/g, '').slice(0, 1)) + '</i><span class="tn"><b>' + esc(x.name) + '</b><small>' + (un ? comma(un) + '세대' : '세대수 미등록') + (op ? ' · 진행 중 지시 ' + op : '') + '</small></span><span class="ck"></span></button>'; }).join('') + '</div>' +
+      all.map((x, i) => { const col = ['#2f5f93', '#b08a4a', '#5b92cc', '#c97b57', '#6f9f7a', '#8a6fb8', '#9aa7b5', '#d6ae66'][i % 8], su = siteUnits(x.key), op = state.orders.filter(o => o.siteKey === x.key && o.status !== 'done').length;
+        return '<button type="button" class="tcard" data-tgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '" style="--c:' + col + '"><i class="av">' + esc(x.name.replace(/\s/g, '').slice(0, 1)) + '</i><span class="tn"><b>' + esc(x.name) + '</b><span class="tm"><em class="un' + (su.n ? '' : ' none') + '" title="' + (su.src === 'register' ? '건축물대장의 세대수' : su.src === 'report' ? '월간보고의 총 세대수' : '월간보고 또는 건축물대장을 올리면 표시됩니다') + '">' + (su.n ? comma(su.n) + '세대' : '세대수 –') + (su.src === 'register' ? ' <u>대장</u>' : '') + '</em>' + (op ? '<em class="op" title="진행 중인 지시사항">지시 ' + op + '건</em>' : '') + '</span></span><span class="ck"></span></button>'; }).join('') + '</div>' +
       '<button type="submit" class="btn primary ocsend" id="ordSend"' + (sel.size ? '' : ' disabled') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>' + (sel.size ? sel.size + '개 사업소에 지시 발송' : '대상 사업소를 선택하세요') + '</button></div></form></div>';
   }
   const f = state.ordFilter, list = isMgr() ? (f === 'open' ? open : f === 'done' ? done : mine) : (f === 'all' ? mine : ordGroups(mine).filter(g => (f === 'open') === g.some(o => o.status !== 'done')).flat());
