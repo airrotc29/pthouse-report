@@ -977,6 +977,10 @@ body.manager .hq-only { display: none !important; }
 .tcard .av { width: 34px; height: 34px; border-radius: 10px; display: grid; place-content: center; font-style: normal; font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 65%, #000 10%)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
 .tcard .tn { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tcard .tn b { font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mtg .och { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; } .mtg .och b { font-size: 13px; }
+.mtg .cnt { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--fg-2); } .mtg .cnt.on { background: var(--accent); color: var(--accent-ink); }
+.mtg .selbar { height: 4px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-bottom: 10px; } .mtg .selbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width .2s; }
+.mtg .tgrid { grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); } .mtg .tgt { margin-bottom: 10px; gap: 10px; } .mtg .tgt .all[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .tcard .tm { display: flex; flex-wrap: wrap; gap: 4px; }
 .tcard .tm em { font-style: normal; font-size: 10.5px; line-height: 1.5; padding: 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--fg-2); white-space: nowrap; }
 .tcard .tm em.un { font-variant-numeric: tabular-nums; } .tcard .tm em.none { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
@@ -3186,7 +3190,10 @@ function renderMeet() {
     const all = sites(), sel = state.meetSel || (state.meetSel = new Set());
     h += '<div class="card"><div class="hd"><h2>회의 열기</h2><span class="note">열면 대상 사업소 소장 화면 상단에 입장 알림이 바로 뜹니다</span></div><div class="bd"><form id="meetForm" class="oform">' +
       '<label class="fi w">회의 제목<input type="text" id="meetTitle" required maxlength="80" placeholder="예: 10월 사업소장 월례회의"></label>' +
-      '<div class="fi w">대상 사업소 <span class="muted">(선택 없음 = 전체)</span><div class="tgt" id="meetTgt"><button type="button" class="all" data-mtgt="__none">전체 (선택 해제)</button>' + all.map(x => '<button type="button" data-mtgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '">' + esc(x.name) + '</button>').join('') + '</div></div>' +
+      '<div class="fi w mtg"><div class="och"><b>대상 사업소</b><span class="cnt' + (sel.size ? ' on' : '') + '">' + (sel.size ? sel.size + ' / ' + all.length + '개 선택' : '전체 ' + all.length + '개 사업소') + '</span></div><div class="selbar"><i style="width:' + (all.length ? 100 * (sel.size || all.length) / all.length : 0).toFixed(1) + '%"></i></div>' +
+        '<div class="tgt"><button type="button" class="all" data-mtgt="__none" aria-pressed="' + (sel.size ? 'false' : 'true') + '">전체 사업소</button><span class="muted small" style="align-self:center">선택하지 않으면 모든 사업소 소장에게 알림이 갑니다. 일부만 부르려면 아래에서 고르세요.</span></div>' +
+        '<div class="tgrid" id="meetTgt">' + all.map((x, i) => { const col = ['#2f5f93', '#b08a4a', '#5b92cc', '#c97b57', '#6f9f7a', '#8a6fb8', '#9aa7b5', '#d6ae66'][i % 8], su = siteUnits(x.key);
+          return '<button type="button" class="tcard" data-mtgt="' + x.key + '" aria-pressed="' + (sel.has(x.key) ? 'true' : 'false') + '" style="--c:' + col + '"><i class="av">' + esc(x.name.replace(/\s/g, '').slice(0, 1)) + '</i><span class="tn"><b>' + esc(x.name) + '</b><span class="tm"><em class="un' + (su.n ? '' : ' none') + '">' + (su.n ? comma(su.n) + '세대' : '세대수 –') + (su.src === 'register' ? ' <u>대장</u>' : '') + '</em></span></span><span class="ck"></span></button>'; }).join('') + '</div></div>' +
       '<div class="fi w" style="flex-direction:row;justify-content:flex-end"><button type="submit" class="btn primary" id="meetStart">회의 열고 입장</button></div></form></div></div>';
   }
   h += '<div class="card"><div class="hd"><h2>진행 중인 회의 <span class="muted small">' + live.length + '건</span></h2></div><div class="bd olist">' +
