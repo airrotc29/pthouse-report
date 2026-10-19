@@ -1210,7 +1210,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], chat: [], chatSite: '', ledger: null, ldMonth: '', joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], chat: [], chatSite: '', ledger: null, ledgerSite: null, ldMonth: '', joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp, pending: state.pending }));
@@ -2087,6 +2087,30 @@ function ldHeroRing() {
   }
   return h.replace('<div class="ring">', '<div class="ring click" data-go="ledger" title="도급비 관리로 이동 (월별 추이는 월별 미인출 잔액)">');
 }
+/* 장부를 사업소별로 쪼갠 요약: 소장은 자기 사업소 것만 읽을 수 있다 (id = 'site:<키>') */
+function ldSiteSlices(data) {
+  const out = {};
+  sites().forEach(sx => {
+    const hit = (data.cumulative ? data.cumulative.rows : []).find(x => ldSiteKey(x.n) === sx.key), months = {};
+    Object.keys(data.months || {}).forEach(m => { const r = data.months[m].rows.find(x => ldSiteKey(x.n) === sx.key); if (r) months[m] = r; });
+    if (!hit && !Object.keys(months).length) return;
+    out['site:' + sx.key] = { v: 1, siteKey: sx.key, name: (hit || Object.values(months)[0] || {}).n || sx.name, updated: data.updated || '', cum: hit || null, months };
+  });
+  return out;
+}
+function renderLedgerSite() {
+  const el = $('#view-ledger'), S = state.ledgerSite;
+  if (!S) { el.innerHTML = '<div class="card"><div class="hd"><h2>우리 사업소 도급비 현황</h2></div><div class="bd"><div class="empty small">아직 본사가 도급비 장부를 올리지 않았거나, 우리 사업소와 연결된 현장이 없습니다. 본사에 문의해 주세요.</div></div></div>'; return; }
+  const c = S.cum || { c: {}, f: {} }, cu = (c.c || {}).u || 0, fu = (c.f || {}).u || 0, bill = ldBill(c), rate = bill ? 1 - (cu + fu) / bill : null;
+  const ms = Object.keys(S.months || {}).sort(), ser = ms.map(m => ({ m, bill: ldBill(S.months[m]), unp: ldUnpaid(S.months[m]) }));
+  let h = '<div class="card"><div class="hd"><h2>우리 사업소 도급비 현황 <span class="muted small">' + esc(S.name || '') + '</span></h2><span class="note">기준일 ' + esc(S.updated || '–') + ' · 본사 장부에서 우리 사업소 해당분만 표시됩니다</span></div><div class="bd">' +
+    minis([[krw(cu + fu) + '원', '총 미수채권', cu + fu ? 'crit' : 'good'], [krw(cu) + '원', '도급용역비 미수', cu ? 'serious' : 'good'], [krw(fu) + '원', '관리수수료 미수', fu ? 'serious' : 'good'], [ldPct(c.c && c.c.t ? 1 - cu / c.c.t : null), '도급용역비 회수율', ldRateTone(c.c && c.c.t ? 1 - cu / c.c.t : null)], [ldPct(rate), '총 회수율', ldRateTone(rate)]]) + '</div></div>';
+  if (ser.length) {
+    h += '<div class="grid2">' + ldBars(ser, 'bill', 'var(--accent)', '월별 청구 합계', '도급용역비 + 관리수수료') + ldBars(ser, 'unp', 'var(--crit)', '월별 미인출 잔액', '해당 월 청구분 중 미인출') + '</div>';
+    h += '<div class="card"><div class="hd"><h2>월별 내역</h2><span class="note">최근 월이 위</span></div><div class="bd tw"><table class="ltbl ana"><thead><tr><th>월</th><th class="r">도급 청구</th><th class="r">수수료 청구</th><th class="r">인출 합계</th><th class="r">미인출</th><th>회수율</th></tr></thead><tbody>' + ms.slice().reverse().map(m => { const r = S.months[m], cc = r.c || {}, ff = r.f || {}, dr = (cc.d || 0) + (ff.d || 0), un = ldUnpaid(r), b = ldBill(r); return '<tr><td class="num">' + m + '</td><td class="r num">' + comma(cc.t || 0) + '</td><td class="r num">' + comma(ff.t || 0) + '</td><td class="r num">' + comma(dr) + '</td><td class="r num' + (un ? ' crit' : '') + '">' + comma(un) + '</td><td style="min-width:90px">' + ldRcCell(un, b) + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+  }
+  el.innerHTML = h;
+}
 function ldUploadCard() {
   const L = state.ledger;
   return '<div class="card" id="ldCard"><div class="hd"><h2>도급용역비 · 관리수수료 장부 <span class="muted small">미수 도급비 관리</span></h2><span class="note">' + (L ? esc(L.fileName || '장부') + ' · 등록 ' + esc(fmtDT(L.uploadedAt)) : '아직 등록된 장부가 없습니다') + '</span></div><div class="bd">' +
@@ -2131,6 +2155,7 @@ function ldBars(rows, key, color, title, note) {
       return '<div class="ab" title="' + r.m + ' · ' + comma(v) + '원"><b>' + (show ? krw(v) : '&nbsp;') + '</b><div class="abt"><i style="height:' + Math.max(2, 100 * v / max).toFixed(0) + '%;background:' + color + '"></i></div><span>' + lab + '</span></div>'; }).join('') + '</div></div></div>';
 }
 function renderLedger() {
+  if (isMgr()) { renderLedgerSite(); return; }
   const el = $('#view-ledger'), L = state.ledger;
   if (!L || !L.data) { el.innerHTML = ldUploadCard() + '<div class="card"><div class="bd"><div class="empty small">도급용역비와 관리수수료의 청구·인출·미인출 잔액을 사업소별로 관리하는 탭입니다. 장부 엑셀을 올리면 총괄표(누적 미수채권)와 월별 현황이 여기에 표시됩니다.</div></div></div>'; return; }
   const D = L.data, cum = D.cumulative, months = Object.keys(D.months || {}).sort(), sel = (state.ldMonth && D.months[state.ldMonth]) ? state.ldMonth : (D.latest || months[months.length - 1]);
@@ -3432,7 +3457,7 @@ function makeSupabaseStore(client) {
   };
   let loading = null, timer = null;
   async function loadAll() {
-    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes, cRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), isMgr() ? Promise.resolve({ data: [] }) : client.from('ledger').select('*').eq('id', 'main'), client.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(2000)]);
+    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes, cRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), client.from('ledger').select('*').eq('id', isMgr() ? 'site:' + mySite() : 'main'), client.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(2000)]);
     const err = sRes.error || rRes.error || dRes.error || aRes.error || oRes.error || mRes.error; if (err) throw err;
     state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code, quota: x.staff_quota == null ? null : x.staff_quota, building: x.building || null }));
     state.reports = (rRes.data || []).map(rowToReport);
@@ -3441,7 +3466,8 @@ function makeSupabaseStore(client) {
     state.orders = (oRes.data || []).map(x => ({ id: x.id, groupId: x.group_id, siteKey: x.site_key, title: x.title, body: x.body || '', due: x.due || '', priority: x.priority, status: x.status, reply: x.reply || '', doneAt: x.done_at || '', createdAt: x.created_at }));
     state.meetings = (mRes.data || []).map(x => ({ id: x.id, room: x.room, title: x.title, siteKeys: x.site_keys || null, status: x.status, createdAt: x.created_at, endedAt: x.ended_at || '' }));
     state.chat = (cRes && !cRes.error && cRes.data ? cRes.data : []).map(x => ({ id: x.id, siteKey: x.site_key, role: x.sender_role, name: x.sender_name || '', body: x.body, at: x.created_at }));
-    state.ledger = (lRes && !lRes.error && lRes.data && lRes.data[0]) ? { data: lRes.data[0].data, fileName: lRes.data[0].file_name || '', uploadedAt: lRes.data[0].uploaded_at } : null;
+    const lrow = (lRes && !lRes.error && lRes.data && lRes.data[0]) ? lRes.data[0] : null;
+    state.ledger = (!isMgr() && lrow) ? { data: lrow.data, fileName: lrow.file_name || '', uploadedAt: lrow.uploaded_at } : null; state.ledgerSite = (isMgr() && lrow) ? lrow.data : null;
     state.canWrite = true; state.loaded = true; onData();
   }
   const reload = () => { clearTimeout(timer); timer = setTimeout(() => { loading = loadAll().catch(e => console.error(e)); }, 400); };
@@ -3460,8 +3486,14 @@ function makeSupabaseStore(client) {
     async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, staff_quota: doc.quota !== undefined ? doc.quota : (cur.quota == null ? null : cur.quota), active: true })); },
     async setSiteQuota(key, n) { await q(client.from('sites').update({ staff_quota: n }).eq('key', key)); },
     async sendChat(m) { const { error } = await client.from('chat_messages').insert({ site_key: m.siteKey, sender_role: m.role, sender_name: m.name, body: m.body }); if (error) throw new Error(/chat_messages/.test(error.message || '') ? '채팅 테이블이 아직 없습니다. 본사 관리자에게 supabase/chat.sql 실행을 요청하세요' : (error.message || error.code)); reload(); },
-    async saveLedger(doc) { await q(client.from('ledger').upsert({ id: 'main', data: doc.data, file_name: doc.fileName, uploaded_at: doc.uploadedAt })); },
-    async deleteLedger() { await q(client.from('ledger').delete().eq('id', 'main')); },
+    async saveLedger(doc) {
+      const rows = [{ id: 'main', data: doc.data, file_name: doc.fileName, uploaded_at: doc.uploadedAt }], sl = ldSiteSlices(doc.data);
+      Object.keys(sl).forEach(id => rows.push({ id, data: sl[id], file_name: doc.fileName, uploaded_at: doc.uploadedAt }));
+      const old = await client.from('ledger').select('id'); const keep = new Set(rows.map(r => r.id)); const stale = ((old && old.data) || []).map(x => x.id).filter(id => id.startsWith('site:') && !keep.has(id));
+      if (stale.length) await client.from('ledger').delete().in('id', stale);
+      const { error } = await client.from('ledger').upsert(rows); if (error) throw new Error(error.message || error.code); reload();
+    },
+    async deleteLedger() { await q(client.from('ledger').delete().or('id.eq.main,id.like.site:*')); },
     async setSiteBuilding(key, b) { await q(client.from('sites').update({ building: b }).eq('key', key)); },
     async saveBuildingFile(key, file) { const path = key + '/register.pdf'; const { error } = await client.storage.from('buildings').upload(path, file, { upsert: true, contentType: 'application/pdf' }); if (error) throw new Error('원본 PDF 업로드 실패: ' + error.message); return { name: file.name, size: file.size, path }; },
     async buildingFileUrl(f) { if (!f || !f.path) return null; const { data, error } = await client.storage.from('buildings').createSignedUrl(f.path, 3600); if (error) throw new Error(error.message); return data.signedUrl; },
@@ -3488,7 +3520,7 @@ function applyRole() {
   document.body.classList.toggle('manager', isMgr());
   if (me) { box.hidden = false; box.innerHTML = (isMgr() ? '<b>' + esc(me.name || '소장') + '</b><span class="muted">' + esc(siteName(me.site_key)) + ' · 소장</span>' : (me.name ? '<b>' + esc(me.name) + '</b>' : '')) + '<button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
-  const allowed = isMgr() ? ['orders', 'daily', 'chat', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'chat', 'meet', 'ledger', 'upload'];
+  const allowed = isMgr() ? ['orders', 'daily', 'chat', 'meet', 'ledger', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'chat', 'meet', 'ledger', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
   if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
   setTab(state.tab);
