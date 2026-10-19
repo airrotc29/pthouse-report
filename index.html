@@ -2645,6 +2645,12 @@ function renderDailyForm(force) {
   if (!d.key) d.key = '__new';
   /* 이미 저장한 보고가 있고 아직 새로 입력한 내용이 없으면, 저장된 내용을 불러와 바로 수정할 수 있게 한다 */
   if (!state.editing && state.noAutoLoad !== d.key + '|' + d.date && d.key !== '__new' && d.date && dailyEntry(d.key, d.date) && !draftHasContent(entryFromDraft(Object.assign({}, d, { directives: d.directives.filter(x => !x.oid) })))) { loadDailyForm(d.key, d.date); d = state.draft; if (isMgr()) { d.key = mySite(); if (!d.author && state.me.name) d.author = state.me.name; } }
+  /* 이전 보고에서 추가한 인원 항목(예: 기전과장·경리담당·기전주임)은 새 보고를 시작할 때 자동으로 따라온다 */
+  if (!state.editing && d.key && d.key !== '__new' && d.extraFor !== d.key) {
+    const keepTyped = d.extraFor === undefined && d.staffExtra.some(x => (x.role || '').trim() || x.count !== '');
+    d.extraFor = d.key;
+    if (!keepTyped) { const pe = prevEntryOf(d.key, d.date), ex = pe && pe.staffDetail && pe.staffDetail.extra; d.staffExtra = (ex && ex.length) ? ex.map(x => ({ role: x.role || '', count: x.count == null ? '' : String(x.count) })) : []; }
+  }
   const ed = state.editing;
   syncOrdersIntoDraft(d);
   $('#dailyFormTitle').textContent = ed ? siteName(ed.key) + ' · ' + dateLabel(ed.date) + ' 수정' : '일일업무 보고 작성';
@@ -2725,7 +2731,7 @@ function bindDaily() {
     if (ad) { const k = ad.dataset.add; if (!Array.isArray(state.draft[k])) state.draft[k] = []; state.draft[k].push(ROW[k]()); renderDailyForm(true); const first = $('[data-f^="' + k + '.' + (state.draft[k].length - 1) + '."]', wrap); if (first) first.focus(); saveDraft(); return; }
     const rmb = e.target.closest('[data-rm]');
     if (rmb) { const [k, i] = rmb.dataset.rm.split(':'); state.draft[k].splice(+i, 1); renderDailyForm(true); saveDraft(); return; }
-    if (e.target.id === 'dPrev') { const p = prevEntryOf(state.draft.key, state.draft.date); if (!p) { toast('이 사업소의 이전 일일보고가 없습니다'); return; } const pd = draftFromEntry(p, state.draft.key, state.draft.date); Object.assign(state.draft, { author: state.draft.author || pd.author, role: state.draft.role || pd.role, staff: pd.staff, checks: pd.checks, checkNotes: {}, directives: pd.directives.filter(x => x.status !== 'done') }); renderDailyForm(true); saveDraft(); toast(dateLabel(p.date) + ' 보고에서 인원 · 점검 상태 · 미완료 지시를 가져왔습니다'); return; }
+    if (e.target.id === 'dPrev') { const p = prevEntryOf(state.draft.key, state.draft.date); if (!p) { toast('이 사업소의 이전 일일보고가 없습니다'); return; } const pd = draftFromEntry(p, state.draft.key, state.draft.date); Object.assign(state.draft, { author: state.draft.author || pd.author, role: state.draft.role || pd.role, staff: pd.staff, staffExtra: pd.staffExtra, extraFor: state.draft.key, checks: pd.checks, checkNotes: {}, directives: pd.directives.filter(x => x.status !== 'done') }); renderDailyForm(true); saveDraft(); toast(dateLabel(p.date) + ' 보고에서 인원 · 점검 상태 · 미완료 지시를 가져왔습니다'); return; }
     if (e.target.id === 'dSign') { const d = state.draft, nm = (d.author || '').trim() || (state.me && state.me.name) || ''; if (!nm) { toast('작성자(관리소장) 이름을 먼저 입력하세요'); const a = $('[data-f="author"], #dAuthor'); if (a) a.focus(); return; } d.author = d.author || nm; const ai = $('#dAuthor'); if (ai) ai.value = d.author; d.sign = { name: nm, at: new Date().toISOString() }; $('#signBox').innerHTML = signBoxHtml(d); toast(nm + ' 서명했습니다. 저장하면 반영됩니다'); return; }
     if (e.target.id === 'dSignOff') { state.draft.sign = null; $('#signBox').innerHTML = signBoxHtml(state.draft); return; }
     if (e.target.id === 'dReset') { resetDailyForm(); return; }
