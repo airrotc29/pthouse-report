@@ -1092,7 +1092,7 @@ body.manager .hq-only { display: none !important; }
   <section class="view" id="view-daily" hidden>
     <div hidden><input type="month" id="dailyMonth" aria-label="일일보고 월"><div id="dailyMatrix"></div></div>
     <div class="card" id="dailyFormCard">
-      <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="note">정상인 항목은 그대로 두고 이상·민원·사고만 입력하면 됩니다. 입력 중인 내용은 이 브라우저에 임시 저장됩니다.</span></div>
+      <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="row" id="dImpRow" hidden style="gap:8px"><button type="button" class="btn sm" id="dImpBtn" title="다른 곳(브라우저 임시 저장 등)에서 내보낸 일일보고 파일(.json)을 이 사업소 보고로 저장합니다">일일보고 가져오기</button><input type="file" id="dImpIn" accept=".json,application/json" hidden></span><span class="note">정상인 항목은 그대로 두고 이상·민원·사고만 입력하면 됩니다. 입력 중인 내용은 이 브라우저에 임시 저장됩니다.</span></div>
       <div class="bd" id="dailyFormWrap"></div>
     </div>
   </section>
@@ -2428,7 +2428,7 @@ function renderDaily() {
   }
   $('#dailyMatrix').innerHTML = h;
   // 양식
-  $('#dailyFormCard').hidden = !state.canWrite;
+  $('#dailyFormCard').hidden = !state.canWrite; { const ir = $('#dImpRow'); if (ir) ir.hidden = isMgr() || !state.canWrite; }
   if (state.canWrite) renderDailyForm();
   if (!dailyBound) bindDaily();
 }
@@ -3244,6 +3244,26 @@ window.addEventListener('message', ev => {
   const merged = Object.assign({}, en, { hqSign: en.hqSign ? null : { name: HQ_SIGNER, at: new Date().toISOString() } });
   store.saveDaily(pc.key, siteName(pc.key), pc.cur, merged).then(() => { fr.srcdoc = dailyReportHtml(pc.key, pc.cur, merged); toast(merged.hqSign ? HQ_SIGNER + ' 확인 서명을 넣었습니다' : '확인 서명을 취소했습니다'); }).catch(err => toast('저장 실패: ' + (err.message || err)));
 });
+/* 일일보고 가져오기: { siteKey, siteName, date, entry } (또는 그 배열) 파일을 저장한다 (본사 전용) */
+async function importDailyFile(file) {
+  if (!file) return;
+  try {
+    let data = JSON.parse(await file.text()); if (!Array.isArray(data)) data = [data];
+    let ok = 0, last = null; const bad = [];
+    for (const it of data) {
+      const e = it && it.entry, date = it && it.date;
+      if (!e || e.v !== 2 || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) { bad.push('형식 오류'); continue; }
+      const nm = ldNorm(it.siteName), hit = sites().find(x => x.key === it.siteKey) || sites().find(x => { const m = ldNorm(x.name); return nm && (m === nm || m.includes(nm) || nm.includes(m)); });
+      if (!hit) { bad.push((it.siteName || it.siteKey || '?') + ' 사업소를 찾지 못함'); continue; }
+      if (dailyEntry(hit.key, date) && !confirm(hit.name + ' ' + dateLabel(date) + ' 일일보고가 이미 있습니다. 이 파일 내용으로 바꿀까요?')) { bad.push(hit.name + ' ' + date + ' 건너뜀'); continue; }
+      await store.saveDaily(hit.key, hit.name, date, e); ok++; last = { key: hit.key, date };
+    }
+    if (last) { state.dailyDate = last.date; state.dailyMonth = last.date.slice(0, 7); state.site = last.key; state.editing = null; state.draft = null; state.noAutoLoad = ''; loadDailyForm(last.key, last.date); if (!state.draft) state.draft = newDraft(last.key, last.date); render(); renderDailyForm(true); }
+    toast(ok + '건 가져왔습니다' + (bad.length ? ' · ' + bad.join(', ') : ''));
+  } catch (err) { toast('가져오기 실패: ' + (err.message || err)); }
+}
+document.addEventListener('click', e => { if (e.target.id === 'dImpBtn') $('#dImpIn').click(); });
+document.addEventListener('change', e => { if (e.target.id === 'dImpIn') { importDailyFile(e.target.files[0]); e.target.value = ''; } });
 function bindMeet() {
   document.addEventListener('click', async e => {
     const j = e.target.closest('[data-join]'); if (j) { joinMeeting(j.dataset.join); return; }
