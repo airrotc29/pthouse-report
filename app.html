@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>사업소 보고 현황판</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
@@ -1057,7 +1058,7 @@ body.manager .hq-only { display: none !important; }
 
 <header class="top">
   <div class="top-in">
-    <div class="brand"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"> <path d="M14 64 A 40 40 0 0 1 82 26" fill="none" stroke="#1e6fb8" stroke-width="15" stroke-linecap="round"/> <path d="M36 20 A 36 36 0 0 1 86 48" fill="none" stroke="#5aa9e6" stroke-width="7" stroke-linecap="round" opacity=".9"/> <path d="M24 82 A 42 42 0 0 0 88 62" fill="none" stroke="#5db431" stroke-width="13" stroke-linecap="round"/> </svg><div class="bt"><h1>사업소 보고 현황판</h1><span class="sub">(주)파트너스종합관리 · 월간·일일업무보고 통합 관리</span></div></div>
+    <div class="brand"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"> <path d="M14 64 A 40 40 0 0 1 82 26" fill="none" stroke="#1e6fb8" stroke-width="15" stroke-linecap="round"/> <path d="M36 20 A 36 36 0 0 1 86 48" fill="none" stroke="#5aa9e6" stroke-width="7" stroke-linecap="round" opacity=".9"/> <path d="M24 82 A 42 42 0 0 0 88 62" fill="none" stroke="#5db431" stroke-width="13" stroke-linecap="round"/> </svg><div class="bt"><h1>사업소 보고 현황판</h1><span class="sub">(주)파트너스종합관리 · 월간·일일업무보고 통합 관리 · <span id="buildTag" title="화면 버전">v1015b</span></span></div></div>
     <div class="top-ctl">
       <label class="small fg2" for="monthSel">보고 월</label>
       <select id="monthSel" aria-label="보고 월"></select>
@@ -1193,12 +1194,13 @@ const state = {
   reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], ledger: null, ldMonth: '', joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
-if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp }));
+if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp, pending: state.pending }));
 
 /* ===================== 저장소 (db 또는 이 브라우저) ===================== */
 let store = {
-  db: null, unsub: [],
-  async init() {
+  db: null, unsub: [], ready: null,
+  init() { this.ready = this._init(); return this.ready; },
+  async _init() {
     let db = null;
     try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
     if (db) {
@@ -1246,9 +1248,25 @@ let store = {
     renderBadge();
   },
   async saveReport(rec) {
-    const doc = Object.assign({}, rec, { uploadedAt: new Date().toISOString() });
-    delete doc.warnings;
-    if (this.db) { await this.db.doc('reports/' + doc.id).set(doc); }
+    if (this.ready) await this.ready; /* 저장소 연결이 끝나기 전에 저장을 누른 경우 대기 */
+    let doc = Object.assign({}, rec, { uploadedAt: new Date().toISOString() });
+    delete doc.warnings; delete doc.saveError;
+    doc = JSON.parse(JSON.stringify(doc, (k, v) => (typeof v === 'number' && !isFinite(v)) ? null : (v === undefined ? null : v)));
+    /* 문서 1건 256KiB 제한: 미납 내역이 너무 길면 금액 큰 순으로 줄인다 */
+    let bytes = new Blob([JSON.stringify(doc)]).size;
+    if (bytes > 240 * 1024 && doc.unpaid && doc.unpaid.length) {
+      doc.unpaid = doc.unpaid.slice().sort((a, b) => (b.total || 0) - (a.total || 0));
+      while (bytes > 240 * 1024 && doc.unpaid.length > 50) { doc.unpaid = doc.unpaid.slice(0, Math.floor(doc.unpaid.length * 0.8)); bytes = new Blob([JSON.stringify(doc)]).size; }
+      doc.unpaidTrimmed = true;
+    }
+    if (this.db) {
+      try { await this.db.doc('reports/' + doc.id).set(doc); }
+      catch (e) {
+        if (e && e.code === 'unavailable') { await new Promise(r => setTimeout(r, 800 + Math.random() * 600)); await this.db.doc('reports/' + doc.id).set(doc); }
+        else throw e;
+      }
+      state.reports = state.reports.filter(r => r.id !== doc.id).concat([doc]); onData();
+    }
     else { state.reports = state.reports.filter(r => r.id !== doc.id).concat([doc]); lsSet('mwr.reports', state.reports); onData(); }
   },
   async deleteReport(id) {
@@ -1319,6 +1337,7 @@ let store = {
     else { state.meetings = state.meetings.map(m => m.id === id ? Object.assign({}, m, patch) : m); lsSet('mwr.meetings', state.meetings); onData(); }
   },
   async saveDaily(siteKey, site, date, entry) {
+    if (this.ready) await this.ready;
     const period = date.slice(0, 7), dd = date.slice(8, 10), id = siteKey + '_' + period;
     if (this.db) {
       const ref = this.db.doc('dailies/' + id);
@@ -1346,12 +1365,16 @@ let store = {
     }
   },
 };
+function storeLabel() {
+  if (state.mode === 'db') return state.canWrite ? '공유 저장소 연결됨' : '공유 저장소 (읽기 전용)';
+  if (state.mode === 'local') return '이 브라우저에만 저장';
+  if (state.mode === 'supabase') return 'Supabase 연결됨';
+  return '연결 중';
+}
 function renderBadge() {
   const b = $('#storeBadge'), t = $('#storeBadgeText');
-  if (state.mode === 'db') { b.classList.add('on'); t.textContent = state.canWrite ? '공유 저장소 연결됨' : '공유 저장소 (읽기 전용)'; }
-  else if (state.mode === 'local') { b.classList.remove('on'); t.textContent = '이 브라우저에만 저장'; }
-  else if (state.mode === 'supabase') { b.classList.add('on'); t.textContent = 'Supabase 연결됨'; }
-  else { t.textContent = '연결 중'; }
+  b.classList.toggle('on', state.mode === 'db' || state.mode === 'supabase'); t.textContent = storeLabel();
+  b.title = state.mode === 'local' ? '공유 저장소에 연결되지 않아 이 브라우저에만 저장됩니다. 페이지를 새로고침하거나 권한 요청을 허용해 주세요.' : (state.mode === 'connecting' ? '저장소에 연결하는 중입니다' : '업로드한 보고서가 이 현황판을 여는 모든 사람에게 공유됩니다.');
 }
 
 /* ===================== 파생 데이터 ===================== */
@@ -2678,7 +2701,8 @@ function pendCard(p, i) {
     '<div class="pr"><label class="small fg2">사업소 <input type="text" data-f="site" data-i="' + i + '" value="' + esc(p.site) + '"' + (isMgr() ? ' disabled' : '') + '></label>' + (isMgr() && p.siteKey && p.siteKey !== mySite() ? '<span class="chip crit">내 사업소 보고서가 아닙니다 (저장 불가)</span>' : '') + '<label class="small fg2">보고 월 <input type="month" data-f="period" data-i="' + i + '" value="' + esc(p.period) + '"></label><label class="small fg2">작성자 <input type="text" data-f="author" data-i="' + i + '" value="' + esc(p.author) + '" style="width:120px"></label></div>' +
     '<div class="sum"><span>총세대 <b>' + comma(p.arrears.units) + '</b></span><span>체납세대 <b>' + comma(arrearsUnits(p)) + '</b></span><span>체납총액 <b>' + won(arrearsTotal(p)) + '</b></span><span>미납내역 <b>' + p.unpaid.length + '건</b></span><span>2개월↑ <b>' + lt + '세대</b></span><span>주요업무 <b>' + p.tasks.reduce((a, t) => a + t.items.length, 0) + '건</b></span><span>법정검사 <b>' + p.inspections.length + '</b></span><span>선임 <b>' + p.managers.filter(m => m.name && !isNA(m.name)).length + '/' + p.managers.length + '</b></span><span>자격증 <b>' + p.certs.length + '</b></span></div>' +
     (p.warnings.length ? '<div class="warns">⚠ ' + p.warnings.map(esc).join(' · ') + '</div>' : '') +
-    '<details><summary>읽어 들인 내용 전체 보기</summary><pre>' + esc(JSON.stringify(Object.assign({}, p, { unpaid: p.unpaid.length + '건 (생략)' }), null, 1)) + '</pre></details></div>';
+    (p.saveError ? '<div class="inline-msg err"><b>저장 실패</b> · ' + esc(p.saveError) + '<br><span class="small">저장소 상태: ' + esc(storeLabel()) + ' · 다시 "모두 저장"을 눌러도 같은 오류가 나면 이 문구를 그대로 알려 주세요.</span></div>' : '') +
+    '<details><summary>읽어 들인 내용 전체 보기</summary><pre>' + esc(JSON.stringify(Object.assign({}, p, { unpaid: p.unpaid.length + '건 (생략)', saveError: undefined }), null, 1)) + '</pre></details></div>';
 }
 function bindUpload() {
   uploadBound = true;
@@ -2694,9 +2718,14 @@ function bindUpload() {
     if (e.target.id === 'saveAll') {
       const bad = state.pending.filter(p => !p.site || !p.period); if (bad.length) { toast('사업소명과 보고 월이 비어 있는 파일이 있습니다.'); return; }
       if (isMgr() && state.pending.some(p => p.siteKey !== mySite())) { toast('내 사업소(' + siteName(mySite()) + ') 보고서만 올릴 수 있습니다. 파일의 건물명을 확인하세요.'); return; }
-      e.target.disabled = true; let ok = 0;
-      for (const p of state.pending.slice()) { try { await store.saveReport(p); ok++; state.pending = state.pending.filter(x => x !== p); } catch (err) { toast('저장 실패 (' + p.fileName + '): ' + (err.message || err.code)); } }
-      toast(ok + '건 저장했습니다'); if (ok) state.month = state.reports.length ? state.month : state.month; renderUpload(); renderMonthSel();
+      e.target.disabled = true; e.target.textContent = '저장 중…'; let ok = 0, fail = 0;
+      for (const p of state.pending.slice()) {
+        try { await store.saveReport(p); ok++; state.pending = state.pending.filter(x => x !== p); }
+        catch (err) { fail++; console.error('saveReport', err); p.saveError = ((err && err.code) ? err.code + ' · ' : '') + (err && err.message ? err.message : String(err)); }
+      }
+      if (fail) toast(ok + '건 저장, ' + fail + '건 실패. 실패한 파일 카드에 원인을 표시했습니다.'); else if (!ok) toast('저장할 파일이 없습니다. 파일을 다시 올려 주세요.'); else toast(ok + '건 저장 완료');
+      if (ok) { const last = state.reports.slice().sort((a, b) => a.period.localeCompare(b.period)).pop(); if (last) state.month = last.period; }
+      renderUpload(); renderMonthSel();
     }
   });
   $('#pendWrap').addEventListener('change', e => {
@@ -3398,7 +3427,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'installClose' || e.target.id === 'installHelp') $('#installHelp').hidden = true;
 });
 function start(saved) {
-  if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid' });
+  if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid', pending: Array.isArray(saved.pending) ? saved.pending : [] });
   const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'ledger', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
   bindOrders(); bindMeet(); bindBuilding(); bindLedger(); updateInstallBtn();
@@ -3408,3 +3437,5 @@ function start(saved) {
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
 })();
 </script>
+
+</body></html>
