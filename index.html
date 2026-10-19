@@ -1126,6 +1126,18 @@ body.manager .hq-only { display: none !important; }
   <section class="view" id="view-meet" hidden></section>
   <section class="view" id="view-daily" hidden>
     <div hidden><input type="month" id="dailyMonth" aria-label="일일보고 월"><div id="dailyMatrix"></div></div>
+    <div class="card" id="dailySearchCard">
+      <div class="hd"><h2>지난 일일보고 검색</h2><span class="note" id="dsCount"></span></div>
+      <div class="bd">
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <input type="search" id="dsQ" placeholder="내용 검색 (민원, 업체, 시설, 작성자 등)" style="flex:1;min-width:200px">
+          <select id="dsSite" aria-label="사업소"></select>
+          <input type="date" id="dsFrom" aria-label="시작일"><span class="muted">~</span><input type="date" id="dsTo" aria-label="종료일">
+          <select id="dsFlag" aria-label="구분"><option value="">전체</option><option value="urgent">긴급</option><option value="cmp">민원 있음</option><option value="bad">시설 이상·조치중</option><option value="inc">사고 있음</option></select>
+        </div>
+        <div id="dsList"></div>
+      </div>
+    </div>
     <div class="card" id="dailyFormCard">
       <div class="hd"><h2 id="dailyFormTitle">일일업무 보고 작성</h2><span class="row" id="dImpRow" hidden style="gap:8px"><button type="button" class="btn sm" id="dImpBtn" title="다른 곳(브라우저 임시 저장 등)에서 내보낸 일일보고 파일(.json)을 이 사업소 보고로 저장합니다">일일보고 가져오기</button><input type="file" id="dImpIn" accept=".json,application/json" hidden></span><span class="note">정상인 항목은 그대로 두고 이상·민원·사고만 입력하면 됩니다. 입력 중인 내용은 이 브라우저에 임시 저장됩니다.</span></div>
       <div class="bd" id="dailyFormWrap"></div>
@@ -2550,6 +2562,40 @@ function renderDaily() {
   $('#dailyFormCard').hidden = !state.canWrite; { const ir = $('#dImpRow'); if (ir) ir.hidden = !state.canWrite; }
   if (state.canWrite) renderDailyForm();
   if (!dailyBound) bindDaily();
+  bindDailySearch(); renderDailySearch();
+}
+/* 지난 일일보고 검색: 모든 달의 보고를 사업소·기간·내용으로 찾아 누르면 PDF 서식으로 본다 */
+const dsState = { q: '', site: '', from: '', to: '', flag: '', limit: 60 };
+function dsText(e) { const c = Object.assign({}, e); delete c.checkPhotos; delete c.sign; delete c.hqSign; try { return JSON.stringify(c).replace(/["{}\[\]]/g, ' ').toLowerCase(); } catch (x) { return ''; } }
+function dsFlags(e) {
+  const bad = e.checks ? CHECK_ITEMS.filter(c => e.checks[c[0]] === 'bad' || e.checks[c[0]] === 'fix').length : 0;
+  const cmp = (e.complaintsDetail && e.complaintsDetail.length) || (e.complaints || []).filter(Boolean).length, inc = (e.incidents || []).filter(i => i && (i.desc || i.type)).length;
+  return { bad, cmp, inc };
+}
+function renderDailySearch() {
+  const box = $('#dsList'); if (!box) return;
+  const sel = $('#dsSite'), all = sites(), hq = !isMgr();
+  $('#dailySearchCard').hidden = !state.dailies.length;
+  if (sel.dataset.n !== String(all.length) + hq) { sel.dataset.n = String(all.length) + hq; sel.innerHTML = '<option value="">' + (hq ? '전체 사업소' : '내 사업소') + '</option>' + (hq ? all.map(s => '<option value="' + esc(s.key) + '">' + esc(s.name) + '</option>').join('') : ''); sel.hidden = !hq; }
+  const terms = dsState.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const rows = allDaily().filter(e => (!dsState.site || e.siteKey === dsState.site) && (!dsState.from || e.date >= dsState.from) && (!dsState.to || e.date <= dsState.to)).filter(e => {
+    const f = dsFlags(e); if (dsState.flag === 'urgent' && !e.urgent) return false; if (dsState.flag === 'cmp' && !f.cmp) return false; if (dsState.flag === 'bad' && !f.bad) return false; if (dsState.flag === 'inc' && !f.inc) return false;
+    if (!terms.length) return true; const t = (e.site || '').toLowerCase() + ' ' + dsText(e); return terms.every(w => t.includes(w));
+  }).sort((a, b) => b.date.localeCompare(a.date) || a.site.localeCompare(b.site, 'ko'));
+  $('#dsCount').textContent = rows.length + '건' + (state.dailies.length ? '' : '');
+  const snip = e => { if (!terms.length) return ''; const t = [].concat(e.work || [], e.memo || [], e.plans || [], e.issues || [], e.complaints || [], (e.works || []).map(w => (w.vendor || '') + ' ' + (w.desc || '')), (e.complaintsDetail || []).map(c => (c.unit || '') + ' ' + (c.desc || '') + ' ' + (c.result || '')), (e.incidents || []).map(i => (i.desc || '') + ' ' + (i.action || '')), (e.directives || []).map(d => d.text || '')).map(String).find(x => terms.some(w => x.toLowerCase().includes(w))); return t ? '<div class="small muted" style="margin-top:2px">' + esc(t.length > 90 ? t.slice(0, 90) + '…' : t) + '</div>' : ''; };
+  box.innerHTML = rows.length ? rows.slice(0, dsState.limit).map(e => { const f = dsFlags(e); return '<div class="psite" data-pdf="' + esc(e.siteKey) + '" data-date="' + e.date + '" style="cursor:pointer"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>' + esc(dateLabel(e.date)) + '</b><span>' + esc(e.site) + '</span><span class="muted small">' + esc(e.author || '') + '</span>' + (e.urgent ? '<span class="chip crit">긴급</span>' : '') + (f.cmp ? '<span class="chip warn">민원 ' + f.cmp + '</span>' : '') + (f.bad ? '<span class="chip serious">시설 ' + f.bad + '</span>' : '') + (f.inc ? '<span class="chip crit">사고 ' + f.inc + '</span>' : '') + (e.hqSign ? '<span class="chip good">본사확인</span>' : '') + '</div>' + snip(e) + '</div>'; }).join('') + (rows.length > dsState.limit ? '<button type="button" class="btn" id="dsMore" style="margin-top:8px">더 보기 (' + (rows.length - dsState.limit) + '건 남음)</button>' : '') : '<div class="empty small">조건에 맞는 일일보고가 없습니다.</div>';
+}
+let dsBound = false;
+function bindDailySearch() {
+  if (dsBound || !$('#dsList')) return; dsBound = true;
+  const upd = () => { dsState.limit = 60; renderDailySearch(); };
+  $('#dsQ').addEventListener('input', e => { dsState.q = e.target.value; upd(); });
+  $('#dsSite').addEventListener('change', e => { dsState.site = e.target.value; upd(); });
+  $('#dsFrom').addEventListener('change', e => { dsState.from = e.target.value; upd(); });
+  $('#dsTo').addEventListener('change', e => { dsState.to = e.target.value; upd(); });
+  $('#dsFlag').addEventListener('change', e => { dsState.flag = e.target.value; upd(); });
+  $('#dsList').addEventListener('click', e => { if (e.target.id === 'dsMore') { dsState.limit += 60; renderDailySearch(); } });
 }
 function dsec(lb, arr) { arr = (arr || []).filter(Boolean); return arr.length ? '<div class="sec"><div class="lb">' + lb + '</div><ul>' + arr.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : ''; }
 /* ---- 일일보고 서식 (구조화 · v2) ---- */
