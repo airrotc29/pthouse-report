@@ -962,6 +962,17 @@ body.manager .hq-only { display: none !important; }
 .mtg .cnt { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--fg-2); } .mtg .cnt.on { background: var(--accent); color: var(--accent-ink); }
 .mtg .selbar { height: 4px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-bottom: 10px; } .mtg .selbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width .2s; }
 .mtg .tgrid { grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); } .mtg .tgt { margin-bottom: 10px; gap: 10px; } .mtg .tgt .all[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chatwrap { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 14px; align-items: start; } .chatwrap.solo { grid-template-columns: 1fr; max-width: 820px; margin: 0 auto; }
+.chrooms { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; max-height: calc(100vh - 190px); overflow-y: auto; } .chrh { padding: 12px 14px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--line-soft); position: sticky; top: 0; background: var(--surface); }
+.chr { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--line-soft); background: transparent; cursor: pointer; } .chr:hover { background: var(--surface-2); } .chr.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.chr .chrn { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .chr b { font-size: 13px; } .chr em { font-style: normal; background: var(--crit); color: #fff; border-radius: 999px; font-size: 11px; font-weight: 700; padding: 0 7px; min-width: 20px; text-align: center; } .chr .chrp { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chatmain { display: flex; flex-direction: column; min-height: 420px; } .chmsgs { height: min(56vh, 560px); overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: var(--surface-2); }
+.chday { align-self: center; font-size: 11px; color: var(--muted); background: var(--surface); border: 1px solid var(--line-soft); border-radius: 999px; padding: 1px 12px; margin: 8px 0 4px; }
+.chm { display: flex; flex-direction: column; max-width: 76%; gap: 2px; } .chm.mine { align-self: flex-end; align-items: flex-end; } .chm.their { align-self: flex-start; } .chn { font-size: 11.5px; color: var(--fg-2); font-weight: 600; margin-left: 4px; }
+.chb { padding: 8px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; word-break: break-word; } .chm.mine .chb { background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; } .chm.their .chb { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.cht { font-size: 10.5px; color: var(--muted); margin: 0 4px; } .chempty { margin: auto; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 4px; padding: 30px 10px; } .chempty b { color: var(--fg-2); }
+.chform { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line-soft); align-items: flex-end; } .chform textarea { flex: 1; resize: none; min-height: 40px; max-height: 120px; padding: 9px 12px; border-radius: 12px; font: inherit; }
+@media (max-width: 800px) { .chatwrap { grid-template-columns: 1fr; } .chrooms { max-height: 190px; } .chm { max-width: 90%; } }
 .signbox { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 16px; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .signbox .sgl { flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; } .signbox .sgl b { font-size: 14px; }
 .signbox .sgv { min-width: 170px; padding: 6px 14px; border-bottom: 2px solid var(--fg); text-align: center; } .signbox .sgv.empty { color: var(--muted); border-bottom-style: dashed; font-size: 13px; }
@@ -1074,6 +1085,7 @@ body.manager .hq-only { display: none !important; }
     <button role="tab" data-tab="analysis" hidden>업무 분석</button>
     <button role="tab" data-tab="daily">일일보고</button>
     <button role="tab" data-tab="orders">지시사항<span class="tabn" id="tabOrdN" hidden></span></button>
+    <button role="tab" data-tab="chat">채팅<span class="tabn" id="tabChatN" hidden></span></button>
     <button role="tab" data-tab="meet">화상회의<span class="tabn live" id="tabMeetN" hidden></span></button>
     <button role="tab" data-tab="ledger">도급비 관리</button>
     <button role="tab" data-tab="upload">업로드</button>
@@ -1087,6 +1099,7 @@ body.manager .hq-only { display: none !important; }
   <section class="view" id="view-compare" hidden></section>
   <section class="view" id="view-analysis" hidden></section>
   <section class="view" id="view-ledger" hidden></section>
+  <section class="view" id="view-chat" hidden></section>
   <section class="view" id="view-orders" hidden></section>
   <section class="view" id="view-meet" hidden></section>
   <section class="view" id="view-daily" hidden>
@@ -1191,7 +1204,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ===================== 상태 ===================== */
 const state = {
   tab: 'home', month: '', site: '', item: 'total', dailyMonth: todayStr().slice(0, 7), dailyDate: todayStr(), dailyQ: '',
-  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], ledger: null, ldMonth: '', joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
+  reports: [], dailies: [], acks: [], orders: [], ordFilter: 'open', meetings: [], chat: [], chatSite: '', ledger: null, ldMonth: '', joined: null, siteList: [], draft: null, me: null, issueLv: 'all', showDone: false, trend: 'total', cmp: 'unpaid', pending: [], editing: null, canWrite: true, mode: 'connecting', loaded: false,
 };
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({ tab: state.tab, month: state.month, site: state.site, item: state.item, dailyMonth: state.dailyMonth, dailyDate: state.dailyDate, issueLv: state.issueLv, trend: state.trend, cmp: state.cmp, pending: state.pending }));
@@ -1230,6 +1243,9 @@ let store = {
       this.unsub.push(db.collection('meetings').onSnapshot(snap => {
         state.meetings = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
       }, err => { console.error('meetings', err); }));
+      this.unsub.push(db.collection('chat').onSnapshot(snap => {
+        state.chat = snap.docs.filter(d => d.exists).map(d => d.data()); onData();
+      }, err => { console.error('chat', err); }));
       this.unsub.push(db.collection('ledger').onSnapshot(snap => {
         const d = snap.docs.find(x => x.exists); state.ledger = d ? d.data() : null; onData();
       }, err => { console.error('ledger', err); }));
@@ -1241,6 +1257,7 @@ let store = {
       state.orders = lsGet('mwr.orders', []);
       state.meetings = lsGet('mwr.meetings', []);
       state.ledger = lsGet('mwr.ledger', null);
+      state.chat = lsGet('mwr.chat', []);
       state.siteList = lsGet('mwr.sites', []);
       state.loaded = true;
       onData();
@@ -1276,6 +1293,11 @@ let store = {
   async setSite(doc) {
     if (this.db) await this.db.doc('sites/' + doc.id).set(doc);
     else { state.siteList = state.siteList.filter(x => x.id !== doc.id).concat([doc]); lsSet('mwr.sites', state.siteList); onData(); }
+  },
+  async sendChat(m) {
+    const doc = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), siteKey: m.siteKey, role: m.role, name: m.name, body: m.body, at: new Date().toISOString() };
+    if (this.db) { await this.db.doc('chat/' + doc.id).set(doc); }
+    else { state.chat = state.chat.concat([doc]); lsSet('mwr.chat', state.chat); onData(); }
   },
   async saveLedger(doc) {
     if (this.db) { await this.db.doc('ledger/main').set(doc); }
@@ -1564,8 +1586,8 @@ function setTab(t) { state.tab = t; $$('#tabs button').forEach(b => b.setAttribu
 function go(tab, key, extra) { if (key) state.site = key; if (extra && extra.date) { state.dailyDate = extra.date; state.dailyMonth = extra.date.slice(0, 7); } setTab(tab); }
 function render() {
   renderBadge();
-  ({ home: renderHome, site: renderSite, compare: renderCompare, analysis: renderAnalysis, ledger: renderLedger, daily: renderDaily, orders: renderOrders, meet: renderMeet, upload: renderUpload })[state.tab]();
-  updateOrdBadge(); updateLiveBar();
+  ({ home: renderHome, site: renderSite, compare: renderCompare, analysis: renderAnalysis, ledger: renderLedger, chat: renderChat, daily: renderDaily, orders: renderOrders, meet: renderMeet, upload: renderUpload })[state.tab]();
+  updateOrdBadge(); updateLiveBar(); updateChatBadge();
 }
 
 /* 인원 충원율: 사업소 정원(siteList.quota) 대비 가장 최근 일일보고 현원 */
@@ -1974,6 +1996,50 @@ const ITEMS = [
 ];
 const CMP = [['unpaid', '미납관리'], ['insp', '법정검사'], ['mgr', '선임관리자 현황'], ['staff', '인원현황'], ['notes', '특이사항'], ['complaints', '민원'], ['tasks', '금월 주요업무']];
 const METRICS = ITEMS.filter(i => i.num && i.id !== 'tasks');
+/* ---------- 채팅: 본사 ↔ 사업소장 (사업소마다 방 1개) ---------- */
+const chatRole = () => isMgr() ? 'manager' : 'hq';
+const chatSeenGet = () => { try { return JSON.parse(localStorage.getItem('pth.chatseen.' + ((state.me && state.me.id) || 'local')) || '{}'); } catch (e) { return {}; } };
+const chatSeenSet = (key, at) => { try { const m = chatSeenGet(); if ((m[key] || '') >= at) return; m[key] = at; localStorage.setItem('pth.chatseen.' + ((state.me && state.me.id) || 'local'), JSON.stringify(m)); } catch (e) {} };
+const chatOf = key => state.chat.filter(m => m.siteKey === key).sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+const chatUnread = key => { const seen = chatSeenGet()[key] || '', me = chatRole(); return chatOf(key).filter(m => m.role !== me && (m.at || '') > seen).length; };
+const chatTotalUnread = () => isMgr() ? chatUnread(mySite()) : sites().reduce((a, x) => a + chatUnread(x.key), 0);
+function updateChatBadge() { const b = $('#tabChatN'); if (!b) return; const n = chatTotalUnread(); b.hidden = !n || state.tab === 'chat'; b.textContent = n > 99 ? '99+' : n; }
+const chatTime = at => { const d = new Date(at); if (isNaN(d)) return ''; const t = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); return localDay(at) === todayStr() ? t : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + t; };
+function chatBubbles(key) {
+  const list = chatOf(key), me = chatRole(); let last = '';
+  if (!list.length) return '<div class="chempty"><b>아직 대화가 없습니다</b><span>' + (isMgr() ? '본사에 궁금한 점이나 요청을 남겨 보세요.' : esc(siteName(key)) + ' 소장에게 첫 메시지를 보내 보세요.') + '</span></div>';
+  return list.map(m => { const day = localDay(m.at), sep = day !== last ? '<div class="chday">' + esc(dateLabel(day)) + '</div>' : ''; last = day; const mine = m.role === me;
+    return sep + '<div class="chm ' + (mine ? 'mine' : 'their') + '">' + (mine ? '' : '<span class="chn">' + esc(m.name || (m.role === 'hq' ? '본사' : '소장')) + '</span>') + '<div class="chb">' + esc(m.body).replace(/\n/g, '<br>') + '</div><span class="cht">' + esc(chatTime(m.at)) + '</span></div>'; }).join('');
+}
+function renderChat() {
+  const el = $('#view-chat'); if (!el) return;
+  const all = sites(); let key = isMgr() ? mySite() : (state.chatSite && all.some(x => x.key === state.chatSite) ? state.chatSite : '');
+  if (!isMgr() && !key && all.length) { const lastKey = all.map(x => ({ k: x.key, t: (chatOf(x.key).slice(-1)[0] || {}).at || '' })).sort((a, b) => b.t.localeCompare(a.t))[0]; key = lastKey.k; state.chatSite = key; }
+  if (!key) { el.innerHTML = '<div class="card"><div class="bd"><div class="empty small">대화할 사업소가 없습니다.</div></div></div>'; return; }
+  const prevIn = $('#chatIn'), draft = prevIn && prevIn.dataset.key === key ? prevIn.value : '', typing = prevIn && document.activeElement === prevIn, scEl = $('#chatMsgs'), atBottom = !scEl || scEl.scrollHeight - scEl.scrollTop - scEl.clientHeight < 80 || scEl.dataset.key !== key;
+  let rooms = '';
+  if (!isMgr()) {
+    const rl = all.map(x => { const l = chatOf(x.key), lm = l[l.length - 1]; return { x, lm, un: chatUnread(x.key) }; }).sort((a, b) => ((b.lm || {}).at || '').localeCompare((a.lm || {}).at || '') || a.x.name.localeCompare(b.x.name, 'ko'));
+    rooms = '<div class="chrooms"><div class="chrh">사업소 채팅방 <span class="muted small">' + all.length + '</span></div>' + rl.map(r => '<button type="button" class="chr' + (r.x.key === key ? ' on' : '') + '" data-chroom="' + r.x.key + '"><span class="chrn"><b>' + esc(r.x.name) + '</b>' + (r.un ? '<em>' + (r.un > 99 ? '99+' : r.un) + '</em>' : '') + '</span><span class="chrp">' + (r.lm ? esc((r.lm.role === 'hq' ? '나: ' : '') + r.lm.body.replace(/\s+/g, ' ').slice(0, 40)) + ' · ' + esc(chatTime(r.lm.at)) : '대화 없음') + '</span></button>').join('') + '</div>';
+  }
+  el.innerHTML = '<div class="chatwrap' + (isMgr() ? ' solo' : '') + '">' + rooms + '<div class="chatmain card"><div class="hd"><h2>' + (isMgr() ? '본사와 대화' : esc(siteName(key)) + ' 소장과 대화') + '</h2><span class="note">' + (isMgr() ? esc(siteName(key)) + ' · 본사 담당자에게 바로 전달됩니다' : '이 사업소 소장에게만 보이는 대화방입니다') + '</span></div><div class="chmsgs" id="chatMsgs" data-key="' + key + '">' + chatBubbles(key) + '</div>' +
+    (state.canWrite ? '<form class="chform" id="chatForm"><textarea id="chatIn" data-key="' + key + '" rows="1" maxlength="2000" placeholder="메시지를 입력하세요 (Enter 전송 · Shift+Enter 줄바꿈)"></textarea><button type="submit" class="btn primary" id="chatSend">전송</button></form>' : '<div class="note" style="padding:12px 16px">읽기 전용입니다.</div>') + '</div></div>';
+  const m = $('#chatMsgs'), inp = $('#chatIn'); if (m && atBottom) m.scrollTop = m.scrollHeight; if (inp) { inp.value = draft; if (typing) inp.focus(); }
+  const l = chatOf(key); if (l.length && state.tab === 'chat') { chatSeenSet(key, l[l.length - 1].at || ''); updateChatBadge(); }
+}
+function bindChat() {
+  document.addEventListener('click', e => { const r = e.target.closest('[data-chroom]'); if (r) { state.chatSite = r.dataset.chroom; renderChat(); updateChatBadge(); } });
+  document.addEventListener('keydown', e => { if (e.target.id === 'chatIn' && e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); const f = $('#chatForm'); if (f) f.requestSubmit(); } });
+  document.addEventListener('input', e => { if (e.target.id === 'chatIn') { e.target.style.height = 'auto'; e.target.style.height = Math.min(120, e.target.scrollHeight) + 'px'; } });
+  document.addEventListener('submit', async e => {
+    if (e.target.id !== 'chatForm') return; e.preventDefault();
+    const inp = $('#chatIn'), body = (inp.value || '').trim(), key = inp.dataset.key; if (!body) return;
+    const btn = $('#chatSend'); btn.disabled = true;
+    try { await store.sendChat({ siteKey: key, role: chatRole(), name: (state.me && state.me.name) || (isMgr() ? siteName(key) + ' 소장' : '본사'), body }); inp.value = ''; inp.style.height = 'auto'; if (state.tab === 'chat') renderChat(); const m = $('#chatMsgs'); if (m) m.scrollTop = m.scrollHeight; }
+    catch (err) { toast('전송 실패: ' + (err.message || err)); }
+    btn.disabled = false; const i2 = $('#chatIn'); if (i2) i2.focus();
+  });
+}
 /* ---------- 도급비 관리: 도급용역비·관리수수료 미수 장부 (본사 전용) ---------- */
 let ldDraft = null;
 const ldNorm = x => String(x || '').replace(/\s+/g, '');
@@ -3297,7 +3363,7 @@ function makeSupabaseStore(client) {
   };
   let loading = null, timer = null;
   async function loadAll() {
-    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), isMgr() ? Promise.resolve({ data: [] }) : client.from('ledger').select('*').eq('id', 'main')]);
+    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes, cRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), isMgr() ? Promise.resolve({ data: [] }) : client.from('ledger').select('*').eq('id', 'main'), client.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(2000)]);
     const err = sRes.error || rRes.error || dRes.error || aRes.error || oRes.error || mRes.error; if (err) throw err;
     state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code, quota: x.staff_quota == null ? null : x.staff_quota, building: x.building || null }));
     state.reports = (rRes.data || []).map(rowToReport);
@@ -3305,6 +3371,7 @@ function makeSupabaseStore(client) {
     state.acks = (aRes.data || []).map(x => ({ id: x.id, month: x.month, memo: x.memo, at: x.acked_at }));
     state.orders = (oRes.data || []).map(x => ({ id: x.id, groupId: x.group_id, siteKey: x.site_key, title: x.title, body: x.body || '', due: x.due || '', priority: x.priority, status: x.status, reply: x.reply || '', doneAt: x.done_at || '', createdAt: x.created_at }));
     state.meetings = (mRes.data || []).map(x => ({ id: x.id, room: x.room, title: x.title, siteKeys: x.site_keys || null, status: x.status, createdAt: x.created_at, endedAt: x.ended_at || '' }));
+    state.chat = (cRes && !cRes.error && cRes.data ? cRes.data : []).map(x => ({ id: x.id, siteKey: x.site_key, role: x.sender_role, name: x.sender_name || '', body: x.body, at: x.created_at }));
     state.ledger = (lRes && !lRes.error && lRes.data && lRes.data[0]) ? { data: lRes.data[0].data, fileName: lRes.data[0].file_name || '', uploadedAt: lRes.data[0].uploaded_at } : null;
     state.canWrite = true; state.loaded = true; onData();
   }
@@ -3323,6 +3390,7 @@ function makeSupabaseStore(client) {
     async deleteDaily(siteKey, date) { await q(client.from('dailies').delete().match({ site_key: siteKey, date })); },
     async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, staff_quota: doc.quota !== undefined ? doc.quota : (cur.quota == null ? null : cur.quota), active: true })); },
     async setSiteQuota(key, n) { await q(client.from('sites').update({ staff_quota: n }).eq('key', key)); },
+    async sendChat(m) { const { error } = await client.from('chat_messages').insert({ site_key: m.siteKey, sender_role: m.role, sender_name: m.name, body: m.body }); if (error) throw new Error(/chat_messages/.test(error.message || '') ? '채팅 테이블이 아직 없습니다. 본사 관리자에게 supabase/chat.sql 실행을 요청하세요' : (error.message || error.code)); reload(); },
     async saveLedger(doc) { await q(client.from('ledger').upsert({ id: 'main', data: doc.data, file_name: doc.fileName, uploaded_at: doc.uploadedAt })); },
     async deleteLedger() { await q(client.from('ledger').delete().eq('id', 'main')); },
     async setSiteBuilding(key, b) { await q(client.from('sites').update({ building: b }).eq('key', key)); },
@@ -3351,7 +3419,7 @@ function applyRole() {
   document.body.classList.toggle('manager', isMgr());
   if (me) { box.hidden = false; box.innerHTML = (isMgr() ? '<b>' + esc(me.name || '소장') + '</b><span class="muted">' + esc(siteName(me.site_key)) + ' · 소장</span>' : (me.name ? '<b>' + esc(me.name) + '</b>' : '')) + '<button class="btn sm" id="pwOpen">비밀번호</button><button class="btn sm" id="logoutBtn">로그아웃</button>'; }
   else box.hidden = true;
-  const allowed = isMgr() ? ['orders', 'daily', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'meet', 'ledger', 'upload'];
+  const allowed = isMgr() ? ['orders', 'daily', 'chat', 'meet', 'upload', 'site'] : ['home', 'site', 'compare', 'daily', 'orders', 'chat', 'meet', 'ledger', 'upload'];
   $$('#tabs button').forEach(b => { b.hidden = !allowed.includes(b.dataset.tab); });
   if (isMgr()) { state.site = me.site_key; if (!allowed.includes(state.tab)) state.tab = 'daily'; }
   setTab(state.tab);
@@ -3462,9 +3530,9 @@ document.addEventListener('click', async e => {
 });
 function start(saved) {
   if (saved && saved.tab) Object.assign(state, { tab: saved.tab, month: saved.month || '', site: saved.site || '', item: saved.item || 'total', dailyMonth: saved.dailyMonth || state.dailyMonth, dailyDate: saved.dailyDate || state.dailyDate, issueLv: saved.issueLv || 'all', trend: saved.trend || 'total', cmp: saved.cmp || 'unpaid', pending: Array.isArray(saved.pending) ? saved.pending : [] });
-  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'meet', 'ledger', 'upload'].includes(hash)) state.tab = hash;
+  const hash = (location.hash || '').slice(1); if (['home', 'site', 'compare', 'daily', 'orders', 'chat', 'meet', 'ledger', 'upload'].includes(hash)) state.tab = hash;
   const cfg = window.PTH_CONFIG || {};
-  bindOrders(); bindMeet(); bindBuilding(); bindLedger(); updateInstallBtn();
+  bindOrders(); bindMeet(); bindBuilding(); bindLedger(); bindChat(); updateInstallBtn();
   if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient) { bootSupabase(cfg).catch(e => { console.error(e); showGate('login', '연결 실패: ' + (e.message || e)); }); return; }
   renderMonthSel(); setTab(state.tab); store.init();
 }

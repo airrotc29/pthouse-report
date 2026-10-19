@@ -14,6 +14,7 @@ claude.ai 아티팩트로 게시되며, 이 저장소는 그 소스를 보관합
 | `app.html` | 화면·집계·내보내기 전체 (아티팩트에 게시하는 본문, 원본) |
 | `index.html` | `app.html`을 `<!doctype html>`·메타로 감싼 GitHub Pages용 문서 (`tools_wrap.py`로 생성, 직접 수정하지 않음) |
 | `supabase/storage.sql` | 건축물대장 원본 PDF 버킷·정책 |
+| `supabase/chat.sql` | 본사 ↔ 사업소장 채팅방 테이블·권한 (SQL Editor에서 실행) |
 | `supabase/ledger.sql` | 도급비 관리(도급용역비·관리수수료 장부) 테이블, 본사 전용 |
 | `ledger.js` | 도급용역비 장부 엑셀 파서 |
 | `supabase/meetings.sql` | 화상회의 표·권한 |
