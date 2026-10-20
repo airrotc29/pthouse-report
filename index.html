@@ -1005,6 +1005,10 @@ body.manager .hq-only { display: none !important; }
 .cht { font-size: 10.5px; color: #4b5b6b; white-space: nowrap; padding-bottom: 1px; } :root[data-theme="dark"] .cht { color: #aebccb; }
 .chempty { margin: auto; text-align: center; color: #3b4a58; display: flex; flex-direction: column; gap: 4px; padding: 30px 10px; } .chempty b { color: #22313f; }
 .chform { display: flex; gap: 8px; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--line-soft); align-items: flex-end; } .chform textarea { flex: 1; resize: none; min-height: 40px; max-height: 120px; padding: 10px 14px; border-radius: 20px; font: inherit; } .chform .chsend { background: var(--kk-me); color: var(--kk-me-ink); border: 0; border-radius: 20px; font-weight: 700; padding: 0 18px; height: 40px; cursor: pointer; } .chform .chsend:disabled { opacity: .5; }
+.chb.ph { padding: 4px; } .chb.ph > div { padding: 4px 7px 3px; } .chimg { display: block; max-width: min(260px, 100%); max-height: 320px; border-radius: 9px; cursor: zoom-in; }
+.chpic { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 19px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--line); } .chpic:hover { background: var(--accent-soft); }
+.chprev { display: flex; align-items: center; gap: 10px; padding: 8px 14px 0; background: var(--surface); border-top: 1px solid var(--line-soft); } .chpv { position: relative; } .chpv img { height: 64px; border-radius: 8px; display: block; } .chpv button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: #333; color: #fff; cursor: pointer; line-height: 1; }
+.chlight { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.82); display: grid; place-items: center; cursor: zoom-out; padding: 16px; } .chlight img { max-width: 96vw; max-height: 92vh; border-radius: 6px; }
 @media (max-width: 800px) { .chatwrap { grid-template-columns: 1fr; } .chrooms { max-height: 190px; } .chrow { max-width: 92%; } }
 .signbox { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 16px; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .signbox .sgl { flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; } .signbox .sgl b { font-size: 14px; }
@@ -1345,7 +1349,7 @@ let store = {
     else { state.siteList = state.siteList.filter(x => x.id !== doc.id).concat([doc]); lsSet('mwr.sites', state.siteList); onData(); }
   },
   async sendChat(m) {
-    const doc = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), siteKey: m.siteKey, role: m.role, name: m.name, body: m.body, at: new Date().toISOString() };
+    const doc = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), siteKey: m.siteKey, role: m.role, name: m.name, body: m.body, photo: m.photo || '', at: new Date().toISOString() };
     if (this.db) { await this.db.doc('chat/' + doc.id).set(doc); }
     else { state.chat = state.chat.concat([doc]); lsSet('mwr.chat', state.chat); onData(); }
   },
@@ -2056,6 +2060,7 @@ const chatUnread = key => { const seen = chatSeenGet()[key] || '', me = chatRole
 const chatTotalUnread = () => isMgr() ? chatUnread(mySite()) : sites().reduce((a, x) => a + chatUnread(x.key), 0);
 function updateChatBadge() { const b = $('#tabChatN'); if (!b) return; const n = chatTotalUnread(); b.hidden = !n || state.tab === 'chat'; b.textContent = n > 99 ? '99+' : n; }
 const chatTime = at => { const p = kstParts(at); if (!p) return ''; const t = p.hour + ':' + p.minute; return localDay(at) === todayStr() ? t : (+p.month) + '/' + (+p.day) + ' ' + t; };
+const CH_PHOTO_TXT = '(사진)';
 const CH_COLORS = ['#5b8def', '#f08a5d', '#4cb782', '#b57bee', '#e5677d', '#3fb5c6', '#d9a441', '#7a8cff'];
 const chAvatar = (name, sm) => { let h = 0; String(name || '').split('').forEach(c => { h = (h * 31 + c.charCodeAt(0)) >>> 0; }); return '<span class="chav' + (sm ? ' sm' : '') + '" style="background:' + CH_COLORS[h % CH_COLORS.length] + '">' + esc(String(name || '?').replace(/\s+/g, '').slice(0, 1)) + '</span>'; };
 function chatBubbles(key) {
@@ -2066,7 +2071,7 @@ function chatBubbles(key) {
     const day = localDay(m.at), sep = day !== last ? '<div class="chday">' + esc(dateLabel(day)) + '</div>' : ''; const newDay = day !== last; last = day; const mine = m.role === me;
     const prev = list[i - 1], next = list[i + 1], first = newDay || !prev || prev.role !== m.role || (prev.name || '') !== (m.name || ''), lastOfRun = !next || next.role !== m.role || (next.name || '') !== (m.name || '') || mk(next) !== mk(m) || localDay(next.at) !== day;
     const nm = m.name || (m.role === 'hq' ? '본사' : '소장');
-    return sep + '<div class="chrow ' + (mine ? 'mine' : 'their') + (first ? '' : ' cont') + '">' + (mine ? '' : (first ? chAvatar(nm, true) : '<span class="chspace"></span>')) + '<div class="chcol">' + (!mine && first ? '<span class="chn">' + esc(nm) + '</span>' : '') + '<div class="chline"><div class="chb">' + esc(m.body).replace(/\n/g, '<br>') + '</div>' + (lastOfRun ? '<span class="cht">' + esc(chatTime(m.at)) + '</span>' : '') + '</div></div></div>';
+    return sep + '<div class="chrow ' + (mine ? 'mine' : 'their') + (first ? '' : ' cont') + '">' + (mine ? '' : (first ? chAvatar(nm, true) : '<span class="chspace"></span>')) + '<div class="chcol">' + (!mine && first ? '<span class="chn">' + esc(nm) + '</span>' : '') + '<div class="chline"><div class="chb' + (m.photo ? ' ph' : '') + '">' + (m.photo ? '<img class="chimg" src="' + esc(m.photo) + '" alt="사진" data-chimg="1" loading="lazy">' : '') + (m.body && m.body !== CH_PHOTO_TXT ? '<div>' + esc(m.body).replace(/\n/g, '<br>') + '</div>' : '') + '</div>' + (lastOfRun ? '<span class="cht">' + esc(chatTime(m.at)) + '</span>' : '') + '</div></div></div>';
   }).join('');
 }
 function renderChat() {
@@ -2079,23 +2084,33 @@ function renderChat() {
   if (!isMgr()) {
     const rl = all.map(x => { const l = chatOf(x.key), lm = l[l.length - 1]; return { x, lm, un: (x.key === key && state.tab === 'chat') ? 0 : chatUnread(x.key) }; }).sort((a, b) => ((b.lm || {}).at || '').localeCompare((a.lm || {}).at || '') || a.x.name.localeCompare(b.x.name, 'ko'));
     const rq = (state.chatQ || '').trim().toLowerCase();
-    rooms = '<div class="chrooms"><div class="chrh">채팅 <span class="muted small">' + all.length + '</span></div><div class="chrs"><input type="search" id="chatRoomQ" placeholder="사업소 검색" value="' + esc(state.chatQ || '') + '"></div><div class="chrl">' + rl.filter(r => !rq || r.x.name.toLowerCase().includes(rq)).map(r => '<button type="button" class="chr' + (r.x.key === key ? ' on' : '') + '" data-chroom="' + r.x.key + '">' + chAvatar(r.x.name) + '<span class="chbody"><span class="chrn"><b>' + esc(r.x.name) + '</b>' + (r.lm ? '<span class="chtm">' + esc(chatTime(r.lm.at)) + '</span>' : '') + '</span><span class="chrp"><span>' + (r.lm ? esc((r.lm.role === 'hq' ? '나: ' : '') + r.lm.body.replace(/\s+/g, ' ').slice(0, 40)) : '대화 없음') + '</span>' + (r.un ? '<em>' + (r.un > 99 ? '99+' : r.un) + '</em>' : '') + '</span></span></button>').join('') + '</div></div>';
+    rooms = '<div class="chrooms"><div class="chrh">채팅 <span class="muted small">' + all.length + '</span></div><div class="chrs"><input type="search" id="chatRoomQ" placeholder="사업소 검색" value="' + esc(state.chatQ || '') + '"></div><div class="chrl">' + rl.filter(r => !rq || r.x.name.toLowerCase().includes(rq)).map(r => '<button type="button" class="chr' + (r.x.key === key ? ' on' : '') + '" data-chroom="' + r.x.key + '">' + chAvatar(r.x.name) + '<span class="chbody"><span class="chrn"><b>' + esc(r.x.name) + '</b>' + (r.lm ? '<span class="chtm">' + esc(chatTime(r.lm.at)) + '</span>' : '') + '</span><span class="chrp"><span>' + (r.lm ? esc((r.lm.role === 'hq' ? '나: ' : '') + (r.lm.photo && r.lm.body === CH_PHOTO_TXT ? '사진을 보냈습니다' : r.lm.body.replace(/\s+/g, ' ').slice(0, 40))) : '대화 없음') + '</span>' + (r.un ? '<em>' + (r.un > 99 ? '99+' : r.un) + '</em>' : '') + '</span></span></button>').join('') + '</div></div>';
   }
   el.innerHTML = '<div class="chatwrap chat-vars' + (isMgr() ? ' solo' : '') + '">' + rooms + '<div class="chatmain card"><div class="hd"><div class="chhead">' + chAvatar(isMgr() ? '본사' : siteName(key), true) + '<h2>' + (isMgr() ? '본사와 대화' : esc(siteName(key)) + ' 소장과 대화') + '</h2></div><span class="note">' + (isMgr() ? esc(siteName(key)) + ' · 본사 담당자에게 바로 전달됩니다' : '이 사업소 소장에게만 보이는 대화방입니다') + '</span></div><div class="chmsgs" id="chatMsgs" data-key="' + key + '">' + chatBubbles(key) + '</div>' +
-    (state.canWrite ? '<form class="chform" id="chatForm"><textarea id="chatIn" data-key="' + key + '" rows="1" maxlength="2000" placeholder="메시지를 입력하세요 (Enter 전송 · Shift+Enter 줄바꿈)"></textarea><button type="submit" class="chsend" id="chatSend">전송</button></form>' : '<div class="note" style="padding:12px 16px">읽기 전용입니다.</div>') + '</div></div>';
-  const m = $('#chatMsgs'), inp = $('#chatIn'); if (m && atBottom) m.scrollTop = m.scrollHeight; if (inp) { inp.value = draft; if (typing) inp.focus(); }
+    (state.canWrite ? '<div class="chprev" id="chatPrev" hidden></div><form class="chform" id="chatForm"><label class="chpic" title="사진 보내기">📷<input type="file" id="chatPic" accept="image/*" hidden></label><textarea id="chatIn" data-key="' + key + '" rows="1" maxlength="2000" placeholder="메시지를 입력하세요 (Enter 전송 · Shift+Enter 줄바꿈)"></textarea><button type="submit" class="chsend" id="chatSend">전송</button></form>' : '<div class="note" style="padding:12px 16px">읽기 전용입니다.</div>') + '</div></div>';
+  showChatPrev(); const m = $('#chatMsgs'), inp = $('#chatIn'); if (m && atBottom) m.scrollTop = m.scrollHeight; if (inp) { inp.value = draft; if (typing) inp.focus(); }
   const l = chatOf(key); if (l.length && state.tab === 'chat') { chatSeenSet(key, l[l.length - 1].at || ''); updateChatBadge(); }
 }
+function showChatPrev() { const p = $('#chatPrev'); if (!p) return; p.hidden = !state.chatPhoto; p.innerHTML = state.chatPhoto ? '<div class="chpv"><img src="' + state.chatPhoto + '" alt="보낼 사진"><button type="button" id="chatPrevX" title="사진 빼기">×</button></div><span class="small muted">사진을 보냅니다. 글도 함께 쓸 수 있습니다.</span>' : ''; }
 function bindChat() {
   document.addEventListener('click', e => { const r = e.target.closest('[data-chroom]'); if (r) { state.chatSite = r.dataset.chroom; renderChat(); updateChatBadge(); } });
   document.addEventListener('keydown', e => { if (e.target.id === 'chatIn' && e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); const f = $('#chatForm'); if (f) f.requestSubmit(); } });
   document.addEventListener('input', e => { if (e.target.id === 'chatRoomQ') { state.chatQ = e.target.value; const pos = e.target.selectionStart; renderChat(); const q = $('#chatRoomQ'); if (q) { q.focus(); q.setSelectionRange(pos, pos); } return; } if (e.target.id === 'chatIn') { e.target.style.height = 'auto'; e.target.style.height = Math.min(120, e.target.scrollHeight) + 'px'; } });
+  document.addEventListener('change', async e => {
+    if (e.target.id !== 'chatPic') return; const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (!/^image\//.test(f.type)) { toast('사진 파일만 보낼 수 있습니다'); return; }
+    try { let u = await photoToDataUrl(f, 900, .72); if (u.length > 170000) u = await photoToDataUrl(f, 720, .55); state.chatPhoto = u; showChatPrev(); } catch (err) { toast(err.message || '사진을 불러오지 못했습니다'); }
+  });
+  document.addEventListener('click', e => {
+    if (e.target.id === 'chatPrevX') { state.chatPhoto = ''; showChatPrev(); return; }
+    const im = e.target.closest('[data-chimg]'); if (im) { const o = document.createElement('div'); o.className = 'chlight'; o.innerHTML = '<img src="' + im.src + '" alt="사진">'; o.addEventListener('click', () => o.remove()); document.body.appendChild(o); }
+  });
   document.addEventListener('submit', async e => {
     if (e.target.id !== 'chatForm') return; e.preventDefault();
-    const inp = $('#chatIn'), body = (inp.value || '').trim(), key = inp.dataset.key; if (!body) return;
-    const btn = $('#chatSend'); btn.disabled = true;
-    try { await store.sendChat({ siteKey: key, role: chatRole(), name: (state.me && state.me.name) || (isMgr() ? siteName(key) + ' 소장' : '본사'), body }); inp.value = ''; inp.style.height = 'auto'; if (state.tab === 'chat') renderChat(); const m = $('#chatMsgs'); if (m) m.scrollTop = m.scrollHeight; }
-    catch (err) { toast('전송 실패: ' + (err.message || err)); }
+    const inp = $('#chatIn'), photo = state.chatPhoto || '', body = (inp.value || '').trim() || (photo ? CH_PHOTO_TXT : ''), key = inp.dataset.key; if (!body) return;
+    const btn = $('#chatSend'); btn.disabled = true; inp.value = ''; inp.style.height = 'auto';
+    try { await store.sendChat({ siteKey: key, role: chatRole(), name: (state.me && state.me.name) || (isMgr() ? siteName(key) + ' 소장' : '본사'), body, photo }); inp.value = ''; inp.style.height = 'auto'; state.chatPhoto = ''; if (state.tab === 'chat') renderChat(); const m = $('#chatMsgs'); if (m) m.scrollTop = m.scrollHeight; }
+    catch (err) { inp.value = body === CH_PHOTO_TXT ? '' : body; toast('전송 실패: ' + (err.message || err)); }
     btn.disabled = false; const i2 = $('#chatIn'); if (i2) i2.focus();
   });
 }
@@ -3566,7 +3581,7 @@ function makeSupabaseStore(client) {
   };
   let loading = null, timer = null;
   async function loadAll() {
-    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes, cRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), client.from('ledger').select('*').eq('id', isMgr() ? 'site:' + mySite() : 'main'), client.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(2000)]);
+    const [sRes, rRes, dRes, aRes, oRes, mRes, lRes, cRes] = await Promise.all([client.from('sites').select('*').eq('active', true), client.from('reports').select('*'), client.from('dailies').select('*'), client.from('acks').select('*'), client.from('directives').select('*'), client.from('meetings').select('*').order('created_at', { ascending: false }).limit(50), client.from('ledger').select('*').eq('id', isMgr() ? 'site:' + mySite() : 'main'), client.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(300)]);
     const err = sRes.error || rRes.error || dRes.error || aRes.error || oRes.error || mRes.error; if (err) throw err;
     state.siteList = (sRes.data || []).map(x => ({ id: x.key, name: x.name, code: x.code, quota: x.staff_quota == null ? null : x.staff_quota, building: x.building || null }));
     state.reports = (rRes.data || []).map(rowToReport);
@@ -3574,7 +3589,7 @@ function makeSupabaseStore(client) {
     state.acks = (aRes.data || []).map(x => ({ id: x.id, month: x.month, memo: x.memo, at: x.acked_at }));
     state.orders = (oRes.data || []).map(x => ({ id: x.id, groupId: x.group_id, siteKey: x.site_key, title: x.title, body: x.body || '', due: x.due || '', priority: x.priority, status: x.status, reply: x.reply || '', doneAt: x.done_at || '', createdAt: x.created_at }));
     state.meetings = (mRes.data || []).map(x => ({ id: x.id, room: x.room, title: x.title, siteKeys: x.site_keys || null, status: x.status, createdAt: x.created_at, endedAt: x.ended_at || '' }));
-    state.chat = (cRes && !cRes.error && cRes.data ? cRes.data : []).map(x => ({ id: x.id, siteKey: x.site_key, role: x.sender_role, name: x.sender_name || '', body: x.body, at: x.created_at }));
+    state.chat = (cRes && !cRes.error && cRes.data ? cRes.data.slice().reverse() : []).map(x => ({ id: x.id, siteKey: x.site_key, role: x.sender_role, name: x.sender_name || '', body: x.body, photo: x.photo || '', at: x.created_at }));
     const lrow = (lRes && !lRes.error && lRes.data && lRes.data[0]) ? lRes.data[0] : null;
     state.ledger = (!isMgr() && lrow) ? { data: lrow.data, fileName: lrow.file_name || '', uploadedAt: lrow.uploaded_at } : null; state.ledgerSite = (isMgr() && lrow) ? lrow.data : null;
     state.canWrite = true; state.loaded = true; onData();
@@ -3594,7 +3609,7 @@ function makeSupabaseStore(client) {
     async deleteDaily(siteKey, date) { await q(client.from('dailies').delete().match({ site_key: siteKey, date })); },
     async setSite(doc) { const cur = state.siteList.find(x => x.id === doc.id) || {}; await q(client.from('sites').upsert({ key: doc.id, name: doc.name, code: doc.code || cur.code || doc.id, staff_quota: doc.quota !== undefined ? doc.quota : (cur.quota == null ? null : cur.quota), active: true })); },
     async setSiteQuota(key, n) { await q(client.from('sites').update({ staff_quota: n }).eq('key', key)); },
-    async sendChat(m) { const { error } = await client.from('chat_messages').insert({ site_key: m.siteKey, sender_role: m.role, sender_name: m.name, body: m.body }); if (error) throw new Error(/chat_messages/.test(error.message || '') ? '채팅 테이블이 아직 없습니다. 본사 관리자에게 supabase/chat.sql 실행을 요청하세요' : (error.message || error.code)); reload(); },
+    async sendChat(m) { const { error } = await client.from('chat_messages').insert({ site_key: m.siteKey, sender_role: m.role, sender_name: m.name, body: m.body, photo: m.photo || null }); if (error) throw new Error(/photo/.test(error.message || '') ? '사진 보내기 설정이 아직 안 됐습니다. 본사 관리자에게 supabase/chat.sql 의 사진 부분 실행을 요청하세요' : /chat_messages/.test(error.message || '') ? '채팅 테이블이 아직 없습니다. 본사 관리자에게 supabase/chat.sql 실행을 요청하세요' : (error.message || error.code)); reload(); },
     async saveLedger(doc) {
       const rows = [{ id: 'main', data: doc.data, file_name: doc.fileName, uploaded_at: doc.uploadedAt }], sl = ldSiteSlices(doc.data);
       Object.keys(sl).forEach(id => rows.push({ id, data: sl[id], file_name: doc.fileName, uploaded_at: doc.uploadedAt }));

@@ -25,3 +25,6 @@ create policy "chat hq delete" on public.chat_messages for delete to authenticat
 do $$ begin
   alter publication supabase_realtime add table public.chat_messages;
 exception when duplicate_object then null; when undefined_object then null; end $$;
+
+-- 사진 보내기 (채팅에 사진 한 장 첨부, 앱에서 줄인 JPEG 를 data URL 로 보관)
+alter table public.chat_messages add column if not exists photo text check (photo is null or char_length(photo) <= 400000);
