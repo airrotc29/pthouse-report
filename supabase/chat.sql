@@ -28,3 +28,23 @@ exception when duplicate_object then null; when undefined_object then null; end 
 
 -- 사진 보내기 (채팅에 사진 한 장 첨부, 앱에서 줄인 JPEG 를 data URL 로 보관)
 alter table public.chat_messages add column if not exists photo text check (photo is null or char_length(photo) <= 400000);
+
+-- 파일 보내기 (PDF·엑셀·한글·워드 등 15MB까지). 파일은 비공개 버킷 chat-files 에 두고 채팅 행에는 경로만 둔다.
+-- 경로 규칙: chat-files/<site_key>/<임의이름>.<확장자> (본사는 전부, 소장은 자기 사업소 폴더만 읽고 올릴 수 있다)
+alter table public.chat_messages add column if not exists file_path text;
+alter table public.chat_messages add column if not exists file_name text;
+alter table public.chat_messages add column if not exists file_size integer;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('chat-files', 'chat-files', false, 15728640)
+on conflict (id) do update set public = false, file_size_limit = 15728640;
+
+drop policy if exists "chatfiles read" on storage.objects;
+drop policy if exists "chatfiles insert" on storage.objects;
+drop policy if exists "chatfiles hq delete" on storage.objects;
+create policy "chatfiles read" on storage.objects for select to authenticated
+  using (bucket_id = 'chat-files' and (public.is_hq() or (storage.foldername(name))[1] = public.auth_site()));
+create policy "chatfiles insert" on storage.objects for insert to authenticated
+  with check (bucket_id = 'chat-files' and (public.is_hq() or (storage.foldername(name))[1] = public.auth_site()));
+create policy "chatfiles hq delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'chat-files' and public.is_hq());
